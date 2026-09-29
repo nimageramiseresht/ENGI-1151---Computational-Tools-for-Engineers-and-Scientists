@@ -166,7 +166,7 @@ button.run[aria-expanded="true"] { background: var(--paper); color: var(--accent
   font-family: var(--mono); font-size: 0.8rem; border: 1px solid var(--muted); border-bottom-width: 2px;
   border-radius: 3px; padding: 0 0.3rem; background: var(--code-bg); color: var(--ink);
 }
-.repl-frame { resize: vertical; overflow: hidden; height: 620px; min-height: 260px; }
+.repl-frame { resize: vertical; overflow: hidden; height: 460px; min-height: 260px; }
 .repl-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 
 details.solution { margin: 1rem 0; border: 1px solid var(--grid); }
@@ -525,17 +525,21 @@ const liteBase = (async () => {
   return { base: PUBLIC_LITE, local: false };
 })();
 
-function replUrl(base, code) {
+function replUrl(base, setup) {
+  // The editor always opens empty. If the block needs earlier code (for example
+  // simulation_results from section 4), that code runs silently in the background.
   const p = new URLSearchParams({
     kernel: 'python',
     toolbar: '1',
     showBanner: '0',
-    execute: '0',                    // put the code in the editor, don't auto-run
-    clearCodeContentOnExecute: '0',  // keep it there after running so students can edit
+    clearCodeContentOnExecute: '0',  // keep typed code in the editor after running
     promptCellPosition: 'top',
     theme: darkQuery.matches ? 'JupyterLab Dark' : 'JupyterLab Light'
   });
-  p.append('code', code);
+  if (setup) {
+    p.append('code', setup);         // executed on start-up
+    p.set('hideCodeInput', '1');     // hide the setup code itself
+  }
   return base + 'repl/index.html?' + p.toString();
 }
 
@@ -569,7 +573,7 @@ document.querySelectorAll('figure.code[data-runnable]').forEach(fig => {
 
   const hint = document.createElement('span');
   hint.className = 'hint';
-  if (setupId === 'simulation') hint.textContent = 'The live window also includes the simulation from section 4, so it runs on its own.';
+  if (setupId === 'simulation') hint.textContent = 'The live window already has simulation_results from section 4 loaded.';
 
   bar.append(run, copy, hint);
   fig.append(bar);
@@ -589,10 +593,10 @@ document.querySelectorAll('figure.code[data-runnable]').forEach(fig => {
     panel = document.createElement('div');
     panel.className = 'repl';
     panel.innerHTML =
-      '<p class="repl-help">Press <kbd>Shift</kbd> + <kbd>Enter</kbd> to run. The code stays in the editor, so you can change it and run it again. ' +
+      '<p class="repl-help">Type or paste code into the empty box and press <kbd>Shift</kbd> + <kbd>Enter</kbd> to run it. Your code stays in the box, so you can change it and run it again. ' +
       'The first start takes 10 to 20 seconds while Python loads in your browser.</p>' +
       '<div class="repl-frame"><iframe title="Live Python console" loading="lazy" allow="clipboard-read; clipboard-write"></iframe></div>';
-    panel.querySelector('iframe').src = replUrl(base, (setup ? setup + '\n' : '') + code);
+    panel.querySelector('iframe').src = replUrl(base, setup);
     fig.append(panel);
   });
 
@@ -627,7 +631,7 @@ document.querySelectorAll('figure.code[data-runnable]').forEach(fig => {
     frame.append(iframe);
     slot.append(frame);
   } else {
-    links.innerHTML = '<a href="content/' + NOTEBOOK + '" download>Download .ipynb</a>';
+    links.innerHTML = '<a href="' + NOTEBOOK + '" download>Download .ipynb</a>';
     slot.innerHTML =
       '<div class="notebook-empty"><p>The embedded notebook appears once this page is published with the included GitHub Action, which builds JupyterLite into the <code>lite/</code> folder.</p>' +
       '<p style="margin:0">Until then, the live Python windows above use the public JupyterLite demo, and you can download the notebook to run in any Jupyter installation.</p></div>';
