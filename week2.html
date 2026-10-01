@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Week 2: Flow control in Python | ENGI 1151</title>
+<meta name="description" content="ENGI 1151 week 2 lecture notes with live, in-browser Python: Boolean expressions, if/elif/else, for and while loops, break, continue and exception handling.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔀</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.bool-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.86rem; margin-top: 0.6rem; }
+.bool-table th, .bool-table td { border: 1px solid var(--grid); padding: 0.3rem 0.55rem; text-align: left; }
+.bool-table th { color: var(--muted); font-weight: 500; }
+.bool-table tr.cur td { background: var(--accent-soft); }
+.tv-True { color: var(--good); font-weight: 600; }
+.tv-False { color: var(--bad); font-weight: 600; }
+.cmp-list { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.5rem; font-family: var(--mono); font-size: 0.88rem; justify-content: start; margin-top: 0.6rem; }
+.gauge { position: relative; height: 1.4rem; background: var(--code-bg); border: 1px solid var(--grid); margin: 0.75rem 0 1.4rem; }
+.gauge .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); transition: width .2s; }
+.gauge .mark { position: absolute; top: -0.35rem; bottom: -0.35rem; width: 2px; background: var(--ink); }
+.gauge .mark span { position: absolute; top: 100%; transform: translateX(-50%); font: 0.72rem var(--mono); color: var(--muted); white-space: nowrap; margin-top: 0.15rem; }
+.flow-code { font-family: var(--mono); font-size: 0.84rem; line-height: 1.6; background: var(--code-bg); border: 1px solid var(--grid); padding: 0.6rem 0; margin: 0.6rem 0; overflow-x: auto; }
+.flow-code div { padding: 0 0.9rem; white-space: pre; border-left: 4px solid transparent; transition: background .2s, opacity .2s; }
+.flow-code div.ran { background: var(--accent-soft); border-left-color: var(--accent); }
+.flow-code div.boom { background: color-mix(in srgb, var(--bad) 16%, var(--paper)); border-left-color: var(--bad); }
+.flow-code div.skip { opacity: 0.38; }
+.grid-loop { display: grid; grid-template-columns: auto repeat(2, minmax(0, 1fr)); gap: 4px; font-family: var(--mono); font-size: 0.85rem; margin: 0.6rem 0; max-width: 30rem; }
+.grid-loop > span { padding: 0.45rem 0.6rem; text-align: center; }
+.grid-loop .h { color: var(--muted); }
+.grid-loop .c { border: 1.5px solid var(--grid); transition: background .2s, color .2s, border-color .2s; }
+.grid-loop .c.done { border-color: var(--accent); color: var(--accent); }
+.grid-loop .c.now { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+</style>
+</head>
+<body data-week="2" data-notebook="week2_flow_control.ipynb">
+
+<div id="topbar"><noscript><a href="index.html">ENGI 1151 · all weeks</a></noscript></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Computational Tools for Engineers and Scientists, week 2</p>
+      <h1>Flow control in Python</h1>
+      <p class="lede">Teach your programs to make decisions, repeat calculations, skip bad data and recover from errors.</p>
+      <p class="byline">Dr Nima Gerami Seresht <br>Department of Engineering <br>Durham University</p>
+    </div>
+    <figure class="sim-panel">
+      <canvas id="hero-conv" aria-label="Bar chart on a logarithmic scale showing an error estimate halving at each iteration of a while loop until it falls below the tolerance line" role="img"></canvas>
+      <div class="sim-readout" aria-live="off">
+        <span>iteration <output id="conv-it">0</output></span>
+        <span>error <output id="conv-err">1.0</output></span>
+        <label>tolerance <select id="conv-tol" aria-label="Tolerance">
+          <option value="0.1">0.1</option><option value="0.01" selected>0.01</option><option value="0.001">0.001</option><option value="0.0001">0.0001</option>
+        </select></label>
+        <button type="button" id="conv-replay">Run again</button>
+      </div>
+      <figcaption class="sim-caption">The <code>while</code> loop from section 4.2: <code>while error &gt; tolerance: error = error / 2.0</code>. Each bar is one pass through the loop, on a logarithmic scale. The loop stops as soon as a bar drops below the dashed tolerance line.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#boolean">Boolean expressions</a></li>
+      <li><a href="#conditionals">Conditional statements</a></li>
+      <li><a href="#loops">Loops</a></li>
+      <li><a href="#controlling">Controlling loops</a></li>
+      <li><a href="#nested">Nested loops</a></li>
+      <li><a href="#exceptions">Exception handling</a></li>
+      <li><a href="#summary">Summary</a></li>
+      <li class="plain"><a href="#notebook">Practice notebook</a></li>
+    </ol>
+  </nav>
+
+  <main>
+<!-- =========================================================== 1 -->
+    <section id="introduction">
+      <h2><span class="num">1</span>Introduction</h2>
+      <p>In programming, <strong>flow control</strong> refers to the order in which statements and instructions are executed. By default, the Python interpreter executes instructions sequentially, from the top of a program or notebook cell to the bottom. Each statement is executed before Python moves to the next statement. The following example demonstrates this standard sequential flow:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">a = 12
+b = 33
+
+result = a + b
+
+a = 36
+
+print(result)</code></pre>
+</figure>
+<pre class="out">45</pre>
+
+      <p>The value of <code>result</code> is <code>45</code> because the expression <code>a + b</code> is evaluated before <code>a</code> is changed. Changing <code>a</code> afterwards does not automatically recalculate <code>result</code>. Step through it to see this happen:</p>
+
+      <div class="tracer" data-trace="w2-sequence" data-title="Sequential flow: one line after another"></div>
+
+      <p>To update the result, the calculation must be performed again:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">a = 12
+b = 33
+
+result = a + b
+
+a = 36
+result = a + b
+
+print(result)</code></pre>
+</figure>
+<pre class="out">69</pre>
+
+      <p>There are many situations in which sequential execution is insufficient. Sometimes, a program must skip some instructions, select one operation from several alternatives, or repeat a calculation. Consider the following examples:</p>
+      <ul>
+        <li>A program asks a user for their age using <code>input("Enter your age: ")</code> and determines whether they are eligible for a youth programme. The program must display either <code>"You are eligible"</code> or <code>"You are not eligible"</code>, depending on the entered age.</li>
+        <li>A numerical calculation must be repeated for 1,000 time steps. Rewriting the same instructions 1,000 times would be inefficient and difficult to maintain.</li>
+        <li>An iterative engineering calculation must continue until its numerical error falls below a specified tolerance.</li>
+        <li>A program must ignore an invalid sensor measurement without stopping the complete analysis.</li>
+      </ul>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 250" role="img" aria-labelledby="dg-flow-t">
+          <title id="dg-flow-t">Three kinds of flow: sequence runs steps in order, selection chooses one branch, repetition loops back while a condition holds</title>
+          <text x="80" y="20" font-size="13" text-anchor="middle" font-weight="600">Sequence</text>
+          <g font-size="12.5" text-anchor="middle">
+            <rect class="box" x="30" y="36" width="100" height="32" rx="3"/><text x="80" y="57">step 1</text>
+            <rect class="box" x="30" y="100" width="100" height="32" rx="3"/><text x="80" y="121">step 2</text>
+            <rect class="box" x="30" y="164" width="100" height="32" rx="3"/><text x="80" y="185">step 3</text>
+          </g>
+          <path class="line" d="M80 68 V 92 M80 132 V 156"/><path class="fill-ink" d="M80 99 l-5 -9 h10 z M80 163 l-5 -9 h10 z"/>
+
+          <text x="330" y="20" font-size="13" text-anchor="middle" font-weight="600">Selection <tspan class="muted" font-weight="400">if / elif / else</tspan></text>
+          <polygon class="box-acc" points="330,36 400,70 330,104 260,70"/>
+          <text x="330" y="74" font-size="12.5" text-anchor="middle" class="acc">condition?</text>
+          <path class="line" d="M260 70 H 230 V 140 M400 70 H 430 V 140"/>
+          <path class="fill-ink" d="M230 147 l-5 -9 h10 z M430 147 l-5 -9 h10 z"/>
+          <text x="244" y="62" font-size="11" class="muted">True</text><text x="408" y="62" font-size="11" class="muted">False</text>
+          <g font-size="12.5" text-anchor="middle">
+            <rect class="box" x="180" y="148" width="100" height="32" rx="3"/><text x="230" y="169">block A</text>
+            <rect class="box" x="380" y="148" width="100" height="32" rx="3"/><text x="430" y="169">block B</text>
+          </g>
+          <path class="line" d="M230 180 V 206 H 430 V 180 M330 206 V 226"/><path class="fill-ink" d="M330 233 l-5 -9 h10 z"/>
+
+          <text x="580" y="20" font-size="13" text-anchor="middle" font-weight="600">Repetition <tspan class="muted" font-weight="400">for / while</tspan></text>
+          <polygon class="box-acc" points="580,36 650,70 580,104 510,70"/>
+          <text x="580" y="74" font-size="12.5" text-anchor="middle" class="acc">repeat?</text>
+          <path class="line" d="M580 104 V 140"/><path class="fill-ink" d="M580 147 l-5 -9 h10 z"/>
+          <rect class="box" x="530" y="148" width="100" height="32" rx="3"/><text x="580" y="169" font-size="12.5" text-anchor="middle">loop body</text>
+          <path class="line-acc" d="M530 164 H 495 V 70 H 505"/><path class="fill-acc" d="M512 70 l-9 -5 v10 z"/>
+          <path class="line" d="M650 70 H 668 V 226 H 590"/><path class="fill-ink" d="M583 226 l9 -5 v10 z"/>
+          <text x="590" y="122" font-size="11" class="muted">True</text><text x="638" y="60" font-size="11" class="muted">False</text>
+          <text x="580" y="246" font-size="11" class="muted" text-anchor="middle">carry on</text>
+        </svg>
+        <figcaption>Python provides tools for controlling the flow of a program: making decisions, repeating tasks, skipping selected operations, terminating loops and responding to expected errors.</figcaption>
+      </figure>
+
+      <p>The main flow-control structures introduced in this lecture are:</p>
+      <ul>
+        <li>Conditional statements: <code>if</code>, <code>elif</code>, and <code>else</code></li>
+        <li>Loops: <code>for</code> and <code>while</code></li>
+        <li>Loop-control statements: <code>break</code> and <code>continue</code></li>
+        <li>Placeholder statements: <code>pass</code></li>
+        <li>Exception handling: <code>try</code> and <code>except</code></li>
+      </ul>
+
+      <div class="note">
+        <p><span class="label">Indentation is an essential part of Python syntax.</span> Python does not normally use an <code>end</code> command to mark the end of an <code>if</code> statement, loop, or function. Instead, indentation identifies the statements that belong to a code block. The recommended convention is to use four spaces for each indentation level. Most programming editors insert four spaces when the Tab key is pressed. However, spaces and tab characters should not be mixed within the same program. A colon, <code>:</code>, must be placed at the end of the header of a compound statement. For example:</p>
+<figure class="code"><pre><code class="language-python">if temperature > 40:
+    print("The temperature is high.")
+
+for value in measurements:
+    print(value)
+
+while error > tolerance:
+    error = error / 2</code></pre></figure>
+        <p>The indented statements belong to the corresponding conditional statement or loop. When the indentation returns to its previous level, the code block has ended.</p>
+      </div>
+    </section>
+
+<!-- =========================================================== 2 -->
+    <section id="boolean">
+      <h2><span class="num">2</span>Boolean expressions and comparison operators</h2>
+      <p>Flow-control decisions are usually based on <strong>Boolean expressions</strong>. A Boolean expression is evaluated as either <code>True</code> or <code>False</code>. Python provides the following comparison operators:</p>
+      <ul>
+        <li>Equal to: <code>==</code> &nbsp; Not equal to: <code>!=</code></li>
+        <li>Greater than: <code>&gt;</code> &nbsp; Less than: <code>&lt;</code></li>
+        <li>Greater than or equal to: <code>&gt;=</code> &nbsp; Less than or equal to: <code>&lt;=</code></li>
+      </ul>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperature = 35.0
+
+print(temperature > 30.0)
+print(temperature == 35.0)
+print(temperature <= 20.0)</code></pre>
+</figure>
+<pre class="out">True
+True
+False</pre>
+
+      <div class="widget" id="cmp-widget">
+        <p class="w-title">Move the temperature</p>
+        <div class="w-row"><label>temperature = <input type="range" id="cmp-t" min="0" max="60" step="0.5" value="35"> <output id="cmp-tv">35.0</output></label></div>
+        <div class="cmp-list" id="cmp-list"></div>
+      </div>
+
+      <div class="note">
+        <p>Do not confuse the assignment operator <code>=</code> with the equality comparison operator <code>==</code>. The statement <code>temperature = 35.0</code> <em>assigns</em> the value <code>35.0</code> to the variable <code>temperature</code>. The expression <code>temperature == 35.0</code> <em>checks</em> whether the value of <code>temperature</code> is equal to <code>35.0</code>. The result of this comparison is either <code>True</code> or <code>False</code>.</p>
+      </div>
+
+      <div class="quiz" data-answer="0">
+        <p class="q">What does <code>print(5 == 5.0)</code> display?</p>
+        <div class="opts"><button>True</button><button>False</button><button>an error, because the types differ</button></div>
+        <p class="why"><code>==</code> compares values, and the integer 5 and the float 5.0 have the same value. (Be careful comparing floats that come from calculations, though: <code>0.1 + 0.2 == 0.3</code> is <code>False</code>, as we saw in week 1.)</p>
+      </div>
+
+      <h3>2.1 Logical operators</h3>
+      <p>Several conditions can be combined using the logical operators <code>and</code>, <code>or</code>, and <code>not</code>.</p>
+      <ul>
+        <li><code>and</code> returns <code>True</code> when both conditions are true.</li>
+        <li><code>or</code> returns <code>True</code> when at least one condition is true.</li>
+        <li><code>not</code> reverses the Boolean value of a condition.</li>
+      </ul>
+      <p>For example, an engineering system may be considered to operate safely only when both its temperature and pressure are below their specified limits:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperature = 65.0
+pressure = 4.2
+
+safe_operation = temperature < 80.0 and pressure < 5.0
+
+print(safe_operation)</code></pre>
+</figure>
+<pre class="out">True</pre>
+
+      <p>Parentheses can be used to make a compound condition clearer:</p>
+<figure class="code"><pre><code class="language-python">safe_operation = (
+    temperature < 80.0 and
+    pressure < 5.0
+)</code></pre></figure>
+
+      <p>The <code>or</code> operator can be used when either of two conditions should trigger an action:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperature = 85.0
+pressure = 4.2
+
+warning_required = temperature > 80.0 or pressure > 5.0
+
+print(warning_required)</code></pre>
+</figure>
+<pre class="out">True</pre>
+
+      <p>The <code>not</code> operator reverses a Boolean value:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">system_active = False
+
+print(not system_active)</code></pre>
+</figure>
+<pre class="out">True</pre>
+
+      <div class="widget" id="logic-widget">
+        <p class="w-title">Safe operating window</p>
+        <p>Move both readings. The row of the truth table that matches the current readings is highlighted.</p>
+        <div class="w-row">
+          <label>temperature <input type="range" id="lg-t" min="40" max="110" step="1" value="65"> <output id="lg-tv">65.0</output></label>
+          <label>pressure <input type="range" id="lg-p" min="2" max="8" step="0.1" value="4.2"> <output id="lg-pv">4.2</output></label>
+        </div>
+        <div class="w-out" id="lg-out" aria-live="polite"></div>
+        <table class="bool-table" id="lg-table">
+          <thead><tr><th>temperature &lt; 80.0</th><th>pressure &lt; 5.0</th><th>A and B</th><th>A or B</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">With <code>temperature = 85.0</code> and <code>pressure = 4.2</code>, what is <code>temperature &lt; 80.0 and pressure &lt; 5.0</code>?</p>
+        <div class="opts"><button>True</button><button>False</button></div>
+        <p class="why"><code>and</code> needs <em>both</em> parts to be true. The pressure is fine, but the temperature is not below 80, so the whole expression is <code>False</code>.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 2.1.</span> Concrete can be poured when the air temperature is between 5 °C and 30 °C (inclusive) <em>and</em> the relative humidity is at least 50 %. Store <code>air_temperature = 12.0</code> and <code>humidity = 45.0</code>, build a Boolean <code>can_pour</code>, and print it. Change the values and check a few cases.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">air_temperature = 12.0   # °C
+humidity = 45.0          # %
+
+can_pour = (air_temperature >= 5.0 and air_temperature <= 30.0
+            and humidity >= 50.0)
+print(can_pour)</code></pre>
+</figure>
+<pre class="out">False</pre>
+          <p>Python also allows the chained form <code>5.0 &lt;= air_temperature &lt;= 30.0</code>, which reads like the maths.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 3 -->
+    <section id="conditionals">
+      <h2><span class="num">3</span>Conditional statements</h2>
+      <p>Conditional statements allow a program to execute different blocks of code depending on whether specified conditions are true or false. Python uses the following conditional statements:</p>
+      <ul>
+        <li><code>if</code> evaluates the first condition. If the condition is true, the associated code block is executed.</li>
+        <li><code>elif</code>, which means “else if”, checks an additional condition when all preceding conditions are false. An <code>if</code> statement can contain zero or more <code>elif</code> clauses.</li>
+        <li><code>else</code> provides a block that is executed when all preceding conditions are false. The <code>else</code> clause is optional and does not contain a condition.</li>
+      </ul>
+      <p>The general structure is:</p>
+<figure class="code"><pre><code class="language-python">if condition_1:
+    # Statements executed if condition_1 is True
+elif condition_2:
+    # Statements executed if condition_2 is True
+elif condition_n:
+    # Statements executed if condition_n is True
+else:
+    # Statements executed if all conditions are False</code></pre></figure>
+
+      <p>Consider the following example:</p>
+<figure class="code" data-runnable data-hint="input() opens a box in the live window: type a number there and press Enter.">
+<pre><code class="language-python">temperature = float(
+    input("Enter the outside temperature in degrees Celsius: ")
+)
+
+if temperature > 40.0:
+    print("It is very hot.")
+elif temperature > 25.0:
+    print("It is warm.")
+else:
+    print("It is cool.")</code></pre>
+</figure>
+
+      <div class="note"><p><span class="label">Using <code>input()</code> in a live window.</span> When the code reaches <code>input()</code>, a small text box appears under the cell: type your answer there and press <kbd>Enter</kbd>. If no box appears (this can happen in some private-browsing windows), replace <code>input(...)</code> with a value in quotes, for example <code>float("41")</code>.</p></div>
+
+      <p>Python processes this conditional statement as follows:</p>
+      <ul>
+        <li>Python checks each condition from top to bottom.</li>
+        <li>If <code>temperature &gt; 40.0</code> is true, Python executes the first block.</li>
+        <li>If the first condition is <code>False</code>, Python checks <code>temperature &gt; 25.0</code>.</li>
+        <li>If neither condition is <code>True</code>, Python executes the <code>else</code> block.</li>
+        <li>Only the block associated with the first true condition is executed.</li>
+      </ul>
+      <p>For example, if the user enters <code>41</code>, the first condition is true. The program displays <code>It is very hot.</code> Although 41 is also greater than 25, the corresponding <code>elif</code> block is not executed because Python has already found a true condition.</p>
+
+      <div class="widget" id="if-widget">
+        <p class="w-title">Follow the path through if / elif / else</p>
+        <div class="w-row">
+          <label>temperature = <input type="range" id="if-t" min="0" max="50" step="1" value="41"> <output id="if-tv">41.0</output></label>
+          <label><input type="checkbox" id="if-wrong"> use the incorrect order</label>
+        </div>
+        <svg class="dg" id="if-svg" viewBox="0 0 680 330" role="img" aria-label="Flowchart of the if, elif, else statement with the path taken highlighted">
+          <g class="node" id="n-start"><rect class="box" x="40" y="10" width="200" height="36" rx="18"/><text id="t-start" x="140" y="33" font-size="13" text-anchor="middle">temperature = 41.0</text></g>
+          <path class="edge line" id="e-s1" d="M140 46 V 64"/>
+          <g class="node" id="n-d1"><polygon class="box-acc" points="140,66 240,106 140,146 40,106"/><text id="t-d1" x="140" y="110" font-size="12.5" text-anchor="middle" class="acc">temperature &gt; 40.0</text></g>
+          <path class="edge line" id="e-y1" d="M240 106 H 330"/>
+          <text x="262" y="98" font-size="11" class="muted">True</text>
+          <g class="node" id="n-y1"><rect class="box" x="332" y="86" width="230" height="40" rx="3"/><text id="t-y1" x="447" y="111" font-size="13" text-anchor="middle">print("It is very hot.")</text></g>
+          <path class="edge line" id="e-n1" d="M140 146 V 166"/>
+          <text x="148" y="160" font-size="11" class="muted">False</text>
+          <g class="node" id="n-d2"><polygon class="box-acc" points="140,168 240,208 140,248 40,208"/><text id="t-d2" x="140" y="212" font-size="12.5" text-anchor="middle" class="acc">temperature &gt; 25.0</text></g>
+          <path class="edge line" id="e-y2" d="M240 208 H 330"/>
+          <text x="262" y="200" font-size="11" class="muted">True</text>
+          <g class="node" id="n-y2"><rect class="box" x="332" y="188" width="230" height="40" rx="3"/><text id="t-y2" x="447" y="213" font-size="13" text-anchor="middle">print("It is warm.")</text></g>
+          <path class="edge line" id="e-n2" d="M140 248 V 270"/>
+          <text x="148" y="264" font-size="11" class="muted">False</text>
+          <g class="node" id="n-el"><rect class="box" x="40" y="272" width="200" height="40" rx="3"/><text x="140" y="297" font-size="13" text-anchor="middle">print("It is cool.")</text></g>
+          <text x="40" y="326" font-size="11" class="muted">else</text>
+          <text x="574" y="111" font-size="11" class="muted">if</text>
+          <text x="574" y="213" font-size="11" class="muted">elif</text>
+        </svg>
+        <div class="w-out" id="if-out" aria-live="polite"></div>
+      </div>
+
+      <div class="note">
+        <p>The order of conditions is important. Conditions should generally be arranged from the most restrictive condition to the least restrictive condition. The following arrangement is incorrect:</p>
+<figure class="code"><pre><code class="language-python">if temperature > 25.0:
+    print("It is warm.")
+elif temperature > 40.0:
+    print("It is very hot.")</code></pre></figure>
+        <p>If <code>temperature</code> is <code>41.0</code>, the first condition is already true. Therefore, the <code>elif</code> condition is not evaluated. The correct order is:</p>
+<figure class="code"><pre><code class="language-python">if temperature > 40.0:
+    print("It is very hot.")
+elif temperature > 25.0:
+    print("It is warm.")</code></pre></figure>
+        <p>Tick <em>use the incorrect order</em> in the flowchart above and set the temperature to 41 to see the problem.</p>
+      </div>
+
+      <div class="tracer" data-trace="w2-elif" data-title="Only the first true branch runs"></div>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">Using the correct order, what is printed when <code>temperature = 25.0</code>?</p>
+        <div class="opts"><button>It is warm.</button><button>It is cool.</button><button>It is very hot.</button><button>nothing</button></div>
+        <p class="why"><code>25.0 &gt; 25.0</code> is <code>False</code>, because “greater than” is strict. Neither condition is true, so the <code>else</code> block runs. Use <code>&gt;=</code> if 25 should count as warm.</p>
+      </div>
+
+      <h3>3.1 Engineering example: checking an operating limit</h3>
+      <p>The following example compares a measured stress with an allowable stress:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">measured_stress = 185.0
+allowable_stress = 200.0
+
+if measured_stress <= allowable_stress:
+    print("The stress is within the allowable limit.")
+else:
+    print("Warning: the allowable stress has been exceeded.")</code></pre>
+</figure>
+<pre class="out">The stress is within the allowable limit.</pre>
+
+      <p>A factor of safety can also be checked:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">material_strength = 350.0
+applied_stress = 175.0
+
+factor_of_safety = material_strength / applied_stress
+
+if factor_of_safety >= 2.0:
+    print("The design satisfies the safety requirement.")
+else:
+    print("The design does not satisfy the safety requirement.")</code></pre>
+</figure>
+<pre class="out">The design satisfies the safety requirement.</pre>
+
+      <div class="widget" id="fos-widget">
+        <p class="w-title">Factor of safety check</p>
+        <div class="w-row">
+          <label>material_strength <input type="range" id="fos-s" min="100" max="600" step="5" value="350"> <output id="fos-sv">350.0</output> MPa</label>
+        </div>
+        <div class="w-row">
+          <label>applied_stress <input type="range" id="fos-a" min="50" max="400" step="5" value="175"> <output id="fos-av">175.0</output> MPa</label>
+        </div>
+        <div class="gauge" aria-hidden="true"><div class="fill" id="fos-fill"></div><div class="mark" style="left:40%"><span>2.0 required</span></div><div class="mark" style="left:20%;opacity:.4"><span>1.0</span></div></div>
+        <div class="w-out" id="fos-out" aria-live="polite"></div>
+      </div>
+
+      <h3>3.2 Nested conditional statements</h3>
+      <p>A conditional statement can be placed inside another conditional statement. This structure is called a <strong>nested conditional statement</strong>. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperature = 70.0
+pressure = 6.0
+
+if temperature < 80.0:
+    if pressure < 5.0:
+        print("The operating conditions are acceptable.")
+    else:
+        print("The pressure is too high.")
+else:
+    print("The temperature is too high.")</code></pre>
+</figure>
+<pre class="out">The pressure is too high.</pre>
+
+      <p>Although nested conditional statements are sometimes useful, excessive nesting can make code difficult to read. Where possible, logical operators can be used to simplify the condition:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperature = 70.0
+pressure = 6.0
+
+if temperature < 80.0 and pressure < 5.0:
+    print("The operating conditions are acceptable.")
+else:
+    print("At least one operating limit has been exceeded.")</code></pre>
+</figure>
+<pre class="out">At least one operating limit has been exceeded.</pre>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 3.1.</span> The <em>utilisation ratio</em> of a beam is \(u = \sigma_{\text{applied}} / \sigma_{\text{allowable}}\). Write an <code>if</code>/<code>elif</code>/<code>else</code> statement that prints <code>"OK"</code> when \(u \le 0.8\), <code>"Close to the limit"</code> when \(0.8 &lt; u \le 1.0\), and <code>"Fails"</code> otherwise. Test it with applied stresses of 120, 185 and 230 MPa and an allowable stress of 200 MPa.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">allowable_stress = 200.0   # MPa
+applied_stress = 185.0     # MPa: try 120.0 and 230.0 too
+
+utilisation = applied_stress / allowable_stress
+
+if utilisation <= 0.8:
+    print("OK")
+elif utilisation <= 1.0:
+    print("Close to the limit")
+else:
+    print("Fails")</code></pre>
+</figure>
+<pre class="out">Close to the limit</pre>
+          <p>Because the conditions are checked in order, the <code>elif</code> does not need <code>utilisation &gt; 0.8</code>: if Python reaches it, the first condition was already false.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 4 -->
+    <section id="loops">
+      <h2><span class="num">4</span>Loops</h2>
+      <p>Loops allow a block of code to be executed repeatedly. Python provides two principal loop types:</p>
+      <ul>
+        <li>A <code>for</code> loop iterates over the elements of an iterable object.</li>
+        <li>A <code>while</code> loop repeats while a specified condition remains true.</li>
+      </ul>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 250" role="img" aria-labelledby="dg-loops-t">
+          <title id="dg-loops-t">A for loop repeats once for each item; a while loop repeats as long as its condition is True</title>
+          <text x="160" y="20" font-size="13" text-anchor="middle" font-weight="600">for item in collection:</text>
+          <polygon class="box-acc" points="160,36 260,76 160,116 60,76"/>
+          <text x="160" y="72" font-size="12" text-anchor="middle" class="acc">another item</text>
+          <text x="160" y="88" font-size="12" text-anchor="middle" class="acc">left?</text>
+          <path class="line" d="M160 116 V 146"/><path class="fill-ink" d="M160 153 l-5 -9 h10 z"/>
+          <text x="168" y="136" font-size="11" class="muted">yes: item = next one</text>
+          <rect class="box" x="90" y="154" width="140" height="34" rx="3"/><text x="160" y="176" font-size="12.5" text-anchor="middle">indented block</text>
+          <path class="line-acc" d="M90 171 H 30 V 76 H 52"/><path class="fill-acc" d="M59 76 l-9 -5 v10 z"/>
+          <path class="line" d="M260 76 H 300 V 226 H 172"/><path class="fill-ink" d="M165 226 l9 -5 v10 z"/>
+          <text x="268" y="68" font-size="11" class="muted">no</text>
+          <text x="160" y="231" font-size="12" text-anchor="middle">after the loop</text>
+
+          <text x="510" y="20" font-size="13" text-anchor="middle" font-weight="600">while condition:</text>
+          <polygon class="box-acc" points="510,36 610,76 510,116 410,76"/>
+          <text x="510" y="80" font-size="12" text-anchor="middle" class="acc">condition?</text>
+          <path class="line" d="M510 116 V 146"/><path class="fill-ink" d="M510 153 l-5 -9 h10 z"/>
+          <text x="518" y="136" font-size="11" class="muted">True</text>
+          <rect class="box" x="440" y="154" width="140" height="34" rx="3"/><text x="510" y="171" font-size="12.5" text-anchor="middle">indented block</text>
+          <text x="510" y="184" font-size="10.5" text-anchor="middle" class="muted">must change the condition!</text>
+          <path class="line-acc" d="M440 171 H 380 V 76 H 402"/><path class="fill-acc" d="M409 76 l-9 -5 v10 z"/>
+          <path class="line" d="M610 76 H 650 V 226 H 522"/><path class="fill-ink" d="M515 226 l9 -5 v10 z"/>
+          <text x="618" y="68" font-size="11" class="muted">False</text>
+          <text x="510" y="231" font-size="12" text-anchor="middle">after the loop</text>
+        </svg>
+        <figcaption>A <code>for</code> loop knows in advance how many times it will run: once per item. A <code>while</code> loop keeps checking its condition, so something inside the loop must eventually make the condition false.</figcaption>
+      </figure>
+
+      <h3>4.1 <code>for</code> loops</h3>
+      <p>A <code>for</code> loop is used to iterate over an iterable object, such as a list, tuple, string, dictionary, or <code>range</code> object. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">for iteration in range(5):
+    print("Iteration:", iteration)</code></pre>
+</figure>
+<pre class="out">Iteration: 0
+Iteration: 1
+Iteration: 2
+Iteration: 3
+Iteration: 4</pre>
+      <p>The loop runs five times. In each iteration, the variable <code>iteration</code> is assigned the next value from <code>range(5)</code>.</p>
+
+      <div class="note">
+        <p>The expression <code>range(5)</code> does not return a list. It returns a <code>range</code> object that represents the integer sequence from <code>0</code> to <code>4</code>. The final value is excluded. Therefore, <code>range(5)</code> represents five values: <code>0, 1, 2, 3, 4</code>.</p>
+      </div>
+
+      <h4>4.1.1 Using <code>range()</code></h4>
+      <p>The <code>range()</code> function can be used in three forms.</p>
+      <ul>
+        <li><strong>Stop value only:</strong> this form starts at zero and stops before the specified value, for example <code>range(4)</code>. The generated values are <code>0</code>, <code>1</code>, <code>2</code>, and <code>3</code>.</li>
+        <li><strong>Start and stop values:</strong> this form starts from the specified starting value and stops before the specified value, for example <code>range(2, 6)</code>. The generated values are <code>2</code>, <code>3</code>, <code>4</code>, and <code>5</code>.</li>
+        <li><strong>Start, stop, and step values:</strong> this form starts from the specified starting value and stops before the specified value; the step size is also controllable. For example, <code>range(0, 10, 2)</code> generates <code>0</code>, <code>2</code>, <code>4</code>, <code>6</code>, and <code>8</code>. A negative step can be used to count backwards. For example, <code>range(5, 0, -1)</code> generates <code>5</code>, <code>4</code>, <code>3</code>, <code>2</code>, and <code>1</code>.</li>
+      </ul>
+
+      <div class="widget" id="range-widget">
+        <p class="w-title">range() explorer</p>
+        <p>Leave <em>start</em> or <em>step</em> empty to use their defaults (0 and 1).</p>
+        <div class="w-row">
+          <span>range(</span>
+          <label>start <input type="number" id="rg-a" value="0" aria-label="start"></label>
+          <label>stop <input type="number" id="rg-b" value="10" aria-label="stop"></label>
+          <label>step <input type="number" id="rg-c" value="2" aria-label="step"></label>
+          <span>)</span>
+        </div>
+        <div class="example-chips" id="rg-chips" style="display:flex;flex-wrap:wrap;gap:.35rem"></div>
+        <div class="chips" id="rg-out" aria-live="polite"></div>
+        <div class="w-out" id="rg-msg"></div>
+      </div>
+
+      <div class="note">
+        <p>The <code>start</code>, <code>stop</code>, and <code>step</code> arguments of <code>range()</code> must be integers. In addition, the step size cannot be zero. Using <code>range(0, 10, 0)</code> raises an error because Python cannot iterate over a sequence with a step size of 0.</p>
+      </div>
+
+      <div class="quiz" data-answer="2">
+        <p class="q">Which values does <code>range(2, 10, 3)</code> generate?</p>
+        <div class="opts"><button>2, 5, 8, 11</button><button>3, 6, 9</button><button>2, 5, 8</button><button>2, 3, 4, …, 10</button></div>
+        <p class="why">Start at 2 and add 3 each time: 2, 5, 8. The next value, 11, is not less than the stop value 10, so it is not generated.</p>
+      </div>
+
+      <h4>4.1.2 Iterating over a list</h4>
+      <p>A <code>for</code> loop can iterate directly over the elements of a list:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperatures = [20.5, 22.1, 25.8, 27.3]
+
+for temperature in temperatures:
+    print("Temperature:", temperature)</code></pre>
+</figure>
+<pre class="out">Temperature: 20.5
+Temperature: 22.1
+Temperature: 25.8
+Temperature: 27.3</pre>
+      <p>During each iteration, the variable <code>temperature</code> refers to one element of the list.</p>
+
+      <h4>4.1.3 Accessing values and indices</h4>
+      <p>The built-in <code>enumerate()</code> function is useful when both the index and the value of each element are required:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperatures = [20.5, 22.1, 25.8]
+
+for index, temperature in enumerate(temperatures):
+    print(index, temperature)</code></pre>
+</figure>
+<pre class="out">0 20.5
+1 22.1
+2 25.8</pre>
+      <p>By default, <code>enumerate()</code> starts counting from zero. A different starting index can be specified:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperatures = [20.5, 22.1, 25.8]
+
+for test_number, temperature in enumerate(
+    temperatures,
+    start=1
+):
+    print("Test", test_number, ":", temperature)</code></pre>
+</figure>
+<pre class="out">Test 1 : 20.5
+Test 2 : 22.1
+Test 3 : 25.8</pre>
+
+      <h4>4.1.4 Iterating over two lists</h4>
+      <p>The <code>zip()</code> function can be used to iterate over corresponding elements from two or more iterable objects:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">times = [0.0, 1.0, 2.0, 3.0]
+displacements = [0.0, 2.5, 5.1, 7.8]
+
+for time, displacement in zip(times, displacements):
+    print("Time:", time, "Displacement:", displacement)</code></pre>
+</figure>
+<pre class="out">Time: 0.0 Displacement: 0.0
+Time: 1.0 Displacement: 2.5
+Time: 2.0 Displacement: 5.1
+Time: 3.0 Displacement: 7.8</pre>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 150" role="img" aria-labelledby="dg-zip-t">
+          <title id="dg-zip-t">zip pairs the first element of times with the first of displacements, the second with the second, and so on; it stops at the end of the shorter list</title>
+          <text x="20" y="40" font-size="13">times</text>
+          <text x="20" y="128" font-size="13">displacements</text>
+          <g font-size="13.5" text-anchor="middle">
+            <rect class="box" x="140" y="20" width="80" height="34"/><text x="180" y="42">0.0</text>
+            <rect class="box" x="250" y="20" width="80" height="34"/><text x="290" y="42">1.0</text>
+            <rect class="box" x="360" y="20" width="80" height="34"/><text x="400" y="42">2.0</text>
+            <rect class="box" x="470" y="20" width="80" height="34"/><text x="510" y="42">3.0</text>
+            <rect class="box" x="140" y="106" width="80" height="34"/><text x="180" y="128">0.0</text>
+            <rect class="box" x="250" y="106" width="80" height="34"/><text x="290" y="128">2.5</text>
+            <rect class="box" x="360" y="106" width="80" height="34"/><text x="400" y="128">5.1</text>
+            <rect class="box" x="470" y="106" width="80" height="34"/><text x="510" y="128">7.8</text>
+          </g>
+          <path class="line-acc" d="M180 54 V 106 M290 54 V 106 M400 54 V 106 M510 54 V 106"/>
+          <g font-size="11" class="acc" text-anchor="middle">
+            <text x="180" y="84">pair 1</text><text x="290" y="84">pair 2</text><text x="400" y="84">pair 3</text><text x="510" y="84">pair 4</text>
+          </g>
+          <text x="572" y="76" font-size="11.5" class="muted">one pair per</text>
+          <text x="572" y="92" font-size="11.5" class="muted">iteration</text>
+        </svg>
+      </figure>
+      <p>This approach is useful when related engineering measurements are stored in separate lists.</p>
+      <div class="note"><p>By default, <code>zip()</code> stops when the shortest iterable has been exhausted. Therefore, related lists should normally have the same length.</p></div>
+
+      <h4>4.1.5 Accumulating results inside a loop</h4>
+      <p>A very common pattern is to build up a result while a loop runs: start a variable at zero <em>before</em> the loop, and add to it on every pass. For example, the total and average of several loads:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">loads = [12.5, 8.0, 15.5, 10.0]
+
+total_load = 0.0
+for load in loads:
+    total_load += load
+
+average_load = total_load / len(loads)
+print("Total:", total_load, "kN")
+print("Average:", average_load, "kN")</code></pre>
+</figure>
+<pre class="out">Total: 46.0 kN
+Average: 11.5 kN</pre>
+      <div class="tracer" data-trace="w2-accumulate" data-title="A running total grows on each pass"></div>
+      <p><code>total_load += load</code> is shorthand for <code>total_load = total_load + load</code>, and <code>len(loads)</code> gives the number of elements in the list.</p>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 4.1.</span> A sensor recorded the hourly strain values <code>strains = [112, 118, 131, 245, 260, 198, 176, 240, 268, 150]</code> (in microstrain). Use a <code>for</code> loop to count how many readings are above 200, and use <code>enumerate()</code> to print the hour (starting at 1) of each of those readings.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">strains = [112, 118, 131, 245, 260, 198, 176, 240, 268, 150]
+# Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">strains = [112, 118, 131, 245, 260, 198, 176, 240, 268, 150]
+
+count_high = 0
+for hour, strain in enumerate(strains, start=1):
+    if strain > 200:
+        count_high += 1
+        print("Hour", hour, ":", strain)
+
+print("Readings above 200:", count_high)</code></pre>
+</figure>
+<pre class="out">Hour 4 : 245
+Hour 5 : 260
+Hour 8 : 240
+Hour 9 : 268
+Readings above 200: 4</pre>
+        </div></details>
+      </div>
+
+      <h3>4.2 <code>while</code> loops</h3>
+      <p>A <code>while</code> loop repeats a block of code while a specified condition remains true. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">counter = 0
+
+while counter < 3:
+    print("Counter:", counter)
+    counter += 1</code></pre>
+</figure>
+<pre class="out">Counter: 0
+Counter: 1
+Counter: 2</pre>
+      <p>Before each iteration, Python checks whether <code>counter &lt; 3</code> is true. The statement <code>counter += 1</code> is equivalent to <code>counter = counter + 1</code>. Updating the counter is essential. Without this update, the condition would remain true, and the loop would continue indefinitely.</p>
+
+      <div class="tracer" data-trace="w2-while" data-title="The condition is checked before every pass"></div>
+
+      <h4>4.2.1 Engineering example: iterative calculation</h4>
+      <p>Many numerical methods repeat a calculation until the error or residual falls below a specified tolerance. The following simplified example repeatedly reduces an error estimate (this is the loop animated at the top of the page):</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">error = 1.0
+tolerance = 0.01
+iteration = 0
+
+while error > tolerance:
+    error = error / 2.0
+    iteration += 1
+
+    print("Iteration:", iteration, "Error:", error)
+
+print("The tolerance has been satisfied.")</code></pre>
+</figure>
+<pre class="out">Iteration: 1 Error: 0.5
+Iteration: 2 Error: 0.25
+Iteration: 3 Error: 0.125
+Iteration: 4 Error: 0.0625
+Iteration: 5 Error: 0.03125
+Iteration: 6 Error: 0.015625
+Iteration: 7 Error: 0.0078125
+The tolerance has been satisfied.</pre>
+
+      <p>This pattern is common in equation solvers, optimisation algorithms, and other iterative numerical methods. A maximum number of iterations should normally be included to prevent an unintended infinite loop:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">error = 1.0
+tolerance = 0.01
+iteration = 0
+maximum_iterations = 100
+
+while error > tolerance and iteration < maximum_iterations:
+    error = error / 2.0
+    iteration += 1
+
+if error <= tolerance:
+    print("The calculation converged.")
+else:
+    print("The calculation did not converge.")</code></pre>
+</figure>
+<pre class="out">The calculation converged.</pre>
+      <p>The loop terminates when either the error becomes smaller than or equal to the tolerance, or the maximum number of iterations is reached. This safeguard is important in scientific computing because an iterative method is not always guaranteed to converge.</p>
+
+      <div class="note">
+        <p>An intentional infinite loop can be created using <code>while True:</code>. Intentional infinite loops are used in applications such as continuous monitoring, data acquisition, and embedded control. However, the loop should normally contain a safe termination mechanism, such as a <code>break</code> statement, an external signal, or a controlled shutdown condition. In a Jupyter Notebook, an unintended infinite loop can usually be stopped by interrupting the kernel (the ■ button). In a live window on this page, close and reopen the window.</p>
+      </div>
+
+      <div class="quiz" data-answer="3">
+        <p class="q">What happens when this runs?</p>
+<figure class="code"><pre><code class="language-python">counter = 0
+while counter < 3:
+    print(counter)</code></pre></figure>
+        <div class="opts"><button>prints 0, 1, 2</button><button>prints 0 once</button><button>an error</button><button>prints 0 forever</button></div>
+        <p class="why"><code>counter</code> is never updated, so <code>counter &lt; 3</code> stays <code>True</code> and the loop never ends. Add <code>counter += 1</code> inside the loop.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 4.2.</span> A storage tank holds 1000 L of water and loses 8 % of its current volume every minute. Use a <code>while</code> loop to find how many minutes it takes for the volume to fall below 100 L. Include a maximum of 500 iterations as a safeguard.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">volume = 1000.0       # L
+minutes = 0
+maximum_minutes = 500
+
+while volume >= 100.0 and minutes < maximum_minutes:
+    volume = volume * (1 - 0.08)
+    minutes += 1
+
+print("Minutes:", minutes)
+print("Volume left:", volume, "L")</code></pre>
+</figure>
+<pre class="out">Minutes: 28
+Volume left: 96.84097776150554 L</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 5 -->
+    <section id="controlling">
+      <h2><span class="num">5</span>Controlling loops</h2>
+      <p>Sometimes, the normal execution of a loop must be changed. Python provides the <code>break</code> and <code>continue</code> statements for this purpose. Python also provides the <code>pass</code> statement. However, <code>pass</code> does not alter the loop flow. It performs no operation and is mainly used as a placeholder.</p>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 230" role="img" aria-labelledby="dg-bc-t">
+          <title id="dg-bc-t">break stops the loop at the unsafe value and the remaining value is never checked; continue skips only the invalid value and the loop carries on</title>
+          <text x="20" y="22" font-size="13" font-weight="600">break</text>
+          <text x="80" y="22" font-size="12" class="muted">stop the whole loop</text>
+          <g font-size="13" text-anchor="middle">
+            <rect class="box" x="20" y="36" width="96" height="40"/><text x="68" y="61">22.0 ✓</text>
+            <rect class="box" x="126" y="36" width="96" height="40"/><text x="174" y="61">24.5 ✓</text>
+            <rect class="box" x="232" y="36" width="96" height="40"/><text x="280" y="61">27.1 ✓</text>
+            <rect class="box-acc" x="338" y="36" width="96" height="40" style="stroke-width:2.5"/><text x="386" y="61" class="acc" font-weight="600">85.0 ✗</text>
+            <rect class="box" x="444" y="36" width="96" height="40" style="stroke-dasharray:4 4;opacity:.45"/><text x="492" y="61" class="muted">25.3</text>
+          </g>
+          <path class="line-acc" d="M386 76 V 100 H 600"/><path class="fill-acc" d="M610 100 l-12 -6 v12 z"/>
+          <text x="560" y="62" font-size="11.5" class="muted">never checked</text>
+          <text x="614" y="104" font-size="12" class="acc">exit</text>
+
+          <text x="20" y="142" font-size="13" font-weight="600">continue</text>
+          <text x="104" y="142" font-size="12" class="muted">skip just this one</text>
+          <g font-size="13" text-anchor="middle">
+            <rect class="box" x="20" y="156" width="96" height="40"/><text x="68" y="181">12.5 ✓</text>
+            <rect class="box-acc" x="126" y="156" width="96" height="40" style="stroke-width:2.5"/><text x="174" y="181" class="acc" font-weight="600">-999.0 ↷</text>
+            <rect class="box" x="232" y="156" width="96" height="40"/><text x="280" y="181">13.1 ✓</text>
+            <rect class="box" x="338" y="156" width="96" height="40"/><text x="386" y="181">12.8 ✓</text>
+          </g>
+          <path class="line-acc" d="M174 196 C 174 224, 280 224, 280 202"/><path class="fill-acc" d="M280 197 l-5 10 h10 z"/>
+          <text x="227" y="228" font-size="11" class="acc" text-anchor="middle">next item</text>
+          <text x="450" y="181" font-size="12" class="muted">→ loop ends normally</text>
+        </svg>
+        <figcaption>The two examples below, side by side. <code>break</code> abandons the loop; <code>continue</code> abandons only the current pass.</figcaption>
+      </figure>
+
+      <h3>5.1 The <code>break</code> statement</h3>
+      <p>The <code>break</code> statement terminates the innermost enclosing loop immediately. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">for i in range(10):
+    if i == 5:
+        break
+
+    print(i)</code></pre>
+</figure>
+<pre class="out">0
+1
+2
+3
+4</pre>
+      <p>When <code>i == 5</code>, Python executes <code>break</code>, exiting the loop. Any statements placed after the loop can then continue normally. An engineering application is stopping a search when an unsafe measurement is detected:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperatures = [22.0, 24.5, 27.1, 85.0, 25.3]
+maximum_temperature = 80.0
+
+for temperature in temperatures:
+    if temperature > maximum_temperature:
+        print("Unsafe temperature detected:", temperature)
+        break
+
+    print("Accepted temperature:", temperature)</code></pre>
+</figure>
+<pre class="out">Accepted temperature: 22.0
+Accepted temperature: 24.5
+Accepted temperature: 27.1
+Unsafe temperature detected: 85.0</pre>
+      <div class="tracer" data-trace="w2-break" data-title="break: the loop is abandoned"></div>
+
+      <h3>5.2 The <code>continue</code> statement</h3>
+      <p>The <code>continue</code> statement skips the remainder of the current iteration and proceeds to the next iteration. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">for i in range(5):
+    if i == 2:
+        continue
+
+    print(i)</code></pre>
+</figure>
+<pre class="out">0
+1
+3
+4</pre>
+      <p>When <code>i == 2</code>, the remaining instructions in that iteration are skipped. Therefore, <code>2</code> is not printed. An engineering application is ignoring invalid sensor readings:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">measurements = [12.5, -999.0, 13.1, 12.8]
+invalid_value = -999.0
+
+for measurement in measurements:
+    if measurement == invalid_value:
+        continue
+
+    print("Valid measurement:", measurement)</code></pre>
+</figure>
+<pre class="out">Valid measurement: 12.5
+Valid measurement: 13.1
+Valid measurement: 12.8</pre>
+      <div class="tracer" data-trace="w2-continue" data-title="continue: only one pass is skipped"></div>
+
+      <h3>5.3 The <code>pass</code> statement</h3>
+      <p>The <code>pass</code> statement performs no operation. It can be used when Python requires a statement syntactically, but the intended code has not yet been implemented. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperature = 25.0
+
+if temperature > 80.0:
+    pass
+else:
+    print("The temperature is within the expected range.")</code></pre>
+</figure>
+<pre class="out">The temperature is within the expected range.</pre>
+      <p>The <code>pass</code> statement does not terminate a loop and does not skip to the next iteration. It must not be confused with <code>break</code> or <code>continue</code>.</p>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">You want to ignore a single faulty reading but keep processing the rest. Which statement do you need?</p>
+        <div class="opts"><button>break</button><button>continue</button><button>pass</button></div>
+        <p class="why"><code>continue</code> skips the rest of the current iteration only. <code>break</code> would stop processing every remaining reading, and <code>pass</code> does nothing at all.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 5.1.</span> Process the water-level readings <code>levels = [2.1, 2.3, -999.0, 2.6, 3.4, 4.9, 2.2]</code> (in metres). Skip the invalid value <code>-999.0</code>, print each valid level, and stop with a flood warning as soon as a level above 4.5 m appears.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">levels = [2.1, 2.3, -999.0, 2.6, 3.4, 4.9, 2.2]
+# Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">levels = [2.1, 2.3, -999.0, 2.6, 3.4, 4.9, 2.2]
+invalid_value = -999.0
+flood_level = 4.5
+
+for level in levels:
+    if level == invalid_value:
+        continue
+    if level > flood_level:
+        print("Flood warning! Level:", level)
+        break
+    print("Level OK:", level)</code></pre>
+</figure>
+<pre class="out">Level OK: 2.1
+Level OK: 2.3
+Level OK: 2.6
+Level OK: 3.4
+Flood warning! Level: 4.9</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 6 -->
+    <section id="nested">
+      <h2><span class="num">6</span>Nested loops</h2>
+      <p>A loop can be placed inside another loop. This structure is called a <strong>nested loop</strong>. For example, a nested loop can process two-dimensional data:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">measurement_grid = [
+    [10.1, 10.2, 10.3],
+    [11.1, 11.2, 11.3]
+]
+
+for row in measurement_grid:
+    for measurement in row:
+        print(measurement)</code></pre>
+</figure>
+<pre class="out">10.1
+10.2
+10.3
+11.1
+11.2
+11.3</pre>
+      <p>The outer loop processes one row at a time. For each row, the inner loop processes the individual measurements. Nested loops can also be used to generate combinations of parameters:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">lengths = [1.0, 2.0, 3.0]
+loads = [100.0, 200.0]
+
+for length in lengths:
+    for load in loads:
+        print("Length:", length, "Load:", load)</code></pre>
+</figure>
+<pre class="out">Length: 1.0 Load: 100.0
+Length: 1.0 Load: 200.0
+Length: 2.0 Load: 100.0
+Length: 2.0 Load: 200.0
+Length: 3.0 Load: 100.0
+Length: 3.0 Load: 200.0</pre>
+
+      <div class="widget" id="grid-widget">
+        <p class="w-title">The inner loop finishes first</p>
+        <p>Each cell is one pass through the inner loop. Watch the order: the inner loop runs through every load before the outer loop moves to the next length.</p>
+        <div class="grid-loop" id="grid-loop" aria-hidden="true"></div>
+        <div class="w-row"><button type="button" class="run" id="grid-play">▶ Play</button><button type="button" id="grid-step">Step</button><button type="button" id="grid-reset">Reset</button><span id="grid-count" class="op-legend"></span></div>
+        <div class="w-out" id="grid-out" aria-live="polite"></div>
+      </div>
+
+      <p>Nested loops are useful for parameter studies, matrices, numerical grids, and multidimensional datasets. However, excessive nesting can make a program difficult to read and can significantly increase the computational cost: with 3 lengths and 2 loads the inner block runs 3 × 2 = 6 times, but with 1000 of each it would run a million times.</p>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 6.1.</span> For a simply supported beam with a uniformly distributed load \(w\), the maximum bending moment is \(M = wL^2/8\). Use nested loops to print \(M\) for every combination of spans <code>[4.0, 6.0, 8.0]</code> m and loads <code>[10.0, 20.0]</code> kN/m.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">spans = [4.0, 6.0, 8.0]     # m
+loads = [10.0, 20.0]        # kN/m
+
+for span in spans:
+    for w in loads:
+        moment = w * span ** 2 / 8
+        print("Span:", span, "Load:", w, "Moment:", moment, "kNm")</code></pre>
+</figure>
+<pre class="out">Span: 4.0 Load: 10.0 Moment: 20.0 kNm
+Span: 4.0 Load: 20.0 Moment: 40.0 kNm
+Span: 6.0 Load: 10.0 Moment: 45.0 kNm
+Span: 6.0 Load: 20.0 Moment: 90.0 kNm
+Span: 8.0 Load: 10.0 Moment: 80.0 kNm
+Span: 8.0 Load: 20.0 Moment: 160.0 kNm</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 7 -->
+    <section id="exceptions">
+      <h2><span class="num">7</span>Exception handling</h2>
+      <p>An <strong>exception</strong> is an error detected while a program is running. Examples include invalid user input, division by zero, missing files, and invalid data conversions. If an exception is not handled, Python stops the normal execution of the current program or notebook cell and displays an error message. Python uses <code>try</code> and <code>except</code> to handle expected exceptions. Consider the following example:</p>
+<figure class="code" data-runnable data-hint="input() opens a box in the live window: type a value there and press Enter.">
+<pre><code class="language-python">try:
+    number = int(input("Enter an integer: "))
+    print("You entered:", number)
+
+except ValueError:
+    print("The entered value is not a valid integer.")</code></pre>
+</figure>
+      <p>Python first executes the statements in the <code>try</code> block. If the entered value can be converted to an integer, the conversion succeeds, and the result is displayed. If <code>int()</code> cannot convert the input, it raises a <code>ValueError</code>. Python then executes the corresponding <code>except</code> block.</p>
+
+      <div class="note">
+        <p>Avoid using a bare <code>except:</code> statement unless there is a specific reason to catch every type of exception. Catching a specific exception makes the cause of an error clearer and prevents unrelated programming errors from being hidden. Prefer <code>except ValueError:</code> rather than <code>except:</code>.</p>
+      </div>
+
+      <h3>7.1 Handling more than one exception</h3>
+      <p>Different exceptions can be handled separately:</p>
+<figure class="code" data-runnable data-hint="Try entering 4, then 0, then abc.">
+<pre><code class="language-python">try:
+    value = float(input("Enter a non-zero value: "))
+    reciprocal = 1.0 / value
+
+    print("Reciprocal:", reciprocal)
+
+except ValueError:
+    print("The input must be numerical.")
+
+except ZeroDivisionError:
+    print("The entered value must not be zero.")</code></pre>
+</figure>
+      <p>A <code>ValueError</code> occurs if the input cannot be converted to a floating-point number. A <code>ZeroDivisionError</code> occurs if the user enters zero and the program attempts to calculate its reciprocal.</p>
+
+      <h3>7.2 The <code>else</code> clause</h3>
+      <p>An optional <code>else</code> block can be added to exception handling. It is executed only if the <code>try</code> block completes without raising an exception.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">try:
+    value = float(input("Enter a numerical value: "))
+
+except ValueError:
+    print("The input must be numerical.")
+
+else:
+    print("The entered value is:", value)</code></pre>
+</figure>
+      <p>Using an <code>else</code> block helps keep the <code>try</code> block limited to the statements that may raise the expected exception.</p>
+
+      <h3>7.3 The <code>finally</code> clause</h3>
+      <p>An optional <code>finally</code> block is executed whether or not an exception occurs:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">try:
+    value = float(input("Enter a numerical value: "))
+    print("The entered value is:", value)
+
+except ValueError:
+    print("The input must be numerical.")
+
+finally:
+    print("Input processing has finished.")</code></pre>
+</figure>
+      <p>A <code>finally</code> block is often used for operations that must always occur, such as closing a file or releasing a resource.</p>
+
+      <div class="widget" id="exc-widget">
+        <p class="w-title">Which blocks run?</p>
+        <p>This combines everything from sections 7.1 to 7.3. Type what the user enters and see which lines run (highlighted), which line raises an exception (red), and which are skipped (faded).</p>
+        <div class="w-row"><label>the user types <input type="text" id="exc-in" value="4" autocomplete="off" spellcheck="false" style="width:9rem"></label></div>
+        <div class="example-chips" id="exc-chips" style="display:flex;flex-wrap:wrap;gap:.35rem"></div>
+        <div class="flow-code" id="exc-code"></div>
+        <div class="w-out" id="exc-out" aria-live="polite"></div>
+      </div>
+
+      <div class="note">
+        <p>Exception handling should be used for operations that may reasonably fail. It should not be used to conceal programming errors. The <code>try</code> block should normally contain only the statements associated with the expected exception. A very large <code>try</code> block can make it difficult to identify which statement caused the exception.</p>
+      </div>
+
+      <div class="quiz" data-answer="2">
+        <p class="q">What happens here?</p>
+<figure class="code"><pre><code class="language-python">try:
+    value = float("abc")
+except ZeroDivisionError:
+    print("Zero!")
+print("Done")</code></pre></figure>
+        <div class="opts"><button>prints Zero! then Done</button><button>prints Done</button><button>stops with a ValueError</button></div>
+        <p class="why"><code>float("abc")</code> raises a <code>ValueError</code>, but only <code>ZeroDivisionError</code> is handled. An exception that no <code>except</code> clause matches still stops the program, so <code>Done</code> is never printed.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 7.1.</span> A data logger exported its readings as text: <code>raw = ["12.1", "11.8", "error", "12.4", "", "12.0"]</code>. Loop over the list, convert each entry with <code>float()</code> inside a <code>try</code> block, skip entries that raise a <code>ValueError</code> (print which one was skipped), and finally print the average of the valid readings.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">raw = ["12.1", "11.8", "error", "12.4", "", "12.0"]
+# Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">raw = ["12.1", "11.8", "error", "12.4", "", "12.0"]
+
+total = 0.0
+count = 0
+for entry in raw:
+    try:
+        reading = float(entry)
+    except ValueError:
+        print("Skipped invalid entry:", repr(entry))
+        continue
+    total += reading
+    count += 1
+
+print("Average of", count, "readings:", total / count)</code></pre>
+</figure>
+<pre class="out">Skipped invalid entry: 'error'
+Skipped invalid entry: ''
+Average of 4 readings: 12.075</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 8 -->
+    <section id="summary">
+      <h2><span class="num">8</span>Summary</h2>
+      <p>Flow-control structures determine the order in which program statements are executed. They allow a program to make decisions, repeat calculations, ignore invalid data, terminate an operation, and respond to expected errors. These concepts provide the foundation for implementing numerical algorithms, processing engineering data, checking operating limits, validating user input, and controlling iterative calculations. In this lecture, you learned the items below. Tick off what you are confident with; your ticks are remembered in this browser only.</p>
+      <ul class="checklist" id="w2-check">
+        <li><label><input type="checkbox"><span>How Python normally executes statements sequentially.</span></label></li>
+        <li><label><input type="checkbox"><span>How to form Boolean expressions using comparison operators.</span></label></li>
+        <li><label><input type="checkbox"><span>How to combine conditions using <code>and</code>, <code>or</code>, and <code>not</code>.</span></label></li>
+        <li><label><input type="checkbox"><span>How to use <code>if</code>, <code>elif</code>, and <code>else</code> for conditional execution, and why the order of conditions matters.</span></label></li>
+        <li><label><input type="checkbox"><span>How to use <code>for</code> loops with <code>range()</code>, <code>enumerate()</code> and <code>zip()</code>.</span></label></li>
+        <li><label><input type="checkbox"><span>How to accumulate numerical results inside a loop.</span></label></li>
+        <li><label><input type="checkbox"><span>How to use <code>while</code> loops, and why iterative calculations should include a maximum number of iterations.</span></label></li>
+        <li><label><input type="checkbox"><span>How to use <code>break</code>, <code>continue</code> and <code>pass</code>.</span></label></li>
+        <li><label><input type="checkbox"><span>How to use nested conditional statements and nested loops.</span></label></li>
+        <li><label><input type="checkbox"><span>How to handle expected runtime errors using <code>try</code> and <code>except</code>, with the optional <code>else</code> and <code>finally</code> clauses.</span></label></li>
+      </ul>
+    </section>
+
+    <section id="notebook" class="wide">
+      <h2>Practice notebook</h2>
+      <p style="max-width:var(--measure)">All of this week’s code in one Jupyter notebook, followed by the end-of-lecture challenge, <em>The Footbridge Inspection, part 2</em>. Cells share variables, so run them from top to bottom with <kbd>Shift</kbd> + <kbd>Enter</kbd>. Your edits are kept in this browser only; use <em>File → Download</em> to save a copy.</p>
+      <div class="notebook-shell">
+        <div class="notebook-bar">
+          <span>week2_flow_control.ipynb</span>
+          <span class="links" id="notebook-links"></span>
+        </div>
+        <div id="notebook-slot"></div>
+      </div>
+    </section>
+
+    <nav class="pager" id="pager" aria-label="Other weeks"></nav>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="assets/traces.js"></script>
+<script src="assets/site.js"></script>
+<script src="assets/week2.js"></script>
+</body>
+</html>

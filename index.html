@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ENGI 1151 Computational Tools | Durham University</title>
+<meta name="description" content="Weekly lecture notes for ENGI 1151 Computational Tools for Engineers and Scientists, with live Python that runs in your browser.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.hero h1 { font-size: clamp(2.2rem, 4.6vw, 3.5rem); }
+.picker-panel { background: var(--paper); border: 1px solid var(--ink); box-shadow: 6px 6px 0 var(--accent); padding: 1.25rem 1.25rem 1rem; margin: 0; }
+.picker-panel h2 { font-size: 1rem; font-family: var(--mono); font-weight: 500; color: var(--muted); margin: 0 0 0.9rem; letter-spacing: 0; }
+.week-picker { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.6rem; }
+.pick {
+  display: grid; place-items: center; aspect-ratio: 1; font-family: var(--mono); font-size: clamp(1.8rem, 4vw, 2.8rem);
+  border: 1.5px solid var(--ink); color: var(--ink); text-decoration: none; transition: background .15s, color .15s, transform .15s;
+}
+a.pick:hover, a.pick:focus-visible { background: var(--accent); border-color: var(--accent); color: var(--paper); transform: translateY(-2px); }
+.pick.soon { border-style: dashed; border-color: var(--grid); color: var(--muted); opacity: 0.6; }
+.picker-panel .sim-caption { margin-top: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Department of Engineering, Durham University</p>
+      <h1>Computational Tools for Engineers and Scientists</h1>
+      <p class="lede">Weekly lecture notes with Python you can run, change and test right here in your browser.</p>
+      <p class="byline">Dr Nima Gerami Seresht</p>
+    </div>
+    <nav class="picker-panel" aria-labelledby="pick-h">
+      <h2 id="pick-h">Choose a week</h2>
+      <div class="week-picker" id="week-picker">
+        <a class="pick" href="week1.html">1</a><a class="pick" href="week2.html">2</a><span class="pick soon">3</span><span class="pick soon">4</span><a class="pick" href="week5.html">5</a>
+      </div>
+      <p class="sim-caption">Dashed weeks are not published yet. Each week opens with the lecture notes, interactive examples and a practice notebook.</p>
+    </nav>
+  </div>
+</header>
+
+<main class="landing-main">
+  <section>
+    <h2>All weeks</h2>
+    <div class="week-grid" id="week-grid">
+      <a class="week-card" href="week1.html"><span class="wk">Week<b>1</b></span><h3>Introduction to Python</h3></a>
+      <a class="week-card" href="week2.html"><span class="wk">Week<b>2</b></span><h3>Flow control in Python</h3></a>
+      <a class="week-card" href="week5.html"><span class="wk">Week<b>5</b></span><h3>Monte Carlo simulation</h3></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>How these pages work</h2>
+    <div class="howto">
+      <div><b>Read and look</b>The notes follow the printed handout, with diagrams that show what Python is doing.</div>
+      <div><b>Try it</b>Sliders, step-through tracers and quick checks let you test your understanding as you read.</div>
+      <div><b>Run real Python</b>Every code block opens a live Python window under it, and empty boxes are there for your own code. The first start takes 10–20 seconds.</div>
+      <div><b>Practise</b>Each week ends with a full Jupyter notebook and a challenge. Use <em>File → Download</em> to keep your work.</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

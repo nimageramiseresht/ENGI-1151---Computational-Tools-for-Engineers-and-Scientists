@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Week 5: Monte Carlo simulation with Python | ENGI 1151</title>
+<meta name="description" content="Lecture notes with live, in-browser Python: basic Monte Carlo simulation for engineers and scientists.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-week="5" data-notebook="week5_monte_carlo.ipynb">
+
+<div id="topbar"><noscript><a href="index.html">ENGI 1151 · all weeks</a></noscript></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Computational Tools for Engineers and Scientists, week 5</p>
+      <h1>Monte Carlo simulation with Python</h1>
+      <p class="lede">When a system is too tangled for an exact formula, sample its uncertain inputs thousands of times and let the answer emerge from the results.</p>
+      <p class="byline">Dr Nima Gerami Seresht <br>Department of Engineering <br>Durham University</p>
+    </div>
+    <figure class="sim-panel" style="margin:0">
+      <canvas id="hero-sim" aria-label="Animated histogram of simulated highway travel speeds building up sample by sample" role="img"></canvas>
+      <div class="sim-readout" aria-live="off">
+        <span>samples <output id="sim-n">0</output></span>
+        <span>median speed <output id="sim-mean">–</output> km/h</span>
+        <button type="button" id="sim-replay">Run again</button>
+      </div>
+      <figcaption class="sim-caption">Each sample is one simulated hour on the two-lane highway in section 1, with random traffic and random coefficients. The shape of the travel speed distribution appears as the samples pile up.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#random-numbers">Random numbers</a></li>
+      <li><a href="#processing">Processing the data</a></li>
+      <li><a href="#plotting">Plotting</a></li>
+      <li><a href="#applications">Applications</a></li>
+      <li><a href="#further-reading">Further reading</a></li>
+      <li class="plain"><a href="#notebook">Practice notebook</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="introduction">
+      <h2><span class="num">1</span>Introduction</h2>
+      <p>Monte Carlo simulation is a technique that uses randomness to solve problems that might be deterministic in principle. It is widely used in engineering to model uncertainty and simulate complex systems.</p>
+      <p>The method is named after the Monte Carlo Casino in Monaco, because of its reliance on chance. Instead of solving problems with exact formulas, Monte Carlo methods use repeated random sampling to approximate the answer.</p>
+
+      <div class="example">
+        <p><span class="label">Example 1.</span> Two cars travel at speeds that are uniformly distributed between 65 km/h and 132 km/h. If they travel in opposite directions, what is their relative speed, represented as a probability distribution?</p>
+      </div>
+
+      <p>Some basic arithmetic operations can be carried out on probability distributions directly. When the behaviour of a system becomes more complex, however, it is very hard to determine analytically the distribution that describes it. Consider the next example.</p>
+
+      <div class="example">
+        <p><span class="label">Example 2.</span> The average travel speed on a two-lane highway depends on the traffic composition, specifically the number of cars and trucks on the road. In a simple representation, the average travel speed <var>V</var> (km/h) can be estimated from the total volume and the truck proportion:</p>
+        <div class="math">$$V = V_f\left(1 - \alpha\,\frac{N_c + N_t}{C} - \beta\,p_t\right)$$</div>
+        <p>where:</p>
+        <ul class="vars">
+          <li>\(V_f\) is the free-flow speed (100 km/h)</li>
+          <li>\(C\) is the capacity of the road (3000 veh/h)</li>
+          <li>\(\alpha\) is the congestion sensitivity coefficient, Uniform[0.6, 0.9]</li>
+          <li>\(\beta\) is the truck impact factor, Uniform[0.3, 0.6]</li>
+          <li>\(N_c\) is the number of cars per hour, Normal(\(\mu = 1200,\ \sigma = 486\))</li>
+          <li>\(N_t\) is the number of trucks per hour, Normal(\(\mu = 329,\ \sigma = 83\))</li>
+          <li>\(p_t\) is the ratio of trucks to total vehicles</li>
+        </ul>
+        <p>Determine the travel speed on this highway based on the values provided.</p>
+      </div>
+
+      <p>Monte Carlo simulation was developed in the 1940s by scientists working on the Manhattan Project. Stanislaw Ulam and John von Neumann first used it to study neutron diffusion. It has since become a powerful tool in many scientific and engineering disciplines.</p>
+    </section>
+
+    <section id="how-it-works">
+      <h2><span class="num">2</span>How Monte Carlo simulation works</h2>
+      <ol class="steps">
+        <li><strong>Define the problem.</strong> Identify the output of interest and the uncertain input parameters.</li>
+        <li><strong>Assign probability distributions.</strong> Describe the uncertainty of each input with an appropriate distribution.</li>
+        <li><strong>Random sampling.</strong> Generate many random input samples from these distributions.</li>
+        <li><strong>Determine the outputs.</strong> Calculate the system output for each random sample. This can be a Python function, a simple equation, or a large, complex simulation model.</li>
+        <li><strong>Analyse the results.</strong> Compute summary statistics such as the mean, standard deviation and confidence intervals of the outputs.</li>
+      </ol>
+    </section>
+
+    <section id="random-numbers">
+      <h2><span class="num">3</span>Random numbers</h2>
+      <p>Programming languages usually generate <em>pseudorandom</em> numbers: numbers that appear random but come from deterministic algorithms. They are not truly random, but they are good enough for most simulations, so from here on we simply call them random numbers.</p>
+      <p>Python can generate random numbers from many well-known distributions, including uniform, normal, beta, chi-square and binomial.</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+x = np.random.rand()       # one random sample from U[0, 1]
+y = np.random.rand(10)     # ten random samples from U[0, 1]
+z = np.random.rand(2, 3)   # a 2x3 matrix of samples from U[0, 1]
+
+print(x, y, z, sep="\n\n")</code></pre>
+</figure>
+
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout writes <code>np.random.rand((2, 3))</code>. <code>rand</code> takes each dimension as a separate argument, so the tuple version raises a <code>TypeError</code>. Use <code>np.random.rand(2, 3)</code>, or <code>np.random.random((2, 3))</code> if you prefer a tuple.</p>
+      </div>
+
+      <p>We can also draw from other distributions.</p>
+
+<figure class="code" data-runnable data-setup="numpy">
+<pre><code class="language-python"># 3x4 matrix from a normal distribution with mean 0 and standard deviation 10
+x_normal = np.random.normal(loc=0, scale=10, size=(3, 4))
+
+# 2x2 matrix from a beta distribution with parameters 0.5 and 0.75
+y_beta = np.random.beta(a=0.5, b=0.75, size=(2, 2))
+
+# 5x5 matrix from the standard normal distribution (mean 0, std 1)
+z_snormal = np.random.randn(5, 5)
+
+print(x_normal, y_beta, z_snormal, sep="\n\n")</code></pre>
+</figure>
+
+      <p>Random numbers from the uniform distribution on [0, 1] are usually all you need for any probabilistic analysis. For example, a sample from an arbitrary uniform distribution \(U(a, b)\) is</p>
+      <div class="math">$$U(a, b) = a + U(0, 1)\,(b - a)$$</div>
+
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout gives \((U(0,1) + a)(b - a)\). That expression spans \([a(b-a),\ (1+a)(b-a)]\), not \([a, b]\): for \(a = 0.6,\ b = 0.9\) it gives values between 0.18 and 0.48. Scale first, then shift, as above. Run the check below to see the difference.</p>
+      </div>
+
+<figure class="code" data-runnable data-setup="numpy">
+<pre><code class="language-python">a, b = 0.6, 0.9
+u = np.random.rand(100_000)
+
+correct = a + u * (b - a)
+handout = (u + a) * (b - a)
+
+print("a + U(b - a):     min %.3f  max %.3f" % (correct.min(), correct.max()))
+print("(U + a)(b - a):   min %.3f  max %.3f" % (handout.min(), handout.max()))</code></pre>
+</figure>
+
+      <p>In future lectures we will see how samples from the uniform distribution on [0, 1] can be transformed into any randomly distributed variable.</p>
+    </section>
+
+    <section id="processing">
+      <h2><span class="num">4</span>Processing the data</h2>
+      <p>We can apply a function to the random samples to simulate processing:</p>
+
+<figure class="code" data-runnable data-setup="numpy">
+<pre><code class="language-python">def process_data(x):
+    return x**2
+
+random_data = np.random.rand(5)
+processed_data = process_data(random_data)
+
+print(random_data)
+print(processed_data)</code></pre>
+</figure>
+
+      <p>For a more realistic problem, let’s write a function for the average speed on the two-lane highway from Example 2. The function takes four inputs that we sample randomly on every run, plus the two fixed values from the example as defaults. We also create a NumPy array to store every speed we calculate.</p>
+
+<figure class="code" data-runnable data-setup="numpy">
+<pre><code class="language-python">def travel_speed(alpha, beta, n_cars, n_trucks, free_f=100, cap=3000):
+    total_vehicles = n_cars + n_trucks
+    average_speed = free_f * (1 - alpha * (total_vehicles / cap)
+                              - beta * (n_trucks / total_vehicles))
+    return average_speed
+
+simulation_results = np.zeros(1000)   # array to hold 1000 results
+
+for i in range(1000):
+    alpha_rand = 0.6 + np.random.rand() * 0.3   # Uniform[0.6, 0.9]
+    beta_rand = 0.3 + np.random.rand() * 0.3    # Uniform[0.3, 0.6]
+    cars_rand = np.random.normal(1200, 486)
+    trucks_rand = np.random.normal(329, 83)
+    simulation_results[i] = travel_speed(alpha_rand, beta_rand, cars_rand, trucks_rand)
+
+print(simulation_results.mean())</code></pre>
+</figure>
+
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout samples \(\alpha\) with <code>(np.random.rand() + 0.6) * 0.3</code>, which gives values in [0.18, 0.48] instead of [0.6, 0.9] (and similarly for \(\beta\)). With the corrected sampling the typical speed is about 52 km/h rather than the 78 km/h shown in the handout’s figure.</p>
+        <p>Run the cell a few times. The mean jumps around more than you might expect, because a normal distribution with \(\mu = 1200,\ \sigma = 486\) occasionally produces a negative number of cars. When \(N_c + N_t\) is close to zero the truck ratio \(p_t\) explodes, which creates the stray outliers you will see in the histogram.</p>
+      </div>
+    </section>
+
+    <section id="plotting">
+      <h2><span class="num">5</span>Plotting</h2>
+      <h3>5.1 Histogram of results</h3>
+      <p>One of the easiest ways to assess the results of a Monte Carlo simulation is a histogram:</p>
+
+<figure class="code" data-runnable data-setup="simulation">
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+plt.hist(simulation_results, bins=50, density=True, color='skyblue', edgecolor='black')
+plt.xlabel('Travel speed (km/h)')
+plt.ylabel('Density')
+plt.grid(True)
+plt.show()</code></pre>
+</figure>
+
+      <h3>5.2 Fitting a normal distribution</h3>
+      <p>Another way to assess the results is to fit a normal distribution to them and see how closely the histogram follows it. The normal distribution is not just “a distribution”: it describes the behaviour of many natural phenomena, so it is worth testing results against it.</p>
+      <p>The probability density function of the normal distribution with mean \(\mu\) and standard deviation \(\sigma\) is</p>
+      <div class="math">$$f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)$$</div>
+
+<figure class="code" data-runnable data-setup="simulation">
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+def pdf(x, mean, std):
+    return 1 / np.sqrt(2 * np.pi * std**2) * np.exp(-0.5 * ((x - mean) / std) ** 2)
+
+x = np.linspace(simulation_results.min(), simulation_results.max(), 100)
+y = pdf(x, simulation_results.mean(), simulation_results.std())
+
+plt.hist(simulation_results, bins=50, density=True, color='skyblue', edgecolor='black')
+plt.plot(x, y, color='red')
+plt.xlabel('Travel speed (km/h)')
+plt.ylabel('Density')
+plt.grid(True)
+plt.show()</code></pre>
+</figure>
+
+      <h3>Try it: Example 1</h3>
+      <p>Simulate the relative speed of the two cars in Example 1. Moving in opposite directions, the relative speed is the sum of the two speeds. Write your own code in a live Python window first, then compare with the solution.</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+n = 100_000
+# Sample the speed of each car here, then add them together.
+</code></pre>
+</figure>
+
+      <details class="solution">
+        <summary>Show a solution</summary>
+        <div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+n = 100_000
+v1 = 65 + np.random.rand(n) * (132 - 65)
+v2 = 65 + np.random.rand(n) * (132 - 65)
+relative = v1 + v2
+
+print("mean %.1f km/h, range %.1f to %.1f km/h" % (relative.mean(), relative.min(), relative.max()))
+
+plt.hist(relative, bins=60, density=True, color='skyblue', edgecolor='black')
+plt.xlabel('Relative speed (km/h)')
+plt.ylabel('Density')
+plt.grid(True)
+plt.show()</code></pre>
+</figure>
+          <p>The sum of two independent uniform variables has a triangular distribution: here between 130 and 264 km/h, peaking at 197 km/h. You can derive this one by hand; the highway problem is where simulation earns its keep.</p>
+        </div>
+      </details>
+    </section>
+
+    <section id="applications">
+      <h2><span class="num">6</span>Applications in engineering</h2>
+      <p>Monte Carlo simulation is used in many engineering applications, including structural reliability analysis, circuit noise modelling, project cost estimation and risk analysis in manufacturing.</p>
+    </section>
+
+    <section id="further-reading">
+      <h2><span class="num">7</span>Further reading</h2>
+      <p>Mathias, S.A. (2023). EIA and Uncertainty Management. In: <em>Hydraulics, Hydrology and Environmental Engineering</em>. Springer, Cham. <a href="https://doi.org/10.1007/978-3-031-41973-7_30">doi.org/10.1007/978-3-031-41973-7_30</a></p>
+    </section>
+
+    <section id="notebook" class="wide">
+      <h2>Practice notebook</h2>
+      <p style="max-width:var(--measure)">All of this week’s code in one Jupyter notebook, with exercises at the end. Cells share variables, so run them from top to bottom with <kbd style="font-family:var(--mono);font-size:.85em">Shift + Enter</kbd>. Your edits are kept in this browser only; use <em>File → Download</em> to save a copy.</p>
+      <div class="notebook-shell">
+        <div class="notebook-bar">
+          <span>week5_monte_carlo.ipynb</span>
+          <span class="links" id="notebook-links"></span>
+        </div>
+        <div id="notebook-slot"></div>
+      </div>
+    </section>
+    <nav class="pager" id="pager" aria-label="Other weeks"></nav>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<!-- Setup code prepended to runnable blocks so each live window works on its own -->
+<script type="text/plain" id="setup-numpy">import numpy as np
+</script>
+<script type="text/plain" id="setup-simulation" data-hint="The live window already has simulation_results from section 4 loaded.">import numpy as np
+
+# --- simulation from section 4 ---
+def travel_speed(alpha, beta, n_cars, n_trucks,
+                 free_f=100, cap=3000):
+    total = n_cars + n_trucks
+    return free_f * (1 - alpha * (total / cap)
+                     - beta * (n_trucks / total))
+
+simulation_results = np.zeros(1000)
+for i in range(1000):
+    alpha = 0.6 + np.random.rand() * 0.3
+    beta = 0.3 + np.random.rand() * 0.3
+    cars = np.random.normal(1200, 486)
+    trucks = np.random.normal(329, 83)
+    simulation_results[i] = travel_speed(alpha, beta,
+                                         cars, trucks)
+# --- end of simulation ---
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<script src="assets/site.js"></script>
+<script>
+/* ============ Hero: the highway simulation, sample by sample ============ */
+(() => {
+  const canvas = document.getElementById('hero-sim');
+  const ctx = canvas.getContext('2d');
+  const nOut = document.getElementById('sim-n');
+  const mOut = document.getElementById('sim-mean');
+  const replay = document.getElementById('sim-replay');
+  const reduce = reduceMotion;
+
+  const TOTAL = 2000, LO = 10, HI = 90, BINS = 40;
+  const binW = (HI - LO) / BINS;
+  let bins, samples, particles, spawned, raf;
+
+  function randn() {                      // Box–Muller
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function sampleSpeed() {
+    const alpha = 0.6 + Math.random() * 0.3;
+    const beta = 0.3 + Math.random() * 0.3;
+    const nc = 1200 + 486 * randn();
+    const nt = 329 + 83 * randn();
+    const tot = nc + nt;
+    return 100 * (1 - alpha * tot / 3000 - beta * nt / tot);
+  }
+  function colours() {
+    const cs = getComputedStyle(document.documentElement);
+    return { ink: cs.getPropertyValue('--ink').trim(), accent: cs.getPropertyValue('--accent').trim(),
+             grid: cs.getPropertyValue('--grid').trim(), muted: cs.getPropertyValue('--muted').trim() };
+  }
+  function size() {
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width = Math.round(r.width * dpr);
+    canvas.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return r;
+  }
+  let box = size();
+  const pad = { l: 8, r: 8, t: 8, b: 26 };
+
+  function xOf(v) { return pad.l + (v - LO) / (HI - LO) * (box.width - pad.l - pad.r); }
+  function median(a) { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; }
+
+  function draw() {
+    const c = colours();
+    const w = box.width, h = box.height, plotH = h - pad.t - pad.b;
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = c.grid; ctx.lineWidth = 1;
+    ctx.fillStyle = c.muted; ctx.font = '12px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+    for (let v = 20; v <= 80; v += 20) {
+      const x = xOf(v);
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, h - pad.b); ctx.stroke();
+      ctx.fillText(v + ' km/h', x, h - 8);
+    }
+    const peak = Math.max(40, ...bins);
+    const bw = (w - pad.l - pad.r) / BINS;
+    ctx.fillStyle = c.accent;
+    bins.forEach((count, i) => {
+      const bh = count / peak * plotH * 0.92;
+      ctx.fillRect(pad.l + i * bw + 1, h - pad.b - bh, bw - 2, bh);
+    });
+    ctx.fillStyle = c.ink;
+    particles.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2); ctx.fill(); });
+    ctx.strokeStyle = c.ink; ctx.beginPath(); ctx.moveTo(pad.l, h - pad.b + 0.5); ctx.lineTo(w - pad.r, h - pad.b + 0.5); ctx.stroke();
+  }
+
+  function land(v) {
+    samples.push(v);
+    const i = Math.floor((v - LO) / binW);
+    if (i >= 0 && i < BINS) bins[i]++;
+  }
+
+  function step() {
+    const perFrame = spawned < 200 ? 4 : 28;
+    for (let k = 0; k < perFrame && spawned < TOTAL; k++, spawned++) {
+      const v = sampleSpeed();
+      const x = xOf(Math.min(HI, Math.max(LO, v)));
+      particles.push({ v, x: x + (Math.random() - 0.5) * 4, y: pad.t - Math.random() * 40, vy: 2 + Math.random() * 2 });
+    }
+    const floor = box.height - pad.b;
+    particles = particles.filter(p => {
+      p.vy += 0.35; p.y += p.vy;
+      if (p.y >= floor - 2) { land(p.v); return false; }
+      return true;
+    });
+    nOut.textContent = samples.length.toLocaleString('en-GB');
+    if (samples.length > 20) mOut.textContent = median(samples).toFixed(1);
+    draw();
+    if (spawned < TOTAL || particles.length) raf = requestAnimationFrame(step);
+  }
+
+  function start() {
+    cancelAnimationFrame(raf);
+    bins = new Array(BINS).fill(0); samples = []; particles = []; spawned = 0;
+    if (reduce) {
+      for (let k = 0; k < TOTAL; k++) land(sampleSpeed());
+      spawned = TOTAL;
+      nOut.textContent = TOTAL.toLocaleString('en-GB');
+      mOut.textContent = median(samples).toFixed(1);
+      draw();
+    } else {
+      raf = requestAnimationFrame(step);
+    }
+  }
+  replay.addEventListener('click', start);
+  window.addEventListener('resize', () => { box = size(); draw(); });
+  darkQuery.addEventListener('change', draw);
+  start();
+})();
+</script>
+</body>
+</html>

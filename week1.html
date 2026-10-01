@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Week 1: Introduction to Python | ENGI 1151</title>
+<meta name="description" content="ENGI 1151 week 1 lecture notes with live, in-browser Python: Jupyter Notebook, arithmetic, variables, data types, lists and dictionaries.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* Hero: a notebook typing out calculations */
+.nb-demo { font-family: var(--mono); font-size: 0.9rem; min-height: 330px; display: flex; flex-direction: column; }
+.nb-stack { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.6rem; min-height: 270px; overflow: hidden; }
+.nb-cell { display: grid; grid-template-columns: 4.6rem 1fr; gap: 0 0.5rem; animation: pop .25s ease-out both; }
+.nb-cell .p { color: var(--accent); text-align: right; white-space: nowrap; }
+.nb-cell .src { background: var(--code-bg); border: 1px solid var(--grid); padding: 0.35rem 0.6rem; white-space: pre; overflow: hidden; }
+.nb-cell .src.typing::after { content: "▍"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+.nb-cell .o { color: var(--muted); text-align: right; white-space: nowrap; }
+.nb-cell .res { padding: 0.3rem 0.6rem; white-space: pre; }
+.nb-cell.old { opacity: 0.55; }
+.nb-demo .sim-caption { font-family: var(--serif); }
+@keyframes blink { 50% { opacity: 0; } }
+.op-legend { font-family: var(--mono); font-size: 0.82rem; color: var(--muted); }
+.dict-view { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 0.8rem; align-items: center; font-family: var(--mono); font-size: 0.86rem; margin: 0.6rem 0; }
+.dict-view .key { border: 1.5px solid var(--accent); color: var(--accent); padding: 0.25rem 0.5rem; text-align: center; }
+.dict-view .key.hit { background: var(--accent); color: var(--paper); }
+.dict-view .val { border: 1.5px solid var(--ink); padding: 0.25rem 0.5rem; overflow-x: auto; white-space: nowrap; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.4rem 0 0; }
+.example-chips button { padding: 0.35rem 0.55rem; font-size: 0.78rem; border-width: 1px; }
+</style>
+</head>
+<body data-week="1" data-notebook="week1_python_basics.ipynb">
+
+<div id="topbar"><noscript><a href="index.html">ENGI 1151 · all weeks</a></noscript></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Computational Tools for Engineers and Scientists, week 1</p>
+      <h1>Introduction to Python</h1>
+      <p class="lede">Run your first Python code, store engineering quantities in variables, and organise data in lists and dictionaries.</p>
+      <p class="byline">Dr Nima Gerami Seresht <br>Department of Engineering <br>Durham University</p>
+    </div>
+    <figure class="sim-panel nb-demo">
+      <div class="nb-stack" id="nb-stack" aria-live="off"></div>
+      <div class="sim-readout">
+        <span>operator <output id="nb-op">–</output></span>
+        <button type="button" id="nb-pause">Pause</button>
+      </div>
+      <figcaption class="sim-caption">A Jupyter notebook used as a calculator. Each cell is typed, run with <kbd>Shift</kbd> + <kbd>Enter</kbd>, and its result appears underneath. Every operator here is covered in section 3.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#introduction" data-n="1">Introduction</a></li>
+      <li><a href="#installing" data-n="2">Installing Python and Jupyter</a></li>
+      <li><a href="#starting" data-n="3">Starting with Python</a></li>
+      <li><a href="#variables" data-n="3.1">Variables</a></li>
+      <li><a href="#types" data-n="3.2">Data types</a></li>
+      <li><a href="#conversion" data-n="3.3">Type conversion</a></li>
+      <li><a href="#lists" data-n="4">Lists</a></li>
+      <li><a href="#dicts" data-n="4.2">Dictionaries</a></li>
+      <li><a href="#summary" data-n="5">Summary</a></li>
+      <li class="plain"><a href="#notebook">Practice notebook</a></li>
+    </ol>
+  </nav>
+
+  <main>
+<!-- =========================================================== 1 -->
+    <section id="introduction">
+      <h2><span class="num">1</span>Introduction</h2>
+      <p>In modern engineering, programming is becoming an essential skill across all disciplines. Whether working with data, building simulations, automating calculations, or even controlling hardware, good programming skills can make your work significantly more efficient. Programming languages can be classified according to their level of abstraction from the computer hardware. While all programming languages ultimately generate machine instructions, they differ in how much control they provide over the hardware and how easy they are for humans to use.</p>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 280" role="img" aria-labelledby="dg-ladder-t">
+          <title id="dg-ladder-t">Levels of abstraction, from hardware at the bottom to Python at the top</title>
+          <g>
+            <rect class="box-acc" x="20" y="16" width="440" height="40" rx="3"/>
+            <text x="36" y="41" font-size="15" font-weight="600" class="acc">Python</text>
+            <text x="200" y="41" font-size="13">print(3 + 5)</text>
+          </g>
+          <g>
+            <rect class="box" x="20" y="68" width="440" height="40" rx="3"/>
+            <text x="36" y="93" font-size="15" font-weight="600">C / Fortran</text>
+            <text x="200" y="93" font-size="13">printf("%d", 3 + 5);</text>
+          </g>
+          <g>
+            <rect class="box" x="20" y="120" width="440" height="40" rx="3"/>
+            <text x="36" y="145" font-size="15" font-weight="600">Assembly</text>
+            <text x="200" y="145" font-size="13">mov eax, 3 ; add eax, 5</text>
+          </g>
+          <g>
+            <rect class="box" x="20" y="172" width="440" height="40" rx="3"/>
+            <text x="36" y="197" font-size="15" font-weight="600">Machine code</text>
+            <text x="200" y="197" font-size="13">10111000 00000011 …</text>
+          </g>
+          <g>
+            <rect class="box-code" x="20" y="224" width="440" height="40" rx="3"/>
+            <text x="36" y="249" font-size="15" font-weight="600">Hardware</text>
+            <text x="200" y="249" font-size="13" class="muted">CPU · memory · storage</text>
+          </g>
+          <path class="line-acc" d="M490 250 V 30"/>
+          <path class="fill-acc" d="M490 18 l-7 14 h14 z"/>
+          <path class="line" d="M490 30 V 254"/>
+          <path class="fill-ink" d="M490 266 l-7 -14 h14 z"/>
+          <text x="506" y="34" font-size="12.5" class="acc">easier for people</text>
+          <text x="506" y="52" font-size="12.5" class="acc">fewer lines of code</text>
+          <text x="506" y="238" font-size="12.5">more control over</text>
+          <text x="506" y="256" font-size="12.5">memory and hardware</text>
+        </svg>
+        <figcaption>The same calculation, 3 + 5, written at different levels of abstraction. Every level is eventually turned into machine instructions; higher levels hide more of the detail.</figcaption>
+      </figure>
+
+      <p>Languages such as <strong>C</strong> and <strong>Fortran</strong> are often considered <strong>lower-level high-level languages</strong>. They provide efficient execution and greater control over memory and data structures, making them particularly suitable for operating systems, embedded systems, and high-performance scientific computing. However, they typically require more detailed management of program structure, memory, and data types.</p>
+      <p>In contrast, <strong>Python</strong> is a <strong>high-level, interpreted language</strong> that emphasises readability, ease of development, and programmer productivity. Many tasks that require dozens of lines of code in C or Fortran can often be implemented in only a few lines of Python. Python automatically manages memory and provides a large collection of libraries for numerical computation, data analysis, visualisation, optimisation, and machine learning.</p>
+
+      <h3>1.1 Why Python?</h3>
+      <p>Although Python programs may execute more slowly than equivalent programs written in C++ or Fortran, much of the computationally intensive work is performed by highly optimised libraries implemented in compiled languages. As a result, Python combines ease of use with powerful computational capabilities, making it one of the most widely used programming languages in modern engineering and scientific research.</p>
+      <p>For these reasons, Python will be used throughout this module. Its readability allows us to focus on understanding algorithms and solving engineering problems without becoming distracted by low-level implementation details, while still providing access to high-performance scientific computing tools when required. Also, Python is widely used in fields such as machine learning, data science, robotics, web development, and scientific computing, all of which are instrumental in scientific and engineering courses.</p>
+      <p>Python comes with an extensive standard library and a vibrant community, which means that if you’re trying to solve a problem, chances are someone has already written a Python package to help you do it. From numerical computations with NumPy to plotting data with Matplotlib to analysing data with Pandas, Python offers tools for almost every engineering task.</p>
+
+      <h3>1.2 What is Jupyter Notebook?</h3>
+      <p>As you’re learning to code, having an interactive and easy-to-use environment makes a big difference. This is where <strong>Jupyter Notebook</strong> comes in.</p>
+      <p>Jupyter Notebook is an open-source web-based interface that allows you to write and run Python code in small blocks called <em>cells</em>. Each cell can contain code, comments, or even formatted text and mathematical equations using Markdown and LaTeX. This makes it ideal for learning and experimentation because you can test individual parts of your code, see the output immediately, and document your work all in one place.</p>
+      <p>Another benefit of Jupyter is that it supports interactive visualisations, which is particularly useful in engineering when dealing with graphs, simulations, or data plots. It’s also the preferred environment for many researchers and data scientists, so learning how to use it early in your studies will be an advantage. Jupyter Notebook is also a common environment for cloud computing platforms, like Google Colab and Amazon AWS. So it will be worthwhile to learn how to work with it from the beginning.</p>
+
+      <h3>1.3 How to start Jupyter Notebook</h3>
+      <p>To get started with Python and Jupyter Notebook, you’ll need to have them installed on your computer. Use the instructions below to install it on your personal machine, or if you do not have one, you can skip this step and use Jupyter Notebook on any of the university computers.</p>
+      <div class="note">
+        <p><span class="label">On this page you can start straight away.</span> Every code block below has an <strong>Open live Python</strong> button, and the practice notebook at the bottom is a full Jupyter Notebook. Both run Python inside your web browser, so nothing needs to be installed to follow the lecture. You will still want a local installation for coursework.</p>
+      </div>
+    </section>
+
+<!-- =========================================================== 2 -->
+    <section id="installing">
+      <h2><span class="num">2</span>Installing Python and Jupyter Notebook</h2>
+      <p>To complete the programming exercises in this course, you will need to install Python and Jupyter Notebook on your computer. Choose your situation below.</p>
+
+      <div class="tabs">
+        <div role="tablist" aria-label="Installation instructions">
+          <button role="tab" id="tab-win" aria-controls="pan-win">2.1 Windows</button>
+          <button role="tab" id="tab-mac" aria-controls="pan-mac">2.2 macOS</button>
+          <button role="tab" id="tab-jup" aria-controls="pan-jup">2.3 Jupyter Notebook</button>
+          <button role="tab" id="tab-uni" aria-controls="pan-uni">2.4 University computers</button>
+        </div>
+        <div role="tabpanel" id="pan-win" aria-labelledby="tab-win">
+          <ol>
+            <li>Open a web browser and visit <a href="https://www.python.org">www.python.org</a>. Download the latest stable version of Python for Windows and run the installer. Before clicking <code>Install Now</code>, ensure that the option <code>Add Python to PATH</code> is checked.</li>
+            <li>Open <code>Command Prompt</code> by clicking the Windows button, typing <code>cmd</code>, and pressing Enter.</li>
+            <li>Verify the installation by typing: <code>python --version</code>.</li>
+            <li>If Python has been installed correctly, the installed version number will be displayed.</li>
+          </ol>
+        </div>
+        <div role="tabpanel" id="pan-mac" aria-labelledby="tab-mac">
+          <ol>
+            <li>Open a web browser and visit <a href="https://www.python.org">www.python.org</a>. Download the latest stable version of Python for macOS and run the installer.</li>
+            <li>Open the <code>Terminal</code> application.</li>
+            <li>Verify the installation by typing: <code>python3 --version</code>.</li>
+            <li>If Python has been installed correctly, the installed version number will be displayed.</li>
+          </ol>
+          <p class="note" style="margin-top:0"><span class="label">macOS tip.</span> On a Mac the command is usually <code>python3</code> rather than <code>python</code>, and <code>pip3</code> rather than <code>pip</code>.</p>
+        </div>
+        <div role="tabpanel" id="pan-jup" aria-labelledby="tab-jup">
+          <p>After Python has been installed successfully, install Jupyter Notebook using Python’s package manager (<code>pip</code>). We will learn more about libraries and installations later in Week 3.</p>
+          <ol>
+            <li>Open a terminal window: the <code>Command Prompt</code> on Windows and <code>Terminal</code> on macOS.</li>
+            <li>Install Jupyter Notebook by entering <code>pip install jupyter</code>. Depending on the version downloaded and your installation, the following commands may be needed instead if errors occur: <code>py -m pip install jupyter</code> or <code>pip3 install jupyter</code>.</li>
+            <li>Wait until the installation has completed.</li>
+            <li>Start Jupyter Notebook by entering <code>py -m notebook</code> (Windows) or <code>python3 -m notebook</code> (macOS).</li>
+            <li>Your default web browser should open automatically and display the Jupyter Notebook interface.</li>
+            <li>In the Jupyter Notebook interface, navigate to the folder where you want to store your work, then click <strong>New → Python 3 (ipykernel)</strong> to create a new notebook. You’ll now see a blank notebook where you can start typing and running Python code.</li>
+          </ol>
+        </div>
+        <div role="tabpanel" id="pan-uni" aria-labelledby="tab-uni">
+          <p>If you prefer to use the university computers, here is how you should start Jupyter Notebook:</p>
+          <ol>
+            <li>In the Durham Windows environment, find <strong>Anaconda</strong> in your Start Menu; if it is not there, you can find it on the AppsHub system.</li>
+            <li>Once opened, you should see a command-line window with a black background where you can type commands. Navigate to the folder that you want to work within:<br><code>C:\Windows\System32&gt; cd C:\Users\&lt;user_name&gt;\&lt;folder_name&gt;</code></li>
+            <li>After navigating to the folder of your choice, start Jupyter Notebook:<br><code>C:\Folder_Name&gt; jupyter notebook</code></li>
+            <li>In the Jupyter interface, navigate to the folder where you want to store your work, then click <strong>New → Python 3 (ipykernel)</strong> to create a new notebook.</li>
+          </ol>
+          <div class="note"><p><span class="label">Remember,</span> if you use the university computers, all your data will be removed after you log out. Please keep a copy of all your writing and code on your J drive or a USB stick after you finish coding.</p></div>
+        </div>
+      </div>
+
+      <p>By learning Python through Jupyter Notebook, you’re not just learning a programming language: you’re learning how to think like an engineer and solve real-world problems with code. As we go through this course, we’ll use Jupyter Notebook to explore various engineering problems, perform calculations, visualise data, and build a strong foundation in programming that will support your academic and professional journey.</p>
+
+      <h3>2.5 Cells or code blocks in Jupyter Notebook</h3>
+      <p>In a Jupyter Notebook, content is organised into <strong>cells</strong>. Cells can contain Python code (or other supported programming languages) as well as descriptive text. Each cell can be edited and executed independently. The two most commonly used cell types are:</p>
+      <ul>
+        <li><strong>Code cell:</strong> contains executable code. When the cell is run, the output is displayed directly below the cell.</li>
+        <li><strong>Markdown cell:</strong> contains formatted text, such as headings, lists, equations, images, and explanations that document the code and results.</li>
+      </ul>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 330" role="img" aria-labelledby="dg-nb-t">
+          <title id="dg-nb-t">Anatomy of a Jupyter notebook: toolbar, a Markdown cell, a code cell and its output</title>
+          <rect class="box" x="10" y="10" width="420" height="310" rx="4"/>
+          <rect class="box-code" x="10" y="10" width="420" height="34" rx="4"/>
+          <text x="26" y="32" font-size="15" font-weight="600" class="acc">+</text>
+          <text x="52" y="32" font-size="13">✂  ⧉  ▶ Run  ■  ⟳</text>
+          <text x="300" y="32" font-size="12" class="muted">Python 3</text>
+          <!-- markdown cell -->
+          <rect class="box" x="30" y="62" width="380" height="88" rx="2" style="stroke:var(--grid)"/>
+          <text x="46" y="92" font-size="19" font-weight="700" class="serif">Beam calculation</text>
+          <text x="46" y="118" font-size="13" class="serif">Bending moment for a simply</text>
+          <text x="46" y="136" font-size="13" class="serif">supported beam: M = wL² / 8</text>
+          <!-- code cell -->
+          <text x="22" y="190" font-size="12" class="acc" text-anchor="start">In [1]:</text>
+          <rect class="box-code" x="80" y="172" width="330" height="62" rx="2" style="stroke:var(--accent)"/>
+          <rect x="80" y="172" width="4" height="62" class="fill-acc"/>
+          <text x="94" y="196" font-size="13">w = 15</text>
+          <text x="94" y="218" font-size="13">w * 24 ** 2 / 8</text>
+          <!-- output -->
+          <text x="18" y="268" font-size="12" class="muted">Out[1]:</text>
+          <text x="94" y="268" font-size="13">1080.0</text>
+          <!-- annotations -->
+          <path class="line-muted" d="M40 30 H 30 M440 27 H 470"/>
+          <text x="476" y="31" font-size="12.5">toolbar: <tspan class="acc">+</tspan> adds a cell,</text>
+          <text x="476" y="48" font-size="12.5">▶ runs the selected one</text>
+          <path class="line-muted" d="M410 106 H 470"/>
+          <text x="476" y="102" font-size="12.5">Markdown cell:</text>
+          <text x="476" y="119" font-size="12.5" class="muted">text, headings, equations</text>
+          <path class="line-muted" d="M410 203 H 470"/>
+          <text x="476" y="199" font-size="12.5">Code cell:</text>
+          <text x="476" y="216" font-size="12.5" class="muted">run with Shift + Enter</text>
+          <path class="line-muted" d="M150 264 H 470"/>
+          <text x="476" y="260" font-size="12.5">Output:</text>
+          <text x="476" y="277" font-size="12.5" class="muted">shown directly below</text>
+        </svg>
+        <figcaption>A notebook mixes explanation (Markdown cells) with code you can run (code cells). The number in <code>In [1]</code> counts the order in which cells were run.</figcaption>
+      </figure>
+
+      <p>To create a new cell, click the <code>+</code> button in the toolbar. A new cell will be inserted below the currently selected cell. Code cells can be executed by pressing <kbd>Shift</kbd> + <kbd>Enter</kbd>. The notebook will run the code and display the resulting output beneath the cell.</p>
+    </section>
+
+<!-- =========================================================== 3 -->
+    <section id="starting">
+      <h2><span class="num">3</span>Starting with Python programming</h2>
+      <p>Let us begin by performing simple mathematical operations in Python. Python expressions can be entered directly into a code cell and then executed. For example, to add the numbers 3 and 5, enter:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">3 + 5</code></pre>
+</figure>
+<pre class="out">8</pre>
+
+      <p>Python can be used as a calculator to perform basic arithmetic operations. The following operators are commonly used:</p>
+      <ul>
+        <li>Addition: <code>+</code> &nbsp; Subtraction: <code>-</code> &nbsp; Multiplication: <code>*</code> &nbsp; Division: <code>/</code></li>
+        <li>Exponentiation: <code>**</code></li>
+        <li>Floor division: <code>//</code> (divide and round down to a whole number)</li>
+        <li>Remainder (modulo): <code>%</code> (what is left over after floor division)</li>
+      </ul>
+      <p>For example:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">print(7 / 2)
+print(7 // 2)
+print(7 % 2)
+print(2 ** 3)</code></pre>
+</figure>
+<pre class="out">3.5
+3
+1
+8</pre>
+
+      <div class="note">
+        <p><span class="label">A small difference from the handout.</span> The handout writes these four lines without <code>print()</code>. A notebook cell only displays the value of its <em>last</em> line automatically, so to see all four results in one cell, wrap each in <code>print()</code> as above.</p>
+      </div>
+
+      <div class="widget" id="op-widget">
+        <p class="w-title">Python as a calculator</p>
+        <p>Type two numbers and pick an operator. The result is what Python would print. Try a whole number such as <code>7</code> and then the same number with a decimal point, <code>7.0</code>, and watch the data type change.</p>
+        <div class="w-row">
+          <input type="text" id="op-a" value="7" aria-label="First number" style="width:7rem">
+          <select id="op-op" aria-label="Operator">
+            <option value="+">+</option><option value="-">-</option><option value="*">*</option>
+            <option value="/">/</option><option value="//" selected>//</option><option value="%">%</option><option value="**">**</option>
+          </select>
+          <input type="text" id="op-b" value="2" aria-label="Second number" style="width:7rem">
+        </div>
+        <div class="w-out" id="op-out" aria-live="polite"></div>
+      </div>
+
+      <h3>Order of operations</h3>
+      <p>The order in which operations are evaluated is important. Python follows the standard mathematical order of operations. In particular, expressions inside parentheses are evaluated first, followed by exponentiation, multiplication and division, and then addition and subtraction.</p>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 200" role="img" aria-labelledby="dg-prec-t">
+          <title id="dg-prec-t">Operator precedence: parentheses, then exponentiation, then multiplication and division, then addition and subtraction</title>
+          <rect class="box-acc" x="20" y="20" width="150" height="46" rx="3"/>
+          <text x="95" y="49" font-size="17" text-anchor="middle" font-weight="600" class="acc">( )</text>
+          <rect class="box" x="20" y="74" width="150" height="34" rx="3" transform="translate(40 0)"/>
+          <text x="135" y="96" font-size="15" text-anchor="middle">**</text>
+          <rect class="box" x="100" y="116" width="150" height="34" rx="3"/>
+          <text x="175" y="138" font-size="15" text-anchor="middle">*  /  //  %</text>
+          <rect class="box" x="140" y="158" width="150" height="34" rx="3"/>
+          <text x="215" y="180" font-size="15" text-anchor="middle">+  -</text>
+          <text x="182" y="49" font-size="12" class="muted">1st  parentheses</text>
+          <text x="222" y="96" font-size="12" class="muted">2nd  exponent</text>
+          <text x="262" y="138" font-size="12" class="muted">3rd  multiply, divide</text>
+          <text x="302" y="180" font-size="12" class="muted">4th  add, subtract</text>
+          <!-- worked example -->
+          <text x="470" y="44" font-size="14">5 + 2 * 5</text>
+          <text x="470" y="80" font-size="14">5 + <tspan class="acc" font-weight="600">10</tspan></text>
+          <text x="470" y="116" font-size="14" font-weight="600">15</text>
+          <text x="470" y="152" font-size="14">(5 + 2) * 5</text>
+          <text x="470" y="184" font-size="14"><tspan class="acc" font-weight="600">7</tspan> * 5 = <tspan font-weight="600">35</tspan></text>
+          <path class="line-muted" d="M455 30 V 122 M455 138 V 190"/>
+        </svg>
+        <figcaption>Operators higher up the staircase are applied first. Operators on the same step are applied from left to right (except <code>**</code>, which works right to left).</figcaption>
+      </figure>
+
+      <p>For example, <code>5 + 2 * 5</code> produces a different result from <code>(5 + 2) * 5</code>:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">print(5 + 2 * 5)
+print((5 + 2) * 5)</code></pre>
+</figure>
+<pre class="out">15
+35</pre>
+      <p>Using parentheses can make the intended order of operations clearer, even when they are not strictly necessary.</p>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">What does Python give for <code>2 + 3 * 4 ** 2</code>?</p>
+        <div class="opts"><button>400</button><button>50</button><button>98</button><button>194</button></div>
+        <p class="why"><code>4 ** 2</code> is done first (16), then <code>3 * 16</code> (48), then <code>2 + 48</code>, which is 50.</p>
+      </div>
+
+      <div class="quiz" data-answer="2">
+        <p class="q">What is <code>17 % 5</code>?</p>
+        <div class="opts"><button>3.4</button><button>3</button><button>2</button><button>12</button></div>
+        <p class="why">17 = 5 × 3 + 2. Floor division <code>17 // 5</code> gives the 3, and modulo <code>17 % 5</code> gives what is left over, 2.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 3.1.</span> A 250 m drum of electrical cable is cut into 12 m lengths. Use <code>//</code> and <code>%</code> to find how many full lengths you get and how many metres are left over. Then calculate \(3^4 - \frac{10}{4}\) and check the order of operations.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">print(250 // 12)    # full lengths
+print(250 % 12)     # metres left over
+print(3 ** 4 - 10 / 4)</code></pre>
+</figure>
+<pre class="out">20
+10
+78.5</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 3.1 -->
+    <section id="variables">
+      <h2><span class="num">3.1</span>Variables in Python</h2>
+      <p>In scientific and engineering programs, values are usually stored in <strong>variables</strong>. A variable is a name that refers to a value. Variables make code easier to read, modify, and reuse. For example, we can define two variables, add their values, and display the result:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">a = 10
+b = 20
+result = a + b
+
+print(result)</code></pre>
+</figure>
+<pre class="out">30</pre>
+
+      <p>The statements perform the following operations:</p>
+      <ul>
+        <li><code>a = 10</code> assigns the integer value <code>10</code> to the variable <code>a</code>.</li>
+        <li><code>b = 20</code> assigns the integer value <code>20</code> to the variable <code>b</code>.</li>
+        <li><code>result = a + b</code> adds the values referred to by <code>a</code> and <code>b</code>, and assigns the result to a new variable named <code>result</code>.</li>
+        <li><code>print(result)</code> displays the value of <code>result</code>.</li>
+      </ul>
+      <p>In Python, the equals sign <code>=</code> is the <strong>assignment operator</strong>. It assigns the value on its right-hand side to the variable on its left-hand side. It does not represent mathematical equality. For example:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">temperature = 25.0
+temperature = temperature + 5.0
+
+print(temperature)</code></pre>
+</figure>
+<pre class="out">30.0</pre>
+
+      <p>The second statement uses the current value of <code>temperature</code>, adds <code>5.0</code>, and assigns the new value back to the same variable.</p>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 170" role="img" aria-labelledby="dg-var-t">
+          <title id="dg-var-t">A variable is a name tag pointing at a value. After reassignment the tag points at the new value.</title>
+          <text x="20" y="24" font-size="12.5" class="muted">after  temperature = 25.0</text>
+          <rect class="box-acc" x="20" y="44" width="130" height="34" rx="17"/>
+          <text x="85" y="66" font-size="14" text-anchor="middle" class="acc">temperature</text>
+          <path class="line-acc" d="M150 61 H 205"/><path class="fill-acc" d="M215 61 l-12 -6 v12 z"/>
+          <rect class="box" x="218" y="40" width="90" height="42" rx="2"/>
+          <text x="263" y="66" font-size="15" text-anchor="middle">25.0</text>
+
+          <text x="370" y="24" font-size="12.5" class="muted">after  temperature = temperature + 5.0</text>
+          <rect class="box-acc" x="370" y="44" width="130" height="34" rx="17"/>
+          <text x="435" y="66" font-size="14" text-anchor="middle" class="acc">temperature</text>
+          <path class="line-acc" d="M500 61 H 555"/><path class="fill-acc" d="M565 61 l-12 -6 v12 z"/>
+          <rect class="box" x="568" y="40" width="90" height="42" rx="2" style="stroke:var(--accent);stroke-width:2.5"/>
+          <text x="613" y="66" font-size="15" text-anchor="middle" font-weight="600">30.0</text>
+          <rect class="box" x="568" y="104" width="90" height="42" rx="2" style="stroke-dasharray:4 4;opacity:.5"/>
+          <text x="613" y="130" font-size="15" text-anchor="middle" class="muted" style="text-decoration:line-through">25.0</text>
+          <text x="440" y="130" font-size="12" class="muted">old value is</text>
+          <text x="440" y="146" font-size="12" class="muted">no longer used</text>
+        </svg>
+        <figcaption>Think of a variable as a name tag rather than a box. Assignment moves the tag to a new value; it does not create a mathematical equation.</figcaption>
+      </figure>
+
+      <div class="tracer" data-trace="w1-assign" data-title="Watch the variables change, one line at a time"></div>
+
+      <div class="quiz" data-answer="2">
+        <p class="q">What does this print?</p>
+<figure class="code"><pre><code class="language-python">x = 5
+x = x * 2
+x = x + 1
+print(x)</code></pre></figure>
+        <div class="opts"><button>5</button><button>10</button><button>11</button><button>6</button></div>
+        <p class="why">Each line uses the <em>current</em> value of <code>x</code>: 5, then 5 × 2 = 10, then 10 + 1 = 11.</p>
+      </div>
+
+      <h3>3.1.1 Variable names</h3>
+      <p>Variable names should describe the quantities that they represent. For example, <code>pipe_radius</code> is usually more informative than <code>r</code>, particularly in a long engineering program. Although short variable names such as <code>x</code>, <code>y</code>, and <code>t</code> are acceptable when their mathematical meanings are clear, descriptive names generally make programs easier to understand and maintain. Python variable names must follow these rules:</p>
+      <ul>
+        <li>A variable name may contain letters, numbers, and underscores.</li>
+        <li>A variable name cannot contain spaces. For example, use <code>surface_area</code> rather than <code>surface area</code>.</li>
+        <li>A variable name cannot begin with a number. For example, <code>2nd_value</code> is invalid, whereas <code>second_value</code> is valid.</li>
+        <li>A variable name cannot contain characters such as <code>@</code>, <code>#</code>, <code>%</code>, or <code>-</code>.</li>
+        <li>Python keywords, such as <code>if</code>, <code>for</code>, <code>while</code>, and <code>class</code>, cannot be used as variable names.</li>
+        <li>Names of built-in Python functions and types, such as <code>list</code>, <code>int</code>, <code>sum</code>, and <code>max</code>, should not be used as variable names.</li>
+        <li>Variable names are case-sensitive. Therefore, <code>temperature</code>, <code>Temperature</code>, and <code>TEMPERATURE</code> are three different names.</li>
+      </ul>
+      <p>For variable names containing multiple words, Python commonly uses <em>snake case</em>, in which words are separated by underscores. Examples include <code>surface_area</code>, <code>fluid_density</code>, and <code>maximum_stress</code>.</p>
+
+      <div class="widget" id="name-widget">
+        <p class="w-title">Is this a valid variable name?</p>
+        <div class="w-row"><label>name <input type="text" id="name-in" value="pipe_radius" autocomplete="off" spellcheck="false"></label></div>
+        <div class="example-chips" id="name-chips"></div>
+        <div class="w-out" id="name-out" aria-live="polite"></div>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 3.2.</span> A water pipe has an internal radius of 0.15 m. Store the radius and \(\pi \approx 3.14159\) in well-named variables, calculate the cross-sectional area \(A = \pi r^2\), and print it. Then change the radius to 0.2 m and recalculate.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">pi = 3.14159
+pipe_radius = 0.15                 # m
+pipe_area = pi * pipe_radius ** 2  # m^2
+print(pipe_area)
+
+pipe_radius = 0.2
+pipe_area = pi * pipe_radius ** 2  # must be recalculated
+print(pipe_area)</code></pre>
+</figure>
+<pre class="out">0.07068577499999999
+0.12566360000000001</pre>
+          <p>The long tails of digits are normal: see the note on floating-point precision in the next section.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 3.2 -->
+    <section id="types">
+      <h2><span class="num">3.2</span>Data types in Python</h2>
+      <p>Every value in Python has a <strong>data type</strong>. The data type tells Python what kind of information the value represents and which operations can be applied to it. The following data types are commonly used:</p>
+      <ul>
+        <li><strong>Integer</strong> (<code>int</code>): a whole number without a decimal point, such as <code>1</code>, <code>-4</code>, or <code>100</code>.</li>
+        <li><strong>Floating-point number</strong> (<code>float</code>): a real number represented using floating-point arithmetic, such as <code>3.14</code>, <code>-0.001</code>, or <code>2.0</code>. Floating-point numbers can also be written using scientific notation. For example, <code>1.5e-3</code> represents \(1.5 \times 10^{-3}\).</li>
+        <li><strong>Complex number</strong> (<code>complex</code>): a number containing real and imaginary parts. Python uses <code>j</code> for the imaginary unit, as in <code>2 + 3j</code>.</li>
+        <li><strong>String</strong> (<code>str</code>): a sequence of characters enclosed in quotation marks, such as <code>"hello"</code> or <code>'Python'</code>.</li>
+        <li><strong>Boolean</strong> (<code>bool</code>): a logical value that is either <code>True</code> or <code>False</code>.</li>
+        <li><strong>List</strong> (<code>list</code>): an ordered and changeable collection of values. A list can contain values of the same type or of different types.</li>
+        <li><strong>Dictionary</strong> (<code>dict</code>): a collection of key–value pairs. Each key in a dictionary must be unique, but different keys can have equal values.</li>
+      </ul>
+      <p>The built-in <code>type()</code> function can be used to determine the type of a value or variable:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">x = 5
+y = 3.14
+small_value = 1.5e-3
+impedance = 2 + 3j
+name = "Alice"
+is_valid = True
+
+example_list = [x, name]
+
+example_dict = {
+    "Name": ["David", "Thomas", "Ellen"],
+    "Age": [22, 34, 12]
+}
+
+print(type(x))
+print(type(y))
+print(type(small_value))
+print(type(impedance))
+print(type(name))
+print(type(is_valid))
+print(type(example_list))
+print(type(example_dict))</code></pre>
+</figure>
+<pre class="out">&lt;class 'int'&gt;
+&lt;class 'float'&gt;
+&lt;class 'float'&gt;
+&lt;class 'complex'&gt;
+&lt;class 'str'&gt;
+&lt;class 'bool'&gt;
+&lt;class 'list'&gt;
+&lt;class 'dict'&gt;</pre>
+
+      <p>The numerical data type can affect the result of an operation. For example, the division operator <code>/</code> always returns a floating-point value:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">result = 10 / 2
+
+print(result)
+print(type(result))</code></pre>
+</figure>
+<pre class="out">5.0
+&lt;class 'float'&gt;</pre>
+
+      <div class="note">
+        <p>Floating-point values are stored with finite precision. Consequently, some decimal numbers cannot be represented exactly by a computer. This behaviour is a consequence of binary floating-point representation. This is important in scientific computing, particularly when comparing calculated values or assessing numerical errors. For example, <code>0.1 + 0.2</code> may produce:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">0.1 + 0.2</code></pre>
+</figure>
+<pre class="out" style="margin-top:-0.75rem">0.30000000000000004</pre>
+      </div>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">What is <code>type(24 / 2)</code>?</p>
+        <div class="opts"><button>&lt;class 'int'&gt;</button><button>&lt;class 'float'&gt;</button><button>&lt;class 'str'&gt;</button></div>
+        <p class="why"><code>/</code> always returns a float, even when the answer is a whole number: <code>24 / 2</code> is <code>12.0</code>. Use <code>//</code> if you want an integer.</p>
+      </div>
+      <div class="quiz" data-answer="2">
+        <p class="q">What is <code>type("3.14")</code>?</p>
+        <div class="opts"><button>&lt;class 'float'&gt;</button><button>&lt;class 'int'&gt;</button><button>&lt;class 'str'&gt;</button><button>&lt;class 'complex'&gt;</button></div>
+        <p class="why">The quotation marks make it text. It looks like a number, but Python treats it as a string until you convert it (next section).</p>
+      </div>
+
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Try type() on your own values, e.g. type(1e3), type(-0.0), type(False), type([])
+</code></pre>
+</figure>
+    </section>
+
+<!-- =========================================================== 3.3 -->
+    <section id="conversion">
+      <h2><span class="num">3.3</span>Type conversion</h2>
+      <p>Python provides built-in functions for converting compatible values between data types:</p>
+      <ul>
+        <li><code>float(value)</code> converts a compatible value to a floating-point number.</li>
+        <li><code>int(value)</code> converts a compatible value to an integer.</li>
+        <li><code>str(value)</code> converts a value to a string.</li>
+        <li><code>bool(value)</code> converts a value to a Boolean value.</li>
+      </ul>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">integer_value = int(4.8)
+float_value = float("12.5")
+text_value = str(250)
+
+print(integer_value)
+print(float_value)
+print(text_value)</code></pre>
+</figure>
+<pre class="out">4
+12.5
+250</pre>
+
+      <div class="note">
+        <p>When <code>int()</code> is applied to a floating-point value, the fractional part is removed by truncation towards zero. The value is <strong>not</strong> rounded.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">print(int(4.9))
+print(int(-4.9))</code></pre>
+</figure>
+<pre class="out" style="margin-top:-0.75rem">4
+-4</pre>
+        <p>A conversion must be valid. For example, <code>float("Hello World")</code> raises a <code>ValueError</code> because the string does not represent a numerical value.</p>
+      </div>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 120" role="img" aria-labelledby="dg-trunc-t">
+          <title id="dg-trunc-t">Number line showing int() truncating 4.9 to 4 and -4.9 to -4, both towards zero</title>
+          <path class="line" d="M40 60 H 640"/>
+          <g font-size="12" text-anchor="middle">
+            <path class="line" d="M90 54 V 66 M170 54 V 66 M250 54 V 66 M340 50 V 70 M430 54 V 66 M510 54 V 66 M590 54 V 66"/>
+            <text x="90" y="86">-5</text><text x="170" y="86" font-weight="600">-4</text><text x="250" y="86">-3</text>
+            <text x="340" y="90" font-weight="600">0</text>
+            <text x="430" y="86">3</text><text x="510" y="86" font-weight="600">4</text><text x="590" y="86">5</text>
+          </g>
+          <circle cx="582" cy="60" r="6" class="fill-acc"/>
+          <text x="582" y="40" font-size="12.5" text-anchor="middle" class="acc">4.9</text>
+          <path class="line-acc" d="M574 52 C 560 22, 528 22, 516 50"/><path class="fill-acc" d="M512 56 l2 -13 l9 7 z"/>
+          <circle cx="98" cy="60" r="6" class="fill-acc"/>
+          <text x="98" y="40" font-size="12.5" text-anchor="middle" class="acc">-4.9</text>
+          <path class="line-acc" d="M106 52 C 120 22, 152 22, 164 50"/><path class="fill-acc" d="M168 56 l-2 -13 l-9 7 z"/>
+          <text x="340" y="22" font-size="12.5" text-anchor="middle" class="muted">int() always moves towards 0</text>
+        </svg>
+      </figure>
+
+      <div class="widget" id="conv-widget">
+        <p class="w-title">Conversion playground</p>
+        <p>Choose a function and type a Python value. Put text in quotation marks, for example <code>"12.5"</code>.</p>
+        <div class="w-row">
+          <select id="conv-fn" aria-label="Function"><option>int</option><option>float</option><option>str</option><option>bool</option></select>
+          <span>(</span><input type="text" id="conv-in" value="4.8" aria-label="Value" autocomplete="off" spellcheck="false"><span>)</span>
+        </div>
+        <div class="example-chips" id="conv-chips"></div>
+        <div class="w-out" id="conv-out" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">What is <code>int(-7.9)</code>?</p>
+        <div class="opts"><button>-8</button><button>-7</button><button>7</button><button>ValueError</button></div>
+        <p class="why"><code>int()</code> truncates towards zero, so the fractional part is simply removed: <code>-7</code>. Rounding down would give -8.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 3.3.</span> A temperature sensor sends its reading as text: <code>reading = "23.7"</code>. Convert it to a number, add a calibration offset of 1.5 °C, and print the corrected temperature. What happens if you forget to convert it first?</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">reading = "23.7"
+# Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">reading = "23.7"
+temperature = float(reading)
+corrected_temperature = temperature + 1.5
+print(corrected_temperature)
+
+# reading + 1.5  would raise a TypeError: you cannot add a str and a float</code></pre>
+</figure>
+<pre class="out">25.2</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 4.1 -->
+    <section id="lists">
+      <h2><span class="num">4</span>Collections: lists and dictionaries</h2>
+      <h3>4.1 List elements</h3>
+      <p>A list stores an ordered collection of elements. The elements of a list are accessed by placing an integer index inside square brackets after the name of the list: <code>list_name[index]</code>. For example:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">example_list = [5, 12.0, "Alice", ["John", 12]]
+
+print(example_list[0])
+print(example_list[3])
+print(example_list[3][0])</code></pre>
+</figure>
+<pre class="out">5
+['John', 12]
+John</pre>
+
+      <p>The expression <code>example_list[3]</code> returns the nested list <code>['John', 12]</code>. The expression <code>example_list[3][0]</code> first selects the nested list and then selects its first element.</p>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 170" role="img" aria-labelledby="dg-nest-t">
+          <title id="dg-nest-t">example_list has four elements; the element at index 3 is itself a list whose element 0 is "John"</title>
+          <text x="20" y="22" font-size="13">example_list</text>
+          <g font-size="14" text-anchor="middle">
+            <rect class="box" x="20" y="34" width="90" height="44"/><text x="65" y="61">5</text>
+            <rect class="box" x="110" y="34" width="90" height="44"/><text x="155" y="61">12.0</text>
+            <rect class="box" x="200" y="34" width="110" height="44"/><text x="255" y="61">"Alice"</text>
+            <rect class="box-acc" x="310" y="34" width="200" height="44"/><text x="410" y="61" class="acc">["John", 12]</text>
+          </g>
+          <g font-size="12" text-anchor="middle" class="muted">
+            <text x="65" y="96">[0]</text><text x="155" y="96">[1]</text><text x="255" y="96">[2]</text><text x="410" y="96" class="acc">[3]</text>
+          </g>
+          <path class="line-acc" d="M410 102 V 118 H 540"/><path class="fill-acc" d="M550 118 l-12 -6 v12 z"/>
+          <g font-size="14" text-anchor="middle">
+            <rect class="box-acc" x="552" y="100" width="70" height="38" style="stroke-width:2.5"/><text x="587" y="124" font-weight="600">"John"</text>
+            <rect class="box" x="622" y="100" width="46" height="38"/><text x="645" y="124">12</text>
+          </g>
+          <text x="587" y="156" font-size="12" text-anchor="middle" class="acc">[3][0]</text>
+          <text x="645" y="156" font-size="12" text-anchor="middle" class="muted">[3][1]</text>
+        </svg>
+        <figcaption>A list can contain another list. Each pair of square brackets goes one level deeper.</figcaption>
+      </figure>
+
+      <div class="note">
+        <p>Python uses <strong>zero-based indexing</strong>. Therefore, the first element of a list has the index <code>0</code>, the second element has the index <code>1</code>, and so forth. Negative indices can be used to access elements from the end of a list:</p>
+        <ul>
+          <li><code>list_name[-1]</code> returns the last element.</li>
+          <li><code>list_name[-2]</code> returns the second-to-last element.</li>
+          <li><code>list_name[-3]</code> returns the third-to-last element.</li>
+        </ul>
+<figure class="code" data-runnable>
+<pre><code class="language-python">values = [10, 20, 30, 40]
+
+print(values[0])
+print(values[-1])
+print(values[-2])</code></pre>
+</figure>
+<pre class="out" style="margin-top:-0.75rem">10
+40
+30</pre>
+      </div>
+
+      <p>A range of list elements can be accessed using <strong>slicing</strong>. The general form is <code>list_name[start:stop:step]</code>. The element at the <code>start</code> index is included, but the element at the <code>stop</code> index is excluded. For example:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">values = [10, 20, 30, 40, 50, 60, 123]
+
+print(values[1:4])
+print(values[:3])
+print(values[2:])
+print(values[::2])</code></pre>
+</figure>
+<pre class="out">[20, 30, 40]
+[10, 20, 30]
+[30, 40, 50, 60, 123]
+[10, 30, 50, 123]</pre>
+
+      <div class="widget" id="list-widget">
+        <p class="w-title">Index and slice explorer</p>
+        <p>Type an index such as <code>-2</code> or a slice such as <code>1:4</code> or <code>::2</code>. The selected elements light up. Positive indices are shown above each element and negative indices below.</p>
+        <div class="w-row"><span>values = [10, 20, 30, 40, 50, 60, 123]</span></div>
+        <div class="w-row"><label>values[ <input type="text" id="list-in" value="1:4" style="width:7rem" autocomplete="off" spellcheck="false" aria-label="Index or slice"> ]</label></div>
+        <div class="example-chips" id="list-chips"></div>
+        <div class="cells" id="list-cells" aria-hidden="true"></div>
+        <div class="w-out" id="list-out" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz" data-answer="3">
+        <p class="q">With <code>values = [10, 20, 30, 40, 50]</code>, what is <code>values[1:3]</code>?</p>
+        <div class="opts"><button>[10, 20, 30]</button><button>[20, 30, 40]</button><button>[10, 20]</button><button>[20, 30]</button></div>
+        <p class="why">The slice starts at index 1 (20) and stops <em>before</em> index 3, so it contains the elements at indices 1 and 2.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 4.1 (from the handout).</span> Create variables to represent different types of engineering data, such as a component name, temperature, pressure, and a validity condition. Store these variables in a list. Then create a nested list and access its elements using positive and negative indices.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">component_name = "Pump P-101"
+temperature = 68.5        # °C
+pressure = 4.2            # bar
+is_operational = True
+
+component = [component_name, temperature, pressure, is_operational]
+print(component[0])       # first element
+print(component[-1])      # last element
+
+plant = [component, ["Valve V-7", 41.0, 3.8, False]]
+print(plant[1][0])        # name of the second component
+print(plant[-1][-2])      # pressure of the last component</code></pre>
+</figure>
+<pre class="out">Pump P-101
+True
+Valve V-7
+3.8</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 4.2 -->
+    <section id="dicts">
+      <h2><span class="num">4.2</span>Dictionary elements</h2>
+      <p>A dictionary stores information as <strong>key–value</strong> pairs. Unlike a list, which is accessed using integer indices, a dictionary is normally accessed using its keys. Consider the following dictionary:</p>
+
+<figure class="code" data-runnable>
+<pre><code class="language-python">example_dict = {
+    "Name": ["David", "Thomas", "Ellen"],
+    "Age": [22, 34, 12]
+}</code></pre>
+</figure>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 130" role="img" aria-labelledby="dg-dict-t">
+          <title id="dg-dict-t">A dictionary maps each key to a value. Here "Name" maps to a list of names and "Age" to a list of ages.</title>
+          <text x="20" y="20" font-size="12" class="muted">keys</text>
+          <text x="250" y="20" font-size="12" class="muted">values</text>
+          <rect class="box-acc" x="20" y="30" width="120" height="38" rx="3"/><text x="80" y="54" font-size="14" text-anchor="middle" class="acc">"Name"</text>
+          <rect class="box-acc" x="20" y="82" width="120" height="38" rx="3"/><text x="80" y="106" font-size="14" text-anchor="middle" class="acc">"Age"</text>
+          <path class="line-acc" d="M140 49 H 238"/><path class="fill-acc" d="M248 49 l-12 -6 v12 z"/>
+          <path class="line-acc" d="M140 101 H 238"/><path class="fill-acc" d="M248 101 l-12 -6 v12 z"/>
+          <g font-size="13.5" text-anchor="middle">
+            <rect class="box" x="250" y="30" width="110" height="38"/><text x="305" y="54">"David"</text>
+            <rect class="box" x="360" y="30" width="110" height="38"/><text x="415" y="54">"Thomas"</text>
+            <rect class="box" x="470" y="30" width="110" height="38"/><text x="525" y="54">"Ellen"</text>
+            <rect class="box" x="250" y="82" width="110" height="38"/><text x="305" y="106">22</text>
+            <rect class="box" x="360" y="82" width="110" height="38"/><text x="415" y="106">34</text>
+            <rect class="box" x="470" y="82" width="110" height="38"/><text x="525" y="106">12</text>
+          </g>
+          <text x="600" y="54" font-size="11.5" class="muted">a list</text>
+          <text x="600" y="106" font-size="11.5" class="muted">a list</text>
+        </svg>
+        <figcaption><code>example_dict["Name"][1]</code> follows the arrow from the key <code>"Name"</code> to its list, then picks index 1: <code>"Thomas"</code>.</figcaption>
+      </figure>
+
+      <p>The keys are <code>"Name"</code> and <code>"Age"</code>. The value associated with each key is a list. The values can be accessed as follows:</p>
+
+<figure class="code" data-runnable data-setup="dict">
+<pre><code class="language-python">print(example_dict["Name"])
+print(example_dict["Name"][1])
+print(example_dict["Age"][1:])</code></pre>
+</figure>
+<pre class="out">['David', 'Thomas', 'Ellen']
+Thomas
+[34, 12]</pre>
+
+      <p>The expression <code>example_dict["Name"]</code> returns the complete list associated with the key <code>"Name"</code>. The expression <code>example_dict["Name"][1]</code> then returns the second element of that list. You can also access the elements of a dictionary using the <code>.get()</code> method. A new key–value pair can be added to the dictionary using assignment:</p>
+
+<figure class="code" data-runnable data-setup="dict">
+<pre><code class="language-python">example_dict["Height"] = [1.72, 1.80, 1.65]
+
+print(example_dict.get("Height"))</code></pre>
+</figure>
+<pre class="out">[1.72, 1.8, 1.65]</pre>
+
+      <p>An existing value can be modified in a similar way:</p>
+
+<figure class="code" data-runnable data-setup="dict">
+<pre><code class="language-python">example_dict["Age"][0] = 23
+
+print(example_dict["Age"])</code></pre>
+</figure>
+<pre class="out">[23, 34, 12]</pre>
+
+      <div class="note">
+        <p><span class="label">Note 1:</span> Accessing a key that does not exist using square brackets produces a <code>KeyError</code>. The <code>get()</code> method can be used when a key might not be present:</p>
+<figure class="code" data-runnable data-setup="dict">
+<pre><code class="language-python">print(example_dict.get("Mass"))
+print(example_dict.get("Mass", "Key not found"))</code></pre>
+</figure>
+<pre class="out" style="margin-top:-0.75rem">None
+Key not found</pre>
+        <p><span class="label">Note 2:</span> You can see all the keys of a dictionary using the <code>.keys()</code> method.</p>
+<figure class="code" data-runnable data-setup="dict">
+<pre><code class="language-python">print(example_dict.keys())</code></pre>
+</figure>
+<pre class="out" style="margin-top:-0.75rem">dict_keys(['Name', 'Age'])</pre>
+      </div>
+
+      <div class="widget" id="dict-widget">
+        <p class="w-title">Look up a key</p>
+        <p>Type a key and choose how to look it up. Keys are case-sensitive, so try <code>Name</code> and then <code>name</code>.</p>
+        <div class="dict-view" id="dict-view" aria-hidden="true"></div>
+        <div class="w-row">
+          <select id="dict-how" aria-label="Lookup method">
+            <option value="br">example_dict[ key ]</option>
+            <option value="get">example_dict.get( key )</option>
+            <option value="getd">example_dict.get( key, "Key not found" )</option>
+          </select>
+          <label>key <input type="text" id="dict-key" value="Name" style="width:9rem" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="w-row">
+          <button type="button" id="dict-add">Run example_dict["Height"] = [1.72, 1.80, 1.65]</button>
+          <button type="button" id="dict-reset">Reset</button>
+        </div>
+        <div class="w-out" id="dict-out" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz" data-answer="0">
+        <p class="q">For the dictionary above, what does <code>example_dict.get("Mass")</code> return?</p>
+        <div class="opts"><button>None</button><button>KeyError</button><button>""</button><button>0</button></div>
+        <p class="why"><code>.get()</code> never raises a <code>KeyError</code>. If the key is missing it returns <code>None</code>, or the default you give it as a second argument.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 4.2.</span> Create a dictionary called <code>steel</code> with the keys <code>"density"</code> (7850 kg/m³), <code>"youngs_modulus"</code> (200e9 Pa) and <code>"yield_strength"</code> (250e6 Pa). Print the yield strength, add a key <code>"poisson_ratio"</code> with the value 0.3, print all the keys, and use <code>.get()</code> to ask for <code>"thermal_conductivity"</code> without causing an error.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">steel = {
+    "density": 7850,            # kg/m^3
+    "youngs_modulus": 200e9,    # Pa
+    "yield_strength": 250e6,    # Pa
+}
+
+print(steel["yield_strength"])
+steel["poisson_ratio"] = 0.3
+print(steel.keys())
+print(steel.get("thermal_conductivity", "Not recorded"))</code></pre>
+</figure>
+<pre class="out">250000000.0
+dict_keys(['density', 'youngs_modulus', 'yield_strength', 'poisson_ratio'])
+Not recorded</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 5 -->
+    <section id="summary">
+      <h2><span class="num">5</span>Summary</h2>
+      <p>In this introduction, you learned how to run basic Python code in Jupyter Notebook. You performed simple mathematical operations, defined variables, and explored the primary data types that Python supports. These fundamentals are the building blocks of programming. As you continue learning, you’ll use these concepts to build more advanced applications, such as simulations, data visualisations, and engineering models.</p>
+      <p>Tick off what you are confident with. Your ticks are remembered in this browser only.</p>
+      <ul class="checklist" id="w1-check">
+        <li><label><input type="checkbox"><span>Run a code cell with <kbd>Shift</kbd> + <kbd>Enter</kbd> and read its output.</span></label></li>
+        <li><label><input type="checkbox"><span>Use <code>+ - * / ** // %</code> and predict the order of operations.</span></label></li>
+        <li><label><input type="checkbox"><span>Assign and reassign variables, and choose valid, descriptive snake_case names.</span></label></li>
+        <li><label><input type="checkbox"><span>Recognise <code>int</code>, <code>float</code>, <code>complex</code>, <code>str</code>, <code>bool</code>, <code>list</code> and <code>dict</code>, and check them with <code>type()</code>.</span></label></li>
+        <li><label><input type="checkbox"><span>Convert values with <code>int()</code>, <code>float()</code>, <code>str()</code> and <code>bool()</code>, and explain why <code>int(-4.9)</code> is <code>-4</code>.</span></label></li>
+        <li><label><input type="checkbox"><span>Index and slice lists, including negative indices and nested lists.</span></label></li>
+        <li><label><input type="checkbox"><span>Read, add and change dictionary entries, and use <code>.get()</code> to avoid a <code>KeyError</code>.</span></label></li>
+      </ul>
+    </section>
+
+    <section id="notebook" class="wide">
+      <h2>Practice notebook</h2>
+      <p style="max-width:var(--measure)">All of this week’s code in one Jupyter notebook, followed by the end-of-lecture challenge, <em>The Footbridge Inspection</em>. Cells share variables, so run them from top to bottom with <kbd>Shift</kbd> + <kbd>Enter</kbd>. Your edits are kept in this browser only; use <em>File → Download</em> to save a copy.</p>
+      <div class="notebook-shell">
+        <div class="notebook-bar">
+          <span>week1_python_basics.ipynb</span>
+          <span class="links" id="notebook-links"></span>
+        </div>
+        <div id="notebook-slot"></div>
+      </div>
+    </section>
+
+    <nav class="pager" id="pager" aria-label="Other weeks"></nav>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<!-- Setup code that runs silently in a live window before you type -->
+<script type="text/plain" id="setup-dict" data-hint="The live window already has example_dict loaded.">example_dict = {
+    "Name": ["David", "Thomas", "Ellen"],
+    "Age": [22, 34, 12]
+}
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="assets/traces.js"></script>
+<script src="assets/site.js"></script>
+<script src="assets/week1.js"></script>
+</body>
+</html>
