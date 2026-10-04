@@ -344,7 +344,9 @@ footer { border-top: 1px solid var(--grid); color: var(--muted); font-size: 0.9r
 footer .inner { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
 
 /* ---------- Landing page ---------- */
-.week-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+.week-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+@media (max-width: 900px) { .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .week-grid { grid-template-columns: 1fr; } }
 a.week-card, div.week-card {
   display: grid; grid-template-rows: auto auto 1fr auto; gap: 0.35rem;
   border: 1px solid var(--ink); background: var(--paper); padding: 1.1rem 1.2rem 1rem;
