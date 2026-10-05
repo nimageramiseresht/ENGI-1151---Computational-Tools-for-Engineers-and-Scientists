@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Week 4: Functions in Python | ENGI 1151</title>
+<meta name="description" content="ENGI 1151 week 4 lecture notes with live, in-browser Python: defining and calling functions, arguments, return values, scope, default parameters, docstrings, lambda and nested functions.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.machine { min-width: 0; }
+.machine input[type="range"] { accent-color: var(--accent); }
+.machine svg { display: block; width: 100%; height: auto; }
+.machine .sim-readout label { display: inline-flex; gap: .4rem; align-items: center; }
+.machine .sim-readout { gap: .4rem 1.2rem; }
+.call-line { font-family: var(--mono); font-size: .85rem; margin-top: .5rem; color: var(--ink); background: var(--code-bg); border: 1px solid var(--grid); padding: .45rem .6rem; overflow-x: auto; white-space: nowrap; }
+.map-row { display: grid; grid-template-columns: auto auto 1fr; gap: .35rem .7rem; align-items: center; font-family: var(--mono); font-size: .88rem; margin: .6rem 0; }
+.map-row .param { border: 1.5px solid var(--accent); color: var(--accent); padding: .25rem .5rem; text-align: center; }
+.map-row .param.missing { border-style: dashed; color: var(--bad); border-color: var(--bad); }
+.map-row .val { border: 1.5px solid var(--ink); padding: .25rem .5rem; }
+.map-row .how { color: var(--muted); font-size: .8rem; }
+.steps-out { font-family: var(--mono); font-size: .85rem; line-height: 1.6; margin: .6rem 0 0; padding: 0; list-style: none; }
+.steps-out li { padding: .15rem 0 .15rem 1.4rem; position: relative; }
+.steps-out li::before { content: "✓"; position: absolute; left: 0; color: var(--good); }
+.steps-out li.stop::before { content: "✗"; color: var(--bad); }
+.steps-out li.skip { opacity: .4; }
+.steps-out li.skip::before { content: "–"; color: var(--muted); }
+.err-tab pre.out { margin-top: -1.5rem; }
+.err-tab .fix { margin-top: .5rem; }
+</style>
+</head>
+<body data-week="4" data-notebook="week4_functions.ipynb">
+
+<div id="topbar"><noscript><a href="index.html">ENGI 1151 · all weeks</a></noscript></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Computational Tools for Engineers and Scientists, week 4</p>
+      <h1>Functions in Python</h1>
+      <p class="lede">Write an engineering equation once, give it a clear name, and reuse it anywhere: with single numbers, with whole NumPy arrays, and inside other functions.</p>
+      <p class="byline">Dr Nima Gerami Seresht <br>Department of Engineering <br>Durham University</p>
+    </div>
+    <figure class="sim-panel machine">
+      <svg id="mach-svg" class="dg" viewBox="0 0 520 250" role="img" aria-label="A function drawn as a machine: radius and height go in, the function body calculates, and the volume comes out"></svg>
+      <div class="sim-readout">
+        <label>radius <input type="range" id="mach-r" min="0.5" max="3" step="0.5" value="2" aria-label="radius"> <output id="mach-rv">2.0</output></label>
+        <label>height <input type="range" id="mach-h" min="2" max="12" step="1" value="10" aria-label="height"> <output id="mach-hv">10.0</output></label>
+        <button type="button" id="mach-run">Call it</button>
+      </div>
+      <div class="call-line" id="mach-call" aria-live="polite"></div>
+      <figcaption class="sim-caption">A function is a machine with a name: arguments go in, the indented body works on them, and <code>return</code> sends one result back out. This is <code>calculate_cylinder_volume()</code> from section 6.1. Move a slider or press <em>Call it</em>.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#defining">Defining and calling</a></li>
+      <li><a href="#returning">Returning results</a></li>
+      <li><a href="#multiple">Returning several values</a></li>
+      <li><a href="#repetition">Avoiding repetition</a></li>
+      <li><a href="#scope">Scope and parameters</a></li>
+      <li><a href="#docstrings">Documenting functions</a></li>
+      <li><a href="#lambda">Lambda functions</a></li>
+      <li><a href="#nested">Nested functions</a></li>
+      <li><a href="#errors">Common errors</a></li>
+      <li><a href="#summary">Summary</a></li>
+      <li class="plain"><a href="#notebook">Practice notebook</a></li>
+    </ol>
+  </nav>
+
+  <main>
+<!-- =========================================================== 1 -->
+    <section id="introduction">
+      <h2><span class="num">1</span>Introduction</h2>
+      <p>A <strong>function</strong> is a named and reusable block of code that performs a specific task. It can receive input values, process them, and return a result. For example, an engineering function could receive the radius and height of a cylinder and return its volume. Functions help us to:</p>
+      <ul>
+        <li>avoid repeating code;</li>
+        <li>divide a program into smaller and more manageable parts;</li>
+        <li>make code easier to read and understand;</li>
+        <li>reuse calculations in different parts of a program; and</li>
+        <li>represent engineering equations clearly.</li>
+      </ul>
+      <p>A well-designed function should normally perform one clearly defined task. You have already used many functions written by other people: <code>print()</code>, <code>type()</code>, <code>len()</code>, <code>range()</code>, <code>np.mean()</code> and <code>plt.plot()</code>. This week you write your own.</p>
+    </section>
+
+<!-- =========================================================== 2 -->
+    <section id="defining">
+      <h2><span class="num">2</span>Defining and calling functions</h2>
+      <p>In Python, a function is defined using the <code>def</code> keyword. The general structure is:</p>
+<figure class="code"><pre><code class="language-python">def function_name(parameters):
+    # Function body
+    statements</code></pre></figure>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 210" role="img" aria-labelledby="dg-anat-t">
+          <title id="dg-anat-t">Anatomy of a function definition: the def keyword, the function name, the parameters in parentheses, the colon, and the indented body ending with return</title>
+          <rect class="box-code" x="20" y="60" width="440" height="118" rx="3"/>
+          <g font-size="16">
+            <text x="36" y="92"><tspan class="acc" font-weight="600">def</tspan> calculate_force(mass, acceleration)<tspan class="acc" font-weight="600">:</tspan></text>
+            <text x="68" y="124">force = mass * acceleration</text>
+            <text x="68" y="156"><tspan class="acc" font-weight="600">return</tspan> force</text>
+          </g>
+          <path class="line-muted" d="M52 168 V 104"/>
+          <!-- labels above -->
+          <g font-size="12">
+            <path class="line-acc" d="M50 58 V 30"/><text x="50" y="22" text-anchor="middle" class="acc">keyword</text>
+            <path class="line-acc" d="M155 58 V 42"/><text x="155" y="34" text-anchor="middle" class="acc">function name</text>
+            <path class="line-acc" d="M330 58 V 30"/><text x="330" y="22" text-anchor="middle" class="acc">parameters (inputs)</text>
+            <path class="line-acc" d="M444 58 V 42"/><text x="444" y="34" text-anchor="middle" class="acc">colon</text>
+          </g>
+          <g font-size="12.5">
+            <path class="line-muted" d="M470 124 H 500"/><text x="508" y="120">indented body:</text><text x="508" y="137" class="muted">runs only when called</text>
+            <path class="line-muted" d="M470 156 H 500"/><text x="508" y="160">return sends the</text><text x="508" y="177" class="muted">result back</text>
+          </g>
+          <text x="36" y="200" font-size="12.5" class="muted">calling it:  F = calculate_force(10.0, 9.81)   →   F is 98.10000000000001</text>
+        </svg>
+      </figure>
+
+      <p>The function header begins with <code>def</code>, followed by:</p>
+      <ul>
+        <li>the function name;</li>
+        <li>parentheses containing any parameters (inputs to the function), if there are any; and</li>
+        <li>a colon.</li>
+      </ul>
+      <p>The function body must be indented, just like the body of an <code>if</code> statement or a loop in week 2. Consider the following function:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">def greet():
+    print("Hello, welcome to programming!")</code></pre>
+</figure>
+      <p>This code defines a function called <code>greet</code>. The function takes no input and just prints some text. Defining a function does not execute it: run the cell above and nothing is printed. To run the code inside a function (its statements), it must be <strong>called</strong>. You write the function’s name, followed by parentheses that include all <strong>required</strong> parameters.</p>
+<figure class="code" data-runnable data-setup="greet0">
+<pre><code class="language-python">greet()</code></pre>
+</figure>
+<pre class="out">Hello, welcome to programming!</pre>
+
+      <div class="note">
+        <p><strong>Remember that Python is case-sensitive.</strong> Therefore, <code>greet()</code>, <code>Greet()</code>, and <code>GREET()</code> refer to different functions. Calling <code>Greet()</code> here raises <code>NameError: name 'Greet' is not defined</code>.</p>
+      </div>
+
+      <p>Function names should describe the task performed by the function. Python function names normally use <strong><em>snake case</em></strong>: a naming convention where spaces are replaced with underscores (<code>_</code>) and all letters are written in lowercase. Examples include <code>calculate_area()</code> and <code>convert_temperature()</code>. The naming rules from week 1 for variables apply to functions too.</p>
+      <p>Functions can receive input values through <strong>parameters</strong>. Consider the following function:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">def greet(name):
+    print("Hello,", name)
+
+greet("Alice")</code></pre>
+</figure>
+<pre class="out">Hello, Alice</pre>
+      <p>In this definition, <code>name</code> is a <strong>parameter</strong>: the name the function uses for its input. The value supplied in the call, <code>"Alice"</code>, is an <strong>argument</strong>. Each time the function is called, the parameter takes the value of the argument.</p>
+
+      <div class="tracer" data-trace="w4-greet" data-title="One definition, two calls"></div>
+
+      <h3>2.1 Functions with several parameters</h3>
+      <p>A function can have several parameters:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">def calculate_force(mass, acceleration):
+    force = mass * acceleration
+    print("Force:", force, "N")</code></pre>
+</figure>
+      <p>The function can be called using two arguments:</p>
+<figure class="code" data-runnable data-setup="force">
+<pre><code class="language-python">calculate_force(10.0, 9.81)</code></pre>
+</figure>
+<pre class="out">Force: 98.10000000000001 N</pre>
+      <p>The arguments are assigned to the parameters according to their position: <code>10.0</code> is assigned to <code>mass</code>, and <code>9.81</code> is assigned to <code>acceleration</code>. These are called <strong>positional arguments</strong>. (The long tail of digits is the floating-point precision from week 1.)</p>
+      <p>Arguments can also be supplied by naming their corresponding parameters. These are called <strong>keyword arguments</strong>. When keyword arguments are used, their order can be changed. Keyword arguments can make a function call easier to understand, particularly when a function has several numerical parameters.</p>
+<figure class="code" data-runnable data-setup="force">
+<pre><code class="language-python">calculate_force(
+    mass=10.0,
+    acceleration=9.81
+)
+
+calculate_force(
+    acceleration=9.81,
+    mass=10.0
+)</code></pre>
+</figure>
+<pre class="out">Force: 98.10000000000001 N
+Force: 98.10000000000001 N</pre>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 190" role="img" aria-labelledby="dg-args-t">
+          <title id="dg-args-t">Positional arguments are matched to parameters by position; keyword arguments are matched by name, so their order can change</title>
+          <text x="20" y="22" font-size="13" font-weight="600">Positional</text><text x="110" y="22" font-size="12" class="muted">matched by position</text>
+          <text x="20" y="56" font-size="14">calculate_force(<tspan class="acc">10.0</tspan>, <tspan class="acc">9.81</tspan>)</text>
+          <g font-size="13" text-anchor="middle">
+            <rect class="box-acc" x="20" y="110" width="110" height="32" rx="16"/><text x="75" y="131" class="acc">mass</text>
+            <rect class="box-acc" x="150" y="110" width="150" height="32" rx="16"/><text x="225" y="131" class="acc">acceleration</text>
+          </g>
+          <path class="line-acc" d="M162 62 C 150 85, 90 85, 78 106"/><path class="line-acc" d="M215 62 C 220 85, 225 85, 225 106"/>
+          <text x="20" y="170" font-size="11.5" class="muted">1st argument → 1st parameter, 2nd → 2nd</text>
+
+          <text x="370" y="22" font-size="13" font-weight="600">Keyword</text><text x="440" y="22" font-size="12" class="muted">matched by name</text>
+          <text x="370" y="56" font-size="14">calculate_force(<tspan class="acc">acceleration=9.81</tspan>,</text>
+          <text x="504" y="78" font-size="14"><tspan class="acc">mass=10.0</tspan>)</text>
+          <g font-size="13" text-anchor="middle">
+            <rect class="box-acc" x="370" y="110" width="110" height="32" rx="16"/><text x="425" y="131" class="acc">mass</text>
+            <rect class="box-acc" x="500" y="110" width="150" height="32" rx="16"/><text x="575" y="131" class="acc">acceleration</text>
+          </g>
+          <path class="line-acc" d="M560 62 C 570 80, 575 90, 575 106"/><path class="line-acc" d="M545 84 C 520 95, 440 95, 428 106"/>
+          <text x="370" y="170" font-size="11.5" class="muted">order does not matter, the names do</text>
+        </svg>
+      </figure>
+
+      <div class="widget" id="am-widget">
+        <p class="w-title">Match the arguments</p>
+        <p>Type what goes inside the brackets of <code>calculate_force( … )</code> and see which parameter receives each argument. Try swapping the numbers, leaving one out, or mixing styles.</p>
+        <div class="w-row"><label>calculate_force( <input type="text" id="am-in" value="10.0, 9.81" style="width:17rem" autocomplete="off" spellcheck="false" aria-label="Arguments"> )</label></div>
+        <div class="example-chips" id="am-chips" style="display:flex;flex-wrap:wrap;gap:.35rem"></div>
+        <div class="map-row" id="am-map" aria-hidden="true"></div>
+        <div class="w-out" id="am-out" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz" data-answer="2">
+        <p class="q">With <code>def calculate_force(mass, acceleration)</code>, what does <code>calculate_force(9.81, 10.0)</code> do?</p>
+        <div class="opts"><button>raises an error, because the order is wrong</button><button>uses mass = 10.0, acceleration = 9.81</button><button>uses mass = 9.81, acceleration = 10.0</button></div>
+        <p class="why">Positional arguments are matched purely by position. Here the answer happens to be the same, because multiplication does not care about order, but for most equations swapped arguments give a wrong result <em>without</em> any error. Keyword arguments protect you from this.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 2.1.</span> Write a function <code>convert_temperature(celsius)</code> that prints the temperature in Fahrenheit, \(F = \frac{9}{5}C + 32\). Call it for 0, 37 and 100 °C. Then write <code>kinetic_energy(mass, velocity)</code> that prints \(E_k = \frac{1}{2} m v^2\) in joules, and call it once with positional and once with keyword arguments for a 1200 kg car at 13.9 m/s.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">def convert_temperature(celsius):
+    fahrenheit = 9 / 5 * celsius + 32
+    print(celsius, "°C =", fahrenheit, "°F")
+
+convert_temperature(0)
+convert_temperature(37)
+convert_temperature(100)
+
+def kinetic_energy(mass, velocity):
+    energy = 0.5 * mass * velocity**2
+    print("Kinetic energy:", energy, "J")
+
+kinetic_energy(1200, 13.9)
+kinetic_energy(velocity=13.9, mass=1200)</code></pre>
+</figure>
+<pre class="out">0 °C = 32.0 °F
+37 °C = 98.60000000000001 °F
+100 °C = 212.0 °F
+Kinetic energy: 115926.0 J
+Kinetic energy: 115926.0 J</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 3 -->
+    <section id="returning">
+      <h2><span class="num">3</span>Returning results</h2>
+      <p>A function can return a result using the <code>return</code> statement. For example, the following function receives two numbers, adds them, and returns the result:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">def add(a, b):
+    result = a + b
+    return result</code></pre>
+</figure>
+      <p>The function can be called and its returned value assigned to a variable:</p>
+<figure class="code" data-runnable data-setup="add">
+<pre><code class="language-python">total = add(3, 5)
+
+print(total)</code></pre>
+</figure>
+<pre class="out">8</pre>
+
+      <div class="tracer" data-trace="w4-return" data-title="Into the function and back out with a value"></div>
+
+      <p><strong>Distinction between <code>return</code> and <code>print()</code>:</strong> the <code>print()</code> function <em>displays</em> a value, while the <code>return</code> statement <em>sends a value back</em> to the part of the program that called the function:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">def display_area_print(radius):
+    area = 3.14159 * radius**2
+    print(area)
+
+def calculate_area_return(radius):
+    area = 3.14159 * radius**2
+    return area</code></pre>
+</figure>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 190" role="img" aria-labelledby="dg-pr-t">
+          <title id="dg-pr-t">print sends the value to the screen and the caller receives None; return sends the value back to the caller, where it can be stored and reused</title>
+          <text x="20" y="22" font-size="13" font-weight="600">display_area_print(5.0)</text>
+          <rect class="box" x="20" y="36" width="180" height="56" rx="4"/><text x="110" y="60" font-size="12.5" text-anchor="middle">area = 78.53975</text><text x="110" y="80" font-size="12.5" text-anchor="middle" class="acc">print(area)</text>
+          <path class="line-acc" d="M200 64 H 250"/><path class="fill-acc" d="M258 64 l-10 -5 v10 z"/>
+          <rect class="box-code" x="260" y="44" width="90" height="40" rx="4"/><text x="305" y="62" font-size="11" text-anchor="middle" class="muted">screen</text><text x="305" y="77" font-size="12" text-anchor="middle">78.53975</text>
+          <path class="line" d="M110 92 V 128"/><path class="fill-ink" d="M110 136 l-5 -10 h10 z"/>
+          <text x="20" y="156" font-size="12.5">x = display_area_print(5.0)</text>
+          <text x="20" y="176" font-size="12.5">x is <tspan class="acc" font-weight="600">None</tspan> <tspan class="muted">(nothing came back)</tspan></text>
+
+          <text x="380" y="22" font-size="13" font-weight="600">calculate_area_return(5.0)</text>
+          <rect class="box" x="380" y="36" width="180" height="56" rx="4"/><text x="470" y="60" font-size="12.5" text-anchor="middle">area = 78.53975</text><text x="470" y="80" font-size="12.5" text-anchor="middle" class="acc">return area</text>
+          <path class="line-acc" d="M470 92 V 128"/><path class="fill-acc" d="M470 136 l-5 -10 h10 z"/>
+          <text x="380" y="156" font-size="12.5">area = calculate_area_return(5.0)</text>
+          <text x="380" y="176" font-size="12.5">area is <tspan class="acc" font-weight="600">78.53975</tspan> <tspan class="muted">→ reusable</tspan></text>
+        </svg>
+      </figure>
+
+      <p>A returned value can be stored and used in another calculation. For engineering calculations, returning the result is normally more useful than only displaying it.</p>
+<figure class="code" data-runnable data-setup="areas">
+<pre><code class="language-python">area = calculate_area_return(5.0)
+volume = area * 10.0
+
+print(volume)</code></pre>
+</figure>
+<pre class="out">785.3975</pre>
+      <div class="note">
+        <p>When Python executes a <code>return</code> statement, the function ends immediately. Any statements after the executed <code>return</code> statement are not run. A function with no <code>return</code> statement (like <code>display_area_print()</code>) returns the special value <code>None</code>.</p>
+      </div>
+
+      <div class="quiz" data-answer="3">
+        <p class="q">What does this print?</p>
+<figure class="code"><pre><code class="language-python">x = display_area_print(5.0)
+print(x)</code></pre></figure>
+        <div class="opts"><button>78.53975</button><button>78.53975 twice</button><button>None</button><button>78.53975, then None</button></div>
+        <p class="why">Calling the function runs its <code>print(area)</code>, which displays 78.53975. But the function has no <code>return</code>, so <code>x</code> is <code>None</code>, and <code>print(x)</code> shows that.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 3.1.</span> Write a function <code>pressure(force, area)</code> that <em>returns</em> \(p = F/A\). Use it to find the pressure under a 25 000 N column standing on a 0.4 m × 0.4 m base, then use the returned value to check, with an <code>if</code> statement, whether it exceeds the allowable soil pressure of 150 000 Pa.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">def pressure(force, area):
+    return force / area
+
+p = pressure(25_000, 0.4 * 0.4)    # Pa
+print(p)
+
+if p > 150_000:
+    print("The base is too small.")
+else:
+    print("The soil pressure is acceptable.")</code></pre>
+</figure>
+<pre class="out">156249.99999999997
+The base is too small.</pre>
+          <p>Because <code>pressure()</code> returns its result, the value can be compared in the <code>if</code> statement. A function that only printed it could not be used like this.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 4 -->
+    <section id="multiple">
+      <h2><span class="num">4</span>Returning more than one value</h2>
+      <p>A function can return more than one value. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">def basic_operations(a, b):
+    addition = a + b
+    subtraction = a - b
+    multiplication = a * b
+
+    if b == 0:
+        division = None
+    else:
+        division = a / b
+
+    return addition, subtraction, multiplication, division</code></pre>
+</figure>
+      <p>The function can be called as follows:</p>
+<figure class="code" data-runnable data-setup="ops">
+<pre><code class="language-python">results = basic_operations(3, 5)
+
+print(results)</code></pre>
+</figure>
+<pre class="out">(8, -2, 15, 0.6)</pre>
+      <p>When several comma-separated values are returned, Python places them in a <strong>tuple</strong>: an ordered collection like a list, written with round brackets, that cannot be changed after it is created. The values can also be assigned to separate variables, which is called <strong>unpacking</strong>:</p>
+<figure class="code" data-runnable data-setup="ops">
+<pre><code class="language-python">addition, subtraction, multiplication, division = (
+    basic_operations(3, 5)
+)
+
+print(addition)
+print(subtraction)
+print(multiplication)
+print(division)</code></pre>
+</figure>
+<pre class="out">8
+-2
+15
+0.6</pre>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 150" role="img" aria-labelledby="dg-tup-t">
+          <title id="dg-tup-t">return packs four values into one tuple; unpacking assigns them, in order, to four variables</title>
+          <text x="20" y="22" font-size="12.5">return addition, subtraction, multiplication, division</text>
+          <g font-size="14" text-anchor="middle">
+            <rect class="box-acc" x="150" y="40" width="380" height="40" rx="20"/>
+            <text x="200" y="66">8</text><text x="290" y="66">-2</text><text x="390" y="66">15</text><text x="480" y="66">0.6</text>
+          </g>
+          <text x="140" y="66" font-size="12" text-anchor="end" class="acc">tuple (</text><text x="540" y="66" font-size="12" class="acc">)</text>
+          <path class="line-acc" d="M200 80 L 90 112 M290 80 L 250 112 M390 80 L 420 112 M480 80 L 590 112"/>
+          <g font-size="12.5" text-anchor="middle">
+            <text x="90" y="130">addition</text><text x="250" y="130">subtraction</text><text x="420" y="130">multiplication</text><text x="590" y="130">division</text>
+          </g>
+        </svg>
+      </figure>
+      <p>The order of the variables must match the order of the values in the <code>return</code> statement, and the number of variables must equal the number of returned values; otherwise Python raises a <code>ValueError</code>.</p>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">After <code>a, s, m, d = basic_operations(10, 0)</code>, what is <code>d</code>?</p>
+        <div class="opts"><button>0</button><button>None</button><button>a ZeroDivisionError is raised</button><button>inf</button></div>
+        <p class="why">The <code>if b == 0</code> check inside the function avoids the division and sets <code>division = None</code>, so no error occurs. This kind of input check is the topic of section 6.2.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 4.1.</span> Write <code>rectangle_section(b, h)</code> that returns three values for a rectangular beam cross-section of width <code>b</code> and depth <code>h</code> (in mm): the area \(A = bh\), the second moment of area \(I = bh^3/12\) and the elastic section modulus \(Z = bh^2/6\). Unpack the results for a 150 mm × 300 mm section and print each one.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">def rectangle_section(b, h):
+    area = b * h
+    second_moment = b * h**3 / 12
+    section_modulus = b * h**2 / 6
+    return area, second_moment, section_modulus
+
+A, I, Z = rectangle_section(150, 300)
+print("A =", A, "mm^2")
+print("I =", I, "mm^4")
+print("Z =", Z, "mm^3")</code></pre>
+</figure>
+<pre class="out">A = 45000 mm^2
+I = 337500000.0 mm^4
+Z = 2250000.0 mm^3</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 5 -->
+    <section id="repetition">
+      <h2><span class="num">5</span>Using functions to avoid repetition</h2>
+      <p>Suppose that a program must calculate the area of several circles. Instead of repeating the area equation, we can define it once in a function:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def area_of_circle(radius):
+    area = np.pi * radius**2
+    return area</code></pre>
+</figure>
+      <p>The function can then be used for different radii:</p>
+<figure class="code" data-runnable data-setup="circle">
+<pre><code class="language-python">area_1 = area_of_circle(5.0)
+area_2 = area_of_circle(10.0)
+
+print(area_1)
+print(area_2)</code></pre>
+</figure>
+<pre class="out">78.53981633974483
+314.1592653589793</pre>
+      <p>The function can also receive a NumPy array:</p>
+<figure class="code" data-runnable data-setup="circle">
+<pre><code class="language-python">radii = np.array([1.0, 2.0, 3.0, 4.0])
+
+areas = area_of_circle(radii)
+
+print(areas)</code></pre>
+</figure>
+<pre class="out">[ 3.14159265 12.56637061 28.27433388 50.26548246]</pre>
+      <p>This works because the arithmetic operations in the function can be applied element-wise to a NumPy array, as you saw in week 3. One function definition now handles a single number and a whole array of numbers.</p>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 5.1.</span> The mid-span deflection of a simply supported beam under a uniform load is \(\delta = \dfrac{5 w L^4}{384 E I}\). Write <code>max_deflection(w, L, E, I)</code> that returns \(\delta\). With \(L = 6000\) mm, \(E = 200\,000\) N/mm² and \(I = 3.375 \times 10^8\) mm⁴, call it once with \(w = 20\) N/mm and once with the NumPy array <code>np.array([10, 20, 30, 40])</code> of loads.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+# Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def max_deflection(w, L, E, I):
+    return 5 * w * L**4 / (384 * E * I)
+
+print(max_deflection(20, 6000, 200_000, 3.375e8))
+
+loads = np.array([10, 20, 30, 40])          # N/mm
+print(max_deflection(loads, 6000, 200_000, 3.375e8))</code></pre>
+</figure>
+<pre class="out">5.0
+[ 2.5  5.   7.5 10. ]</pre>
+          <p>The deflections are in millimetres. Doubling the load doubles the deflection, as the equation predicts.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 6 -->
+    <section id="scope">
+      <h2><span class="num">6</span>Variable scope and function parameters</h2>
+      <p>A variable created inside a function is normally a <strong>local variable</strong>. It can be used only inside that function. For example:</p>
+<figure class="code" data-runnable data-setup="np">
+<pre><code class="language-python">def calculate_area(radius):
+    area = np.pi * radius**2
+    return area
+
+result = calculate_area(5.0)
+
+print(result)</code></pre>
+</figure>
+<pre class="out">78.53981633974483</pre>
+      <p>The variable <code>area</code> is local to <code>calculate_area()</code>. You normally cannot access it outside the function: <code>print(area)</code> after the call would raise <code>NameError: name 'area' is not defined</code>. The variable <code>result</code> exists outside the function and stores the returned value.</p>
+
+      <div class="tracer" data-trace="w4-scope" data-title="Local variables appear during the call and vanish afterwards"></div>
+
+      <p>A variable defined outside a function is called a <strong>global variable</strong>:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">gravity = 9.81
+
+def calculate_weight(mass):
+    weight = mass * gravity
+    return weight
+
+print(calculate_weight(10.0))</code></pre>
+</figure>
+<pre class="out">98.10000000000001</pre>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 190" role="img" aria-labelledby="dg-scope-t">
+          <title id="dg-scope-t">The global scope contains gravity and calculate_weight. The function's local scope contains mass and weight. Code inside the function can read the global gravity, but code outside cannot see weight.</title>
+          <rect class="box-code" x="20" y="14" width="640" height="164" rx="6"/>
+          <text x="36" y="38" font-size="13" font-weight="600">global scope</text><text x="140" y="38" font-size="12" class="muted">the main program</text>
+          <g font-size="12.5">
+            <rect class="box" x="36" y="52" width="196" height="30" rx="15"/><text x="134" y="72" text-anchor="middle">gravity = 9.81</text>
+            <rect class="box" x="36" y="92" width="196" height="30" rx="15"/><text x="134" y="112" text-anchor="middle">calculate_weight</text>
+            <rect class="box" x="36" y="132" width="196" height="30" rx="15"/><text x="134" y="151" text-anchor="middle" font-size="11">w = calculate_weight(10.0)</text>
+          </g>
+          <rect class="box-acc" x="256" y="52" width="390" height="110" rx="6"/>
+          <text x="272" y="74" font-size="13" font-weight="600" class="acc">local scope of calculate_weight()</text>
+          <g font-size="12.5">
+            <rect class="box" x="272" y="90" width="120" height="30" rx="15"/><text x="332" y="110" text-anchor="middle">mass = 10.0</text>
+            <rect class="box" x="404" y="90" width="226" height="30" rx="15"/><text x="517" y="110" text-anchor="middle">weight = mass * gravity</text>
+          </g>
+          <text x="272" y="148" font-size="11.5" class="muted">created at the call, deleted when it returns</text>
+          <path class="line-acc" d="M600 90 C 600 26, 300 26, 236 62"/><path class="fill-acc" d="M233 66 l11 1 l-5 -10 z"/>
+          <text x="400" y="36" font-size="11" class="acc">can read globals</text>
+        </svg>
+      </figure>
+
+      <p>The function can read the global variable <code>gravity</code>. However, it is usually clearer to pass required values as parameters:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">def calculate_weight(mass, gravity):
+    weight = mass * gravity
+    return weight
+
+weight = calculate_weight(
+    mass=10.0,
+    gravity=9.81
+)
+
+print(weight)</code></pre>
+</figure>
+<pre class="out">98.10000000000001</pre>
+      <div class="note">
+        <p>Parameters make a function’s required inputs clear. They also make the function easier to reuse with different values: the same function now works on the Moon, with <code>gravity=1.62</code>. Notice that the global <code>weight</code> and the local <code>weight</code> inside the function are two different variables that happen to share a name.</p>
+      </div>
+
+      <div class="quiz" data-answer="2">
+        <p class="q">After <code>result = calculate_area(5.0)</code> runs, what does <code>print(area)</code> do?</p>
+        <div class="opts"><button>prints 78.53981633974483</button><button>prints None</button><button>raises a NameError</button></div>
+        <p class="why"><code>area</code> was a local variable. It existed only while <code>calculate_area()</code> was running. Outside, only the returned value, stored in <code>result</code>, is available.</p>
+      </div>
+
+      <h3>6.1 Default parameter values</h3>
+      <p>A parameter can be given a <strong>default value</strong>. If the caller does not provide an argument for that parameter, Python uses the default value. The following function calculates the volume of a cylinder and uses a default height of 10:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def calculate_cylinder_volume(radius, height=10.0):
+    volume = np.pi * radius**2 * height
+    return volume</code></pre>
+</figure>
+      <p>The function can be called without specifying the height. In this case, Python uses <code>height=10.0</code>. The user can also assign a different value to height if needed:</p>
+<figure class="code" data-runnable data-setup="cyl">
+<pre><code class="language-python">example_volume = calculate_cylinder_volume(2.0)
+print(example_volume)
+
+example_volume = calculate_cylinder_volume(2.0, 5.0)
+print(example_volume)</code></pre>
+</figure>
+<pre class="out">125.66370614359172
+62.83185307179586</pre>
+      <div class="note">
+        <p><strong>It is important that</strong> all parameters without default values appear before parameters with default values. Writing <code>def calculate_cylinder_volume(height=10.0, radius):</code> raises <code>SyntaxError: parameter without a default follows parameter with a default</code>.</p>
+      </div>
+
+      <div class="tracer" data-trace="w4-default" data-title="When the argument is missing, the default fills in"></div>
+
+      <h3>6.2 Checking function inputs</h3>
+      <p>A function can check its inputs before performing a calculation. For example, the dimensions of a cylinder should not be negative:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def calculate_cylinder_volume(radius, height=10.0):
+    if radius < 0:
+        print("The radius must not be negative.")
+        return None
+
+    if height < 0:
+        print("The height must not be negative.")
+        return None
+
+    volume = np.pi * radius**2 * height
+    return volume</code></pre>
+</figure>
+      <p>The function returns <code>None</code> when an invalid value is supplied. This simple form of input checking can prevent some invalid engineering calculations. Returning <code>None</code> indicates that the function did not produce a valid volume.</p>
+<figure class="code" data-runnable data-setup="cylcheck">
+<pre><code class="language-python">volume = calculate_cylinder_volume(
+    radius=-2.0,
+    height=5.0
+)
+
+print(volume)</code></pre>
+</figure>
+<pre class="out">The radius must not be negative.
+None</pre>
+
+      <div class="widget" id="cy-widget">
+        <p class="w-title">Defaults and input checks</p>
+        <p>Build a call to the checked <code>calculate_cylinder_volume()</code> above. Untick <em>pass a height</em> to let the default fill in, and drag a value below zero to trigger a check.</p>
+        <div class="w-row">
+          <label>radius <input type="range" id="cy-r" min="-3" max="5" step="0.5" value="2"> <output id="cy-rv">2.0</output></label>
+        </div>
+        <div class="w-row">
+          <label><input type="checkbox" id="cy-pass"> pass a height</label>
+          <label>height <input type="range" id="cy-h" min="-3" max="12" step="1" value="5" disabled> <output id="cy-hv">5.0</output></label>
+          <label><input type="checkbox" id="cy-kw"> use keyword arguments</label>
+        </div>
+        <ol class="steps-out" id="cy-steps"></ol>
+        <div class="w-out" id="cy-out" aria-live="polite"></div>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 6.1.</span> Write <code>weight(mass, g=9.81)</code> that returns \(W = mg\) in newtons, but prints a message and returns <code>None</code> if the mass is negative. Find the weight of an 80 kg astronaut on Earth, on the Moon (\(g = 1.62\) m/s²) using a keyword argument, and test the check with a mass of −5 kg.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">def weight(mass, g=9.81):
+    if mass < 0:
+        print("The mass must not be negative.")
+        return None
+    return mass * g
+
+print(weight(80))            # Earth, default g
+print(weight(80, g=1.62))    # Moon
+print(weight(-5))</code></pre>
+</figure>
+<pre class="out">784.8000000000001
+129.60000000000002
+The mass must not be negative.
+None</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 7 -->
+    <section id="docstrings">
+      <h2><span class="num">7</span>Documenting functions</h2>
+      <p>A <strong>docstring</strong> is a description placed immediately below a function definition. It is enclosed in triple quotation marks. For example:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def calculate_cylinder_volume(radius, height=10.0):
+    """
+    Calculate the volume of a circular cylinder.
+
+    radius: radius of the cylinder
+    height: height of the cylinder
+    returns: volume of the cylinder
+    """
+    volume = np.pi * radius**2 * height
+    return volume</code></pre>
+</figure>
+      <p>The docstring can be displayed using:</p>
+<figure class="code" data-runnable data-setup="cyldoc">
+<pre><code class="language-python">help(calculate_cylinder_volume)</code></pre>
+</figure>
+<pre class="out">Help on function calculate_cylinder_volume in module __main__:
+
+calculate_cylinder_volume(radius, height=10.0)
+    Calculate the volume of a circular cylinder.
+
+    radius: radius of the cylinder
+    height: height of the cylinder
+    returns: volume of the cylinder</pre>
+      <p>Docstrings are useful because they explain:</p>
+      <ul>
+        <li>the purpose of the function;</li>
+        <li>the expected inputs;</li>
+        <li>the returned result; and</li>
+        <li>any relevant physical units or assumptions.</li>
+      </ul>
+      <div class="note">
+        <p><span class="label">Tip.</span> In a Jupyter Notebook, click inside the brackets of a function call and press <kbd>Shift</kbd> + <kbd>Tab</kbd> to see its docstring without running anything. This works for library functions too: try it on <code>np.linspace(</code>. Writing <code>help(np.linspace)</code> shows the full NumPy documentation.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 7.1.</span> Add a docstring to your <code>rectangle_section()</code> function from Exercise 4.1 that states what it calculates, the meaning and units of <code>b</code> and <code>h</code>, and what it returns. Display it with <code>help()</code>.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">def rectangle_section(b, h):
+    """
+    Section properties of a solid rectangular cross-section.
+
+    b: width of the section [mm]
+    h: depth of the section [mm]
+    returns: area [mm^2], second moment of area [mm^4],
+             elastic section modulus [mm^3]
+    """
+    area = b * h
+    second_moment = b * h**3 / 12
+    section_modulus = b * h**2 / 6
+    return area, second_moment, section_modulus
+
+help(rectangle_section)</code></pre>
+</figure>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 8 -->
+    <section id="lambda">
+      <h2><span class="num">8</span>Lambda functions</h2>
+      <p>A <strong>lambda function</strong> is a short function defined using the <code>lambda</code> keyword. The general form is <code>lambda parameters: expression</code>.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">add = lambda a, b: a + b
+
+result = add(3, 5)
+
+print(result)</code></pre>
+</figure>
+<pre class="out">8</pre>
+      <p>This lambda function is equivalent to:</p>
+<figure class="code"><pre><code class="language-python">def add(a, b):
+    return a + b</code></pre></figure>
+
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 120" role="img" aria-labelledby="dg-lam-t">
+          <title id="dg-lam-t">Correspondence between a lambda and a def: the parameters before the colon become the def parameters, and the expression after the colon becomes the returned value</title>
+          <text x="20" y="34" font-size="16">add = <tspan class="acc" font-weight="600">lambda</tspan> <tspan font-weight="600">a, b</tspan>: <tspan font-weight="600">a + b</tspan></text>
+          <text x="380" y="34" font-size="16"><tspan class="acc" font-weight="600">def</tspan> add(<tspan font-weight="600">a, b</tspan>):</text>
+          <text x="410" y="62" font-size="16"><tspan class="acc" font-weight="600">return</tspan> <tspan font-weight="600">a + b</tspan></text>
+          <path class="line-muted" d="M150 42 C 200 90, 400 90, 462 42"/>
+          <path class="line-muted" d="M215 42 C 270 110, 470 110, 512 70"/>
+          <text x="210" y="100" font-size="11.5" class="muted">parameters</text>
+          <text x="560" y="98" font-size="11.5" class="muted">expression = returned value</text>
+        </svg>
+      </figure>
+
+      <p>A lambda function can contain only one expression. The result of that expression is returned automatically, without writing <code>return</code>.</p>
+      <div class="note">
+        <p>Lambda functions are useful for short and simple operations. For longer calculations, conditional statements, or functions requiring documentation, a normal function defined with <code>def</code> is clearer.</p>
+      </div>
+
+      <div class="quiz" data-answer="0">
+        <p class="q">What does this print?</p>
+<figure class="code"><pre><code class="language-python">kn_to_n = lambda force: force * 1000
+print(kn_to_n(2.5))</code></pre></figure>
+        <div class="opts"><button>2500.0</button><button>&lt;function &lt;lambda&gt;&gt;</button><button>None</button><button>2.5</button></div>
+        <p class="why">The lambda returns its expression automatically: 2.5 × 1000 = 2500.0. Printing <code>kn_to_n</code> without calling it would show the function object instead.</p>
+      </div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 8.1.</span> Write a lambda <code>c_to_k</code> that converts degrees Celsius to kelvin (\(K = C + 273.15\)) and a lambda <code>stress</code> that takes a force <code>F</code> in newtons and an area <code>A</code> in mm² and returns \(F/A\) in MPa. Apply <code>c_to_k</code> to the NumPy array <code>np.array([-10, 0, 25, 100])</code>.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+# Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+c_to_k = lambda C: C + 273.15
+stress = lambda F, A: F / A          # N / mm^2 = MPa
+
+print(c_to_k(np.array([-10, 0, 25, 100])))
+print(stress(50_000, 400))</code></pre>
+</figure>
+<pre class="out">[263.15 273.15 298.15 373.15]
+125.0</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 9 -->
+    <section id="nested">
+      <h2><span class="num">9</span>Nested functions</h2>
+      <p>A function can be defined inside another function. This is called a <strong>nested function</strong> or <strong>inner function</strong>. For example:</p>
+<figure class="code" data-runnable data-setup="np">
+<pre><code class="language-python">def calculate_circle_properties(radius):
+
+    def calculate_area():
+        return np.pi * radius**2
+
+    def calculate_circumference():
+        return 2 * np.pi * radius
+
+    area = calculate_area()
+    circumference = calculate_circumference()
+
+    return area, circumference</code></pre>
+</figure>
+      <p>The function can be called as follows:</p>
+<figure class="code" data-runnable data-setup="nested">
+<pre><code class="language-python">area, circumference = calculate_circle_properties(5.0)
+
+print("Area:", area)
+print("Circumference:", circumference)</code></pre>
+</figure>
+<pre class="out">Area: 78.53981633974483
+Circumference: 31.41592653589793</pre>
+      <p>The inner functions can use the value of <code>radius</code> supplied to the outer function. The inner functions are available only within <code>calculate_circle_properties()</code>. Nested functions can be useful for dividing a calculation into smaller internal operations. However, use them only when they make the program easier to understand.</p>
+
+      <div class="tracer" data-trace="w4-nested" data-title="Inner functions live inside the outer call"></div>
+
+      <div class="exercise">
+        <p><span class="label">Exercise 9.1.</span> Write <code>pipe_flow(diameter, velocity)</code> that contains an inner function <code>cross_section_area()</code> (using the outer <code>diameter</code>) and returns both the area \(A = \pi d^2/4\) and the flow rate \(Q = A v\). Find them for a 0.3 m pipe with water flowing at 1.5 m/s. What happens if you try to call <code>cross_section_area()</code> outside <code>pipe_flow()</code>?</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+# Write your code here
+</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def pipe_flow(diameter, velocity):
+
+    def cross_section_area():
+        return np.pi * diameter**2 / 4
+
+    area = cross_section_area()
+    flow_rate = area * velocity
+    return area, flow_rate
+
+A, Q = pipe_flow(0.3, 1.5)
+print("A =", A, "m^2")
+print("Q =", Q, "m^3/s")
+
+# cross_section_area()  ->  NameError: the inner function only exists inside pipe_flow()</code></pre>
+</figure>
+<pre class="out">A = 0.07068583470577035 m^2
+Q = 0.10602875205865553 m^3/s</pre>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 10 -->
+    <section id="errors">
+      <h2><span class="num">10</span>Common errors</h2>
+      <p>Four mistakes cause most problems with functions. Open each tab to see the broken code, the message Python gives, and the fix.</p>
+
+      <div class="tabs err-tab">
+        <div role="tablist" aria-label="Common errors">
+          <button role="tab" id="tab-e1" aria-controls="pan-e1">Calling before defining</button>
+          <button role="tab" id="tab-e2" aria-controls="pan-e2">Forgetting parentheses</button>
+          <button role="tab" id="tab-e3" aria-controls="pan-e3">Wrong number of arguments</button>
+          <button role="tab" id="tab-e4" aria-controls="pan-e4">Displayed vs returned</button>
+        </div>
+        <div role="tabpanel" id="pan-e1" aria-labelledby="tab-e1">
+          <p><strong>Calling a function before defining it:</strong> a function must be defined before the corresponding function call is executed. Python runs from top to bottom (week 2), so the <code>def</code> line has not run yet.</p>
+<figure class="code"><pre><code class="language-python">result = cube(3)
+
+def cube(x):
+    return x**3</code></pre></figure>
+<pre class="out"><span class="err">NameError</span>: name 'cube' is not defined</pre>
+          <p class="fix"><span class="ok">Fix:</span> move the <code>def</code> block above the call. In a notebook, also make sure the cell containing the <code>def</code> has been run.</p>
+        </div>
+        <div role="tabpanel" id="pan-e2" aria-labelledby="tab-e2">
+          <p><strong>Forgetting parentheses:</strong> writing the function’s name without any parentheses after it refers to the function, rather than calling it. There is no error message, which makes this mistake easy to miss.</p>
+<figure class="code"><pre><code class="language-python">def greet():
+    print("Hello, welcome to programming!")
+
+greet          # nothing happens
+print(greet)</code></pre></figure>
+<pre class="out">&lt;function greet at 0x7f3a5c2d1e40&gt;</pre>
+          <p class="fix"><span class="ok">Fix:</span> add the parentheses: <code>greet()</code>. (The hexadecimal number is the function’s memory address, and will be different on your computer.)</p>
+        </div>
+        <div role="tabpanel" id="pan-e3" aria-labelledby="tab-e3">
+          <p><strong>Using an incorrect number of arguments:</strong> if a function requires two arguments, both must be supplied unless one has a default value.</p>
+<figure class="code"><pre><code class="language-python">def calculate_force(mass, acceleration):
+    return mass * acceleration
+
+calculate_force(10.0)</code></pre></figure>
+<pre class="out"><span class="err">TypeError</span>: calculate_force() missing 1 required positional argument: 'acceleration'</pre>
+          <p class="fix"><span class="ok">Fix:</span> supply every required argument, <code>calculate_force(10.0, 9.81)</code>, or give the parameter a default value, <code>def calculate_force(mass, acceleration=9.81):</code>. Too many arguments also raises a <code>TypeError</code>.</p>
+        </div>
+        <div role="tabpanel" id="pan-e4" aria-labelledby="tab-e4">
+          <p><strong>Confusing displayed and returned values:</strong> a function that prints a result does not necessarily return that result.</p>
+<figure class="code"><pre><code class="language-python">def display_area_print(radius):
+    area = 3.14159 * radius**2
+    print(area)
+
+volume = display_area_print(5.0) * 10.0</code></pre></figure>
+<pre class="out">78.53975
+<span class="err">TypeError</span>: unsupported operand type(s) for *: 'NoneType' and 'float'</pre>
+          <p class="fix"><span class="ok">Fix:</span> for reusable engineering calculations, <code>return</code> the calculated value and display it separately when required, as in <code>calculate_area_return()</code>.</p>
+        </div>
+      </div>
+
+      <div class="quiz" data-answer="1">
+        <p class="q">You run <code>v = calculate_cylinder_volume</code> and then <code>print(v * 2)</code>. Which error do you get?</p>
+        <div class="opts"><button>NameError</button><button>TypeError</button><button>no error: 2 × the volume is printed</button></div>
+        <p class="why">Without parentheses, <code>v</code> is the function itself, not a number, and a function cannot be multiplied by 2: <code>TypeError: unsupported operand type(s) for *: 'function' and 'int'</code>.</p>
+      </div>
+
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python"># Try each broken example from the tabs here and read the error message,
+# then fix it.
+</code></pre>
+</figure>
+    </section>
+
+<!-- =========================================================== 11 -->
+    <section id="summary">
+      <h2><span class="num">11</span>Summary</h2>
+      <p>Functions help to make engineering programs shorter, clearer, and easier to reuse. They also provide a direct way to represent mathematical equations and repeated calculations. In this lecture, you learned the items below. Tick off what you are confident with; your ticks are remembered in this browser only.</p>
+      <ul class="checklist" id="w4-check">
+        <li><label><input type="checkbox"><span>How to define functions using <code>def</code>, and how to call a function.</span></label></li>
+        <li><label><input type="checkbox"><span>The difference between parameters and arguments.</span></label></li>
+        <li><label><input type="checkbox"><span>How to use positional and keyword arguments.</span></label></li>
+        <li><label><input type="checkbox"><span>How to return results using <code>return</code>, and how it is different from <code>print()</code>.</span></label></li>
+        <li><label><input type="checkbox"><span>How to return and unpack several values.</span></label></li>
+        <li><label><input type="checkbox"><span>How local and global variables differ.</span></label></li>
+        <li><label><input type="checkbox"><span>How to define default parameter values and check function inputs.</span></label></li>
+        <li><label><input type="checkbox"><span>How to document a function using a docstring.</span></label></li>
+        <li><label><input type="checkbox"><span>How to define a simple lambda function.</span></label></li>
+        <li><label><input type="checkbox"><span>How to create a nested function.</span></label></li>
+      </ul>
+    </section>
+
+    <section id="notebook" class="wide">
+      <h2>Practice notebook</h2>
+      <p style="max-width:var(--measure)">All of this week’s code in one Jupyter notebook, followed by the end-of-lecture challenge, <em>The Footbridge Inspection, part 4</em>, where you turn your inspection calculations into a small, documented toolkit of functions. Cells share variables, so run them from top to bottom with <kbd>Shift</kbd> + <kbd>Enter</kbd>. Your edits are kept in this browser only; use <em>File → Download</em> to save a copy.</p>
+      <div class="notebook-shell">
+        <div class="notebook-bar">
+          <span>week4_functions.ipynb</span>
+          <span class="links" id="notebook-links"></span>
+        </div>
+        <div id="notebook-slot"></div>
+      </div>
+    </section>
+
+    <nav class="pager" id="pager" aria-label="Other weeks"></nav>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<!-- Setup code that runs silently in a live window before you type -->
+<script type="text/plain" id="setup-greet0" data-hint="The live window already has greet() from the cell above defined.">def greet():
+    print("Hello, welcome to programming!")
+</script>
+<script type="text/plain" id="setup-force" data-hint="The live window already has calculate_force() defined.">def calculate_force(mass, acceleration):
+    force = mass * acceleration
+    print("Force:", force, "N")
+</script>
+<script type="text/plain" id="setup-add" data-hint="The live window already has add() defined.">def add(a, b):
+    result = a + b
+    return result
+</script>
+<script type="text/plain" id="setup-areas" data-hint="The live window already has both area functions defined.">def display_area_print(radius):
+    area = 3.14159 * radius**2
+    print(area)
+
+def calculate_area_return(radius):
+    area = 3.14159 * radius**2
+    return area
+</script>
+<script type="text/plain" id="setup-ops" data-hint="The live window already has basic_operations() defined.">def basic_operations(a, b):
+    addition = a + b
+    subtraction = a - b
+    multiplication = a * b
+    if b == 0:
+        division = None
+    else:
+        division = a / b
+    return addition, subtraction, multiplication, division
+</script>
+<script type="text/plain" id="setup-np" data-hint="NumPy is already imported as np in the live window.">import numpy as np
+</script>
+<script type="text/plain" id="setup-circle" data-hint="The live window already has np and area_of_circle() loaded.">import numpy as np
+
+def area_of_circle(radius):
+    area = np.pi * radius**2
+    return area
+</script>
+<script type="text/plain" id="setup-cyl" data-hint="The live window already has calculate_cylinder_volume() with its default height.">import numpy as np
+
+def calculate_cylinder_volume(radius, height=10.0):
+    volume = np.pi * radius**2 * height
+    return volume
+</script>
+<script type="text/plain" id="setup-cylcheck" data-hint="The live window already has the checked calculate_cylinder_volume() defined.">import numpy as np
+
+def calculate_cylinder_volume(radius, height=10.0):
+    if radius < 0:
+        print("The radius must not be negative.")
+        return None
+    if height < 0:
+        print("The height must not be negative.")
+        return None
+    volume = np.pi * radius**2 * height
+    return volume
+</script>
+<script type="text/plain" id="setup-cyldoc" data-hint="The live window already has the documented calculate_cylinder_volume() defined.">import numpy as np
+
+def calculate_cylinder_volume(radius, height=10.0):
+    """
+    Calculate the volume of a circular cylinder.
+
+    radius: radius of the cylinder
+    height: height of the cylinder
+    returns: volume of the cylinder
+    """
+    volume = np.pi * radius**2 * height
+    return volume
+</script>
+<script type="text/plain" id="setup-nested" data-hint="The live window already has calculate_circle_properties() defined.">import numpy as np
+
+def calculate_circle_properties(radius):
+
+    def calculate_area():
+        return np.pi * radius**2
+
+    def calculate_circumference():
+        return 2 * np.pi * radius
+
+    area = calculate_area()
+    circumference = calculate_circumference()
+
+    return area, circumference
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="assets/traces-week4.js"></script>
+<script src="assets/site.js"></script>
+<script src="assets/week4.js"></script>
+</body>
+</html>
