@@ -463,17 +463,20 @@ print(x)</code></pre></figure>
 pipe_radius = 0.15                 # m
 pipe_length = 32.6                 # m
 pipe_area = pi * pipe_radius ** 2  # m^2
-pipe_volume = pipe_area * length
+pipe_volume = pipe_area * pipe_length
 print(pipe_area)
 print(pipe_volume)
 
 pipe_radius = 0.2
 pipe_area = pi * pipe_radius ** 2  # must be recalculated
+pipe_volume = pipe_area * pipe_length  # must be recalculated
 print(pipe_area)
 print(pipe_volume)</code></pre>
 </figure>
 <pre class="out">0.07068577499999999
-0.12566360000000001</pre>
+2.304356265
+0.12566360000000001
+4.09663336</pre>
           <p>The long tails of digits are normal: see the note on floating-point precision in the next section.</p>
         </div></details>
       </div>
