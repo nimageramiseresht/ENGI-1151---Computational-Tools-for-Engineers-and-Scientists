@@ -14,7 +14,9 @@ const WEEKS = [
     blurb: 'Install and import packages, compute with whole arrays at once, and turn results into clear engineering plots.',
     topics: 'pip · import · numpy arrays · matplotlib'
   },
-  { n: 4, soon: true },
+  { n: 4, file: 'week4.html', title: 'Functions in Python',
+    blurb: 'Write an equation once as a named, documented function and reuse it with numbers, arrays and other functions.',
+    topics: 'def · arguments · return · scope · lambda' },
   { n: 5, file: 'week5.html', title: 'Monte Carlo simulation',
     blurb: 'Sample uncertain inputs thousands of times with NumPy and let the answer emerge from the results.',
     topics: 'numpy.random · functions · histograms' },
