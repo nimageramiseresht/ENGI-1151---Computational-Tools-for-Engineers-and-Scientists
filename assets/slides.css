@@ -1,0 +1,185 @@
+/* ENGI 1151 presentation pages (reveal.js, light theme). Shared by every weekN-slides.html. */
+:root {
+  --paper: #FFFFFF;
+  --ink: #1B2230;
+  --muted: #5A6474;
+  --accent: #68246D;          /* Durham palatinate */
+  --accent-soft: #F3EAF4;
+  --grid: #DCE4EE;
+  --code-bg: #F5F6F9;
+  --good: #1F7A4D;
+  --bad: #B3261E;
+  --warn: #B26B00;
+  --serif: "Literata", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r-background-color: #FFFFFF;
+  --r-main-font: var(--serif);
+  --r-main-color: #1B2230;
+  --r-heading-font: var(--serif);
+  --r-heading-color: #1B2230;
+  --r-link-color: #68246D;
+  --r-selection-background-color: #F3EAF4;
+}
+.reveal { font-family: var(--serif); font-size: 32px; color: var(--ink); }
+.reveal .slides { text-align: left; }
+.reveal .slides section { height: 100%; }
+.reveal h1, .reveal h2, .reveal h3 { text-transform: none; font-family: var(--serif); letter-spacing: -0.01em; }
+.reveal h2 { font-size: 1.45em; margin: 0 0 0.25em; line-height: 1.15; font-weight: 700; }
+.reveal h2 .num { font-family: var(--mono); font-weight: 500; color: var(--accent); font-size: 0.7em; margin-right: 0.45em; vertical-align: 0.08em; }
+.reveal h2 code { font-size: 0.9em; background: transparent; padding: 0; color: var(--accent); }
+.reveal p { margin: 0.3em 0; line-height: 1.4; }
+.reveal ul { margin: 0.2em 0 0.2em 1.1em; }
+.reveal li { margin: 0.15em 0; line-height: 1.35; }
+.reveal code { font-family: var(--mono); font-size: 0.86em; background: var(--code-bg); padding: 0.05em 0.25em; border-radius: 3px; }
+.reveal .small { font-size: 0.75em; color: var(--muted); }
+.reveal .lede { font-size: 0.9em; color: var(--muted); }
+.reveal .slide-number { font-family: var(--mono); background: transparent; color: var(--muted); font-size: 14px; left: 18px; right: auto; bottom: 12px; }
+.reveal .progress { color: var(--accent); }
+.reveal .controls { color: var(--accent); }
+
+/* key terms */
+.terms { display: flex; flex-wrap: wrap; gap: 0.35em; margin: 0.1em 0 0.55em !important; }
+.terms span {
+  font-family: var(--mono); font-size: 0.62em; font-weight: 500; color: var(--accent); background: var(--accent-soft);
+  border: 1.5px solid var(--accent); border-radius: 999px; padding: 0.12em 0.7em;
+}
+.terms::before { content: "Key terms"; font-family: var(--mono); font-size: 0.55em; color: var(--muted); align-self: center; margin-right: 0.3em; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* layout */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.cols.wide-left { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.cols.wide-right { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+.cols.trace-left { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; }
+.stack > * + * { margin-top: 12px; }
+.panel { border: 1.5px solid var(--grid); border-radius: 6px; padding: 12px 16px; background: var(--paper); }
+.panel h3 { font-size: 0.75em; margin: 0 0 0.3em; font-family: var(--mono); font-weight: 500; color: var(--accent); }
+.big-code { font-family: var(--mono); font-size: 0.95em; color: var(--ink); }
+.big-code b { color: var(--accent); }
+.callout { border-left: 5px solid var(--accent); background: var(--accent-soft); padding: 8px 14px; font-size: 0.85em; border-radius: 0 4px 4px 0; }
+
+/* title and dividers */
+.reveal section.title-slide h1 { font-size: 2.4em; line-height: 1.05; margin: 0.2em 0 0.3em; }
+.reveal section.title-slide .course { font-family: var(--mono); color: var(--accent); font-size: 0.7em; }
+.reveal section.title-slide .byline { color: var(--muted); font-size: 0.75em; }
+.py-status { font-family: var(--mono); font-size: 0.55em; color: var(--muted); margin-top: 1.4em !important; }
+.py-status b { color: var(--good); }
+.reveal section.divider { display: flex !important; flex-direction: column; justify-content: center; text-align: left; }
+.reveal section.divider .dnum { font-family: var(--mono); font-size: 2.6em; color: rgba(255,255,255,.65); margin: 0; line-height: 1; }
+.reveal section.divider h1 { color: #fff; font-size: 2.5em; margin: 0.15em 0 0; line-height: 1.05; }
+.reveal section.divider h1 code { background: transparent; color: #fff; font-size: 0.9em; }
+
+/* tables */
+.reveal table.t { border-collapse: collapse; font-size: 0.7em; width: 100%; margin: 0; }
+.reveal table.t th, .reveal table.t td { border: none; border-bottom: 1px solid var(--grid); padding: 0.32em 0.5em; text-align: left; vertical-align: middle; }
+.reveal table.t th { white-space: nowrap; font-family: var(--mono); font-weight: 500; color: var(--muted); border-bottom: 2px solid var(--ink); }
+.reveal table.t td code { font-size: 0.95em; }
+.reveal table.t tr.hi td { background: var(--accent-soft); }
+.tv-T { color: var(--good); font-weight: 700; font-family: var(--mono); }
+.tv-F { color: var(--bad); font-weight: 700; font-family: var(--mono); }
+
+/* ---------- runnable code boxes ---------- */
+.py { border: 1.5px solid var(--grid); border-radius: 6px; background: var(--code-bg); overflow: hidden; }
+.py .ed { position: relative; font-family: var(--mono); font-size: 20px; line-height: 1.45; }
+.py .ed pre, .py .ed textarea {
+  margin: 0; padding: 10px 14px; border: 0; font: inherit; line-height: inherit; tab-size: 4;
+  white-space: pre; overflow: hidden; box-sizing: border-box; width: 100%; letter-spacing: 0;
+}
+.py .ed pre { pointer-events: none; color: var(--ink); background: transparent; box-shadow: none; }
+.py .ed pre code { background: transparent; padding: 0; font: inherit; display: block; }
+.py .ed textarea {
+  position: absolute; inset: 0; height: 100%; resize: none; background: transparent; color: transparent;
+  caret-color: var(--accent); outline: none;
+}
+.py .ed textarea:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+.py .bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--paper); border-top: 1px solid var(--grid); flex-wrap: wrap; }
+.py .bar button {
+  font: 500 17px/1 var(--mono); padding: 8px 14px; border-radius: 4px; cursor: pointer;
+  border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink);
+}
+.py .bar button.run { background: var(--accent); border-color: var(--accent); color: #fff; }
+.py .bar button.stop { border-color: var(--bad); color: var(--bad); }
+.py .bar button[hidden] { display: none; }
+.py .bar .in { display: inline-flex; gap: 6px; align-items: center; font: 16px var(--mono); color: var(--muted); }
+.py .bar .in input { font: 17px var(--mono); width: 7em; padding: 5px 7px; border: 1.5px solid var(--grid); border-radius: 4px; background: var(--code-bg); color: var(--ink); }
+.py .bar .in input:focus { border-color: var(--accent); outline: none; }
+.py .bar .hint { font: 15px var(--mono); color: var(--muted); margin-left: auto; }
+.py .out {
+  margin: 0; padding: 8px 14px; font: 19px/1.4 var(--mono); background: var(--paper); border-top: 1px dashed var(--grid);
+  white-space: pre-wrap; max-height: 190px; overflow-y: auto; color: var(--ink);
+}
+.py .out[hidden] { display: none; }
+.reveal .py .out, .reveal .py .ed pre { width: 100%; box-sizing: border-box; margin: 0; box-shadow: none; }
+.py .out::before { content: "Output"; display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.py .out .err { color: var(--bad); font-weight: 600; }
+.py .out .note { color: var(--muted); }
+.py.sm .ed { font-size: 17.5px; }
+.py.sm .out { font-size: 17px; }
+.py.tall .out { max-height: 260px; }
+.py.short .out { max-height: 120px; }
+.py.write .ed { min-height: 250px; }
+
+/* highlight.js colours (GitHub light) */
+.hljs-keyword, .hljs-built_in, .hljs-literal { color: #cf222e; }
+.hljs-string { color: #0a3069; }
+.hljs-number { color: #0550ae; }
+.hljs-comment { color: #6e7781; font-style: italic; }
+.hljs-title, .hljs-title.function_ { color: #8250df; }
+
+/* ---------- diagrams ---------- */
+.dg { width: 100%; height: auto; display: block; }
+.dg text { font-family: var(--mono); fill: var(--ink); }
+.dg .serif text { font-family: var(--serif); }
+.dg .muted { fill: var(--muted); }
+.dg .acc { fill: var(--accent); }
+.dg .good { fill: var(--good); }
+.dg .bad { fill: var(--bad); }
+.dg .box { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
+.dg .box-acc { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.dg .box-code { fill: var(--code-bg); stroke: var(--grid); stroke-width: 1.5; }
+.dg .line { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+.dg .line-acc { stroke: var(--accent); stroke-width: 2.2; fill: none; }
+.dg .line-muted { stroke: var(--muted); stroke-width: 1.2; fill: none; stroke-dasharray: 4 4; }
+.dg .fill-acc { fill: var(--accent); }
+.dg .fill-ink { fill: var(--ink); }
+.dg .on { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+.dg .path-on { stroke: var(--accent); stroke-width: 3.5; }
+.dg .dim { opacity: 0.28; }
+.dg g.node, .dg path.edge { transition: opacity .25s; }
+
+/* ---------- step-through tracer ---------- */
+.tracer { border: 1.5px solid var(--ink); border-radius: 6px; background: var(--paper); overflow: hidden; }
+.tracer .t-body { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.tracer.wide .t-body { grid-template-columns: minmax(0, 1fr); }
+.tracer.wide .t-code { font-size: 17px; }
+.tracer.wide .t-side { border-left: 0; border-top: 1px solid var(--grid); display: grid; grid-template-rows: auto 1fr; grid-auto-flow: column; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 16px; }
+.tracer.wide .t-out { max-height: 120px; }
+.tracer .t-code { margin: 0; padding: 8px 0; font: 18px/1.5 var(--mono); background: var(--code-bg); overflow-x: auto; }
+.tracer .t-code div { padding: 0 10px 0 4px; white-space: pre; border-left: 5px solid transparent; }
+.tracer .t-code div::before { content: attr(data-n); display: inline-block; width: 1.9em; color: var(--muted); font-size: 0.8em; }
+.tracer .t-code div.cur { background: var(--accent-soft); border-left-color: var(--accent); }
+.tracer .t-side { border-left: 1px solid var(--grid); padding: 8px 12px; font: 17px/1.45 var(--mono); min-width: 0; }
+.tracer .t-side h5 { margin: 0 0 3px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.tracer .t-vars { margin: 0 0 10px; display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; }
+.tracer .t-vars dt { color: var(--muted); }
+.tracer .t-vars dd { margin: 0; overflow-wrap: anywhere; }
+.tracer .t-vars dd.changed { color: var(--accent); font-weight: 700; }
+.tracer .t-out { white-space: pre-wrap; margin: 0; max-height: 150px; overflow-y: auto; font: inherit; background: none; box-shadow: none; width: auto; }
+.tracer .t-note { font-size: 17px; color: var(--muted); padding: 6px 12px; margin: 0 !important; min-height: 1.6em; border-top: 1px solid var(--grid); }
+.tracer .t-ctrl { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--grid); }
+.tracer .t-ctrl button { font: 500 17px/1 var(--mono); padding: 8px 14px; border-radius: 4px; cursor: pointer; border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); }
+.tracer .t-ctrl button.run { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tracer .t-ctrl button:disabled { opacity: .4; cursor: default; }
+.tracer .t-ctrl .count { margin-left: auto; font: 15px var(--mono); color: var(--muted); }
+
+/* widget controls */
+.ctl { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; font: 20px var(--mono); margin: 4px 0 8px; }
+.ctl label { display: inline-flex; gap: 8px; align-items: center; }
+.ctl input[type="range"] { accent-color: var(--accent); width: 260px; }
+.ctl input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px; }
+.wout { font: 20px/1.5 var(--mono); background: var(--code-bg); border: 1px solid var(--grid); border-radius: 4px; padding: 8px 12px; white-space: pre-wrap; }
+.wout .err { color: var(--bad); font-weight: 700; }
+
+/* exercise */
+.task { font-size: 0.82em; }
+.task ul { font-size: 0.95em; }
+@media print { .py .bar { display: none; } }
