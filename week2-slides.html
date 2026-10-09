@@ -1,0 +1,1160 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 2 slides: Flow control in Python | ENGI 1151</title>
+<meta name="description" content="ENGI 1151 week 2 presentation: flow control in Python, with runnable code on every slide.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔀</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+<link rel="stylesheet" href="assets/slides.css">
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ 1 -->
+<section class="title-slide" style="display:flex;flex-direction:column;justify-content:center">
+  <p class="course">ENGI 1151 · Computational Tools for Engineers and Scientists · Week 2</p>
+  <h1>Flow control in Python</h1>
+  <p class="byline">Dr Nima Gerami Seresht · Department of Engineering · Durham University</p>
+  <p class="py-status" data-py-status>Python: loading…</p>
+  <p class="small">Full notes, widgets and the practice notebook: <a href="week2.html">week2.html</a></p>
+  <aside class="notes">
+Welcome to week 2. Last week: values, variables, lists and dictionaries; every program ran straight from top to bottom.
+Today we learn to control that order: make decisions, repeat work, skip bad data and recover from errors.
+Every code box in these slides is live Python. Click Run to see the output; you can edit the code first.
+Check the status line on this slide says "Python: ready" before you start (10–20 s on the first load).
+  </aside>
+</section>
+
+<!-- ============================================================ 2 -->
+<section>
+  <h2><span class="num">1</span>Introduction</h2>
+  <p class="terms"><span>flow control</span></p>
+  <div class="cols wide-left">
+    <div class="tracer" data-trace="w2-sequence"></div>
+    <div class="stack">
+      <p class="callout">Python runs the statements <b>one after another</b>, from the top of the cell to the bottom.</p>
+      <p style="font-size:.78em">Step through the code. When <code>a</code> changes on line 6, does <code>result</code> change too?</p>
+    </div>
+  </div>
+  <aside class="notes">
+Flow control = the order in which statements are executed.
+By default Python is sequential: each statement runs before the next one starts.
+Click "Next line" through the panel. result = a + b is evaluated once, giving 45. Changing a afterwards does NOT recalculate result: it stays 45. To update it, the calculation must be written again.
+Why we need more than sequence: ask for an input and choose between two messages; repeat a calculation 1000 times; iterate until an error is below a tolerance; ignore an invalid sensor value without stopping.
+  </aside>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+  <h2><span class="num">1</span>Three ways a program can flow</h2>
+  <p class="terms"><span>sequence</span><span>selection</span><span>repetition</span></p>
+  <svg class="dg" viewBox="0 0 1200 300" role="img" aria-label="Flowcharts for sequence, selection and repetition">
+    <!-- sequence -->
+    <g font-size="17" text-anchor="middle">
+      <rect class="box" x="120" y="20" width="160" height="46" rx="5"/><text x="200" y="50">step 1</text>
+      <rect class="box" x="120" y="122" width="160" height="46" rx="5"/><text x="200" y="152">step 2</text>
+      <rect class="box" x="120" y="224" width="160" height="46" rx="5"/><text x="200" y="254">step 3</text>
+    </g>
+    <path class="line" d="M200 66 V 112 M200 168 V 214"/><path class="fill-ink" d="M200 121 l-7 -12 h14 z M200 223 l-7 -12 h14 z"/>
+    <!-- selection -->
+    <polygon class="box-acc" points="600,14 700,64 600,114 500,64"/>
+    <text x="600" y="70" font-size="17" text-anchor="middle" class="acc">condition?</text>
+    <path class="line" d="M500 64 H 455 V 170 M700 64 H 745 V 170"/>
+    <path class="fill-ink" d="M455 180 l-7 -12 h14 z M745 180 l-7 -12 h14 z"/>
+    <text x="474" y="54" font-size="14" class="muted">True</text><text x="706" y="54" font-size="14" class="muted">False</text>
+    <g font-size="17" text-anchor="middle">
+      <rect class="box" x="385" y="182" width="140" height="44" rx="5"/><text x="455" y="210">block A</text>
+      <rect class="box" x="675" y="182" width="140" height="44" rx="5"/><text x="745" y="210">block B</text>
+    </g>
+    <path class="line" d="M455 226 V 258 H 745 V 226 M600 258 V 280"/><path class="fill-ink" d="M600 292 l-7 -12 h14 z"/>
+    <!-- repetition -->
+    <polygon class="box-acc" points="1000,14 1100,64 1000,114 900,64"/>
+    <text x="1000" y="70" font-size="17" text-anchor="middle" class="acc">repeat?</text>
+    <path class="line" d="M1000 114 V 170"/><path class="fill-ink" d="M1000 180 l-7 -12 h14 z"/>
+    <text x="1008" y="150" font-size="14" class="muted">True</text>
+    <rect class="box" x="930" y="182" width="140" height="44" rx="5"/><text x="1000" y="210" font-size="17" text-anchor="middle">loop body</text>
+    <path class="line-acc" d="M930 204 H 860 V 64 H 890"/><path class="fill-acc" d="M900 64 l-12 -7 v14 z"/>
+    <path class="line" d="M1100 64 H 1150 V 282 H 1012"/><path class="fill-ink" d="M1002 282 l12 -7 v14 z"/>
+    <text x="1108" y="54" font-size="14" class="muted">False</text>
+    <text x="992" y="287" font-size="14" text-anchor="end" class="muted">carry on</text>
+  </svg>
+  <div class="cols" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:6px">
+    <div class="panel"><h3>Sequence</h3><p style="font-size:.7em">statements run top to bottom</p></div>
+    <div class="panel"><h3>Selection: choose a path</h3><p class="big-code" style="font-size:.7em"><b>if</b> · <b>elif</b> · <b>else</b></p><p class="big-code" style="font-size:.7em"><b>try</b> · <b>except</b> <span class="small">(when an error happens)</span></p></div>
+    <div class="panel"><h3>Repetition: loop</h3><p class="big-code" style="font-size:.7em"><b>for</b> · <b>while</b></p><p class="big-code" style="font-size:.7em"><span class="small">loop control:</span> break · continue · pass</p></div>
+  </div>
+  <aside class="notes">
+Every program is built from three kinds of flow.
+Sequence: one statement after another (what we had last week).
+Selection: test a condition and choose one block. In Python: if, elif, else. try / except is also a kind of selection: it chooses a different block when an error occurs.
+Repetition: run the same block several times. In Python: for and while. break, continue and pass control what happens inside a loop.
+This is the map for the whole lecture: section 2 builds the conditions, section 3 is selection, sections 4–6 repetition, section 7 errors.
+  </aside>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+  <h2><span class="num">2</span>Boolean expressions and comparison operators</h2>
+  <p class="terms"><span>Boolean expression</span><span>True / False</span><span>= versus ==</span></p>
+  <div class="cols wide-left">
+    <div class="stack">
+      <table class="t">
+        <thead><tr><th>operator</th><th>meaning</th><th>with <code>temperature = 35.0</code></th><th>result</th></tr></thead>
+        <tbody>
+          <tr><td><code>==</code></td><td>equal to</td><td><code>temperature == 35.0</code></td><td class="tv-T">True</td></tr>
+          <tr><td><code>!=</code></td><td>not equal to</td><td><code>temperature != 35.0</code></td><td class="tv-F">False</td></tr>
+          <tr><td><code>&gt;</code></td><td>greater than</td><td><code>temperature &gt; 30.0</code></td><td class="tv-T">True</td></tr>
+          <tr><td><code>&lt;</code></td><td>less than</td><td><code>temperature &lt; 20.0</code></td><td class="tv-F">False</td></tr>
+          <tr><td><code>&gt;=</code></td><td>greater or equal</td><td><code>temperature &gt;= 35.0</code></td><td class="tv-T">True</td></tr>
+          <tr><td><code>&lt;=</code></td><td>less or equal</td><td><code>temperature &lt;= 20.0</code></td><td class="tv-F">False</td></tr>
+        </tbody>
+      </table>
+      <div class="cols" style="gap:12px">
+        <div class="panel"><h3>=  assigns</h3><p class="big-code" style="font-size:.66em">temperature <b>=</b> 35.0</p><p class="small">stores 35.0 in the variable</p></div>
+        <div class="panel"><h3>==  compares</h3><p class="big-code" style="font-size:.66em">temperature <b>==</b> 35.0</p><p class="small">asks a question → <span class="tv-T">True</span></p></div>
+      </div>
+    </div>
+    <div class="py" data-hint="change 35.0 and run again"><pre>
+temperature = 35.0
+
+print(temperature > 30.0)
+print(temperature == 35.0)
+print(temperature <= 20.0)
+print(temperature != 35.0)
+</pre></div>
+  </div>
+  <aside class="notes">
+Every decision is based on a Boolean expression: an expression whose value is either True or False.
+Six comparison operators. Point out == has TWO equals signs.
+= is assignment: it stores a value. == is comparison: it asks "are these equal?" and gives True or False. Mixing them up is one of the most common beginner errors (if temperature = 35.0: is a SyntaxError).
+Run the code. Then change temperature to 15.0 and predict the four outputs before running again.
+Note: comparing floats from calculations with == is risky (0.1 + 0.2 == 0.3 is False, from week 1).
+  </aside>
+</section>
+
+<!-- ============================================================ 5 -->
+<section>
+  <h2><span class="num">2.1</span>Logical operators</h2>
+  <p class="terms"><span>and</span><span>or</span><span>not</span></p>
+  <div class="cols wide-left">
+    <div class="stack">
+      <table class="t">
+        <thead><tr><th>A</th><th>B</th><th>A and B</th><th>A or B</th></tr></thead>
+        <tbody>
+          <tr><td class="tv-T">True</td><td class="tv-T">True</td><td class="tv-T">True</td><td class="tv-T">True</td></tr>
+          <tr><td class="tv-T">True</td><td class="tv-F">False</td><td class="tv-F">False</td><td class="tv-T">True</td></tr>
+          <tr><td class="tv-F">False</td><td class="tv-T">True</td><td class="tv-F">False</td><td class="tv-T">True</td></tr>
+          <tr><td class="tv-F">False</td><td class="tv-F">False</td><td class="tv-F">False</td><td class="tv-F">False</td></tr>
+        </tbody>
+      </table>
+      <div class="cols" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+        <div class="panel"><h3>and</h3><p class="small">True only if <b>both</b> are True</p></div>
+        <div class="panel"><h3>or</h3><p class="small">True if <b>at least one</b> is True</p></div>
+        <div class="panel"><h3>not</h3><p class="small">reverses: <code>not True</code> → <span class="tv-F">False</span></p></div>
+      </div>
+    </div>
+    <div class="py sm" data-hint="try temperature = 85.0"><pre>
+temperature = 65.0
+pressure = 4.2
+
+safe_operation = (temperature < 80.0
+                  and pressure < 5.0)
+warning_required = (temperature > 80.0
+                    or pressure > 5.0)
+
+print(safe_operation)
+print(warning_required)
+print(not safe_operation)
+</pre></div>
+  </div>
+  <aside class="notes">
+Several conditions can be combined with and, or, not.
+Engineering example: a system is safe only when BOTH the temperature and the pressure are below their limits → and. A warning is needed if EITHER limit is exceeded → or.
+Walk through the truth table; then run the code (True, False, False).
+Change temperature to 85.0: safe_operation becomes False, warning_required True.
+Parentheses let a long condition run over several lines and make the grouping clearer.
+  </aside>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">3</p>
+  <h1>Conditional statements</h1>
+  <aside class="notes">Section 3: selection with if, elif and else.</aside>
+</section>
+
+<!-- ============================================================ 7 -->
+<section>
+  <h2><span class="num">3</span>Conditional statements</h2>
+  <p class="terms"><span>if</span><span>elif</span><span>else</span><span>condition</span></p>
+  <div class="cols">
+    <div class="stack">
+      <pre class="code panel" style="font-size:.6em;margin:0"><code>if condition_1:
+    # runs if condition_1 is True
+elif condition_2:
+    # runs if condition_2 is True
+elif condition_n:
+    # runs if condition_n is True
+else:
+    # runs if all conditions are False</code></pre>
+      <ul style="font-size:.66em">
+        <li>checked <b>from top to bottom</b></li>
+        <li>only the <b>first</b> True block runs</li>
+        <li><code>elif</code> and <code>else</code> are optional</li>
+      </ul>
+    </div>
+    <div class="py sm" data-input="41" data-hint="input() takes the value in the box"><pre>
+temperature = float(
+    input("Enter the temperature in °C: ")
+)
+
+if temperature > 40.0:
+    print("It is very hot.")
+elif temperature > 25.0:
+    print("It is warm.")
+else:
+    print("It is cool.")
+</pre></div>
+  </div>
+  <aside class="notes">
+if evaluates the first condition; if True its block runs.
+elif ("else if") is checked only when every condition above it was False. Zero or more elif clauses.
+else has no condition: it runs when all the conditions above were False. Optional.
+Only the block of the FIRST true condition runs.
+Run with 41 → "It is very hot." Although 41 > 25 is also True, the elif is never reached.
+Then type 30 and 10 in the input() box and run again.
+On the slides, input() takes its value from the small box next to Run (in a notebook a typing box appears instead).
+  </aside>
+</section>
+
+<!-- ============================================================ 8 -->
+<section>
+  <h2><span class="num">3</span>Indentation and colons</h2>
+  <p class="terms"><span>indentation</span><span>code block</span><span>colon</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 600 400" role="img" aria-label="Annotated code: a colon ends each header line and the indented lines below belong to it">
+      <rect class="box-code" x="10" y="20" width="440" height="330" rx="6"/>
+      <g font-size="21">
+        <text x="30" y="60">if temperature &gt; 40<tspan class="acc" font-weight="700" font-size="26">:</tspan></text>
+        <text x="74" y="96">print("High")</text>
+        <text x="30" y="158">for value in values<tspan class="acc" font-weight="700" font-size="26">:</tspan></text>
+        <text x="74" y="194">print(value)</text>
+        <text x="30" y="256">while error &gt; tol<tspan class="acc" font-weight="700" font-size="26">:</tspan></text>
+        <text x="74" y="292">error = error / 2</text>
+        <text x="30" y="332" class="muted">print("done")</text>
+      </g>
+      <path class="line-acc" d="M40 72 V 104 M40 170 V 202 M40 268 V 300"/>
+      <rect x="38" y="80" width="34" height="22" fill="none" class="line-muted"/>
+      <text x="55" y="122" font-size="12" text-anchor="middle" class="acc">4 spaces</text>
+      <g font-size="15">
+        <text x="462" y="58" class="acc">colon ends</text><text x="462" y="76" class="acc">the header</text>
+        <text x="462" y="186">indented =</text><text x="462" y="204">inside the</text><text x="462" y="222">block</text>
+        <text x="462" y="330" class="muted">back to the</text><text x="462" y="348" class="muted">left = block</text><text x="462" y="366" class="muted">has ended</text>
+      </g>
+    </svg>
+    <div class="stack">
+      <p style="font-size:.66em">Fix this code: it has a missing colon. Then delete the 4 spaces before <code>print</code> and run it again.</p>
+      <div class="py" data-hint="read the error message"><pre>
+temperature = 45.0
+
+if temperature > 40.0
+    print("The temperature is high.")
+
+print("Check finished.")
+</pre></div>
+    </div>
+  </div>
+  <aside class="notes">
+Python has no "end" keyword. Indentation decides which statements belong to an if, a loop or a function: the indented lines form the code block.
+Convention: 4 spaces per level. Editors insert 4 spaces when you press Tab. Never mix tabs and spaces.
+Every header line (if, elif, else, for, while, try, except...) ends with a colon.
+When the indentation goes back to the previous level, the block has ended: print("done") runs once, after the loop.
+Live demo: run as it is → SyntaxError: expected ':'. Add the colon → works. Remove the indentation → IndentationError: expected an indented block. Restore it.
+  </aside>
+</section>
+
+<!-- ============================================================ 9 -->
+<section>
+  <h2><span class="num">3</span>Order of conditions</h2>
+  <p class="terms"><span>most restrictive first</span><span>first True wins</span></p>
+  <div class="ctl">
+    <label>temperature <input type="range" id="if-t" min="0" max="50" step="1" value="41"> <output id="if-tv">41.0</output></label>
+    <label><input type="checkbox" id="if-wrong"> incorrect order</label>
+  </div>
+  <div class="cols" style="grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)">
+    <svg class="dg" viewBox="0 0 680 330" role="img" aria-label="Flowchart of the if, elif, else statement with the path taken highlighted">
+      <g class="node" id="n-start"><rect class="box" x="40" y="10" width="200" height="36" rx="18"/><text id="t-start" x="140" y="34" font-size="15" text-anchor="middle">temperature = 41.0</text></g>
+      <path class="edge line" id="e-s1" d="M140 46 V 64"/>
+      <g class="node" id="n-d1"><polygon class="box-acc" points="140,66 250,106 140,146 30,106"/><text id="t-d1" x="140" y="111" font-size="14.5" text-anchor="middle" class="acc">temperature &gt; 40.0</text></g>
+      <path class="edge line" id="e-y1" d="M250 106 H 330"/>
+      <text x="268" y="98" font-size="13" class="muted">True</text>
+      <g class="node" id="n-y1"><rect class="box" x="332" y="84" width="260" height="44" rx="4"/><text id="t-y1" x="462" y="112" font-size="15" text-anchor="middle">print("It is very hot.")</text></g>
+      <path class="edge line" id="e-n1" d="M140 146 V 166"/>
+      <text x="148" y="161" font-size="13" class="muted">False</text>
+      <g class="node" id="n-d2"><polygon class="box-acc" points="140,168 250,208 140,248 30,208"/><text id="t-d2" x="140" y="213" font-size="14.5" text-anchor="middle" class="acc">temperature &gt; 25.0</text></g>
+      <path class="edge line" id="e-y2" d="M250 208 H 330"/>
+      <text x="268" y="200" font-size="13" class="muted">True</text>
+      <g class="node" id="n-y2"><rect class="box" x="332" y="186" width="260" height="44" rx="4"/><text id="t-y2" x="462" y="214" font-size="15" text-anchor="middle">print("It is warm.")</text></g>
+      <path class="edge line" id="e-n2" d="M140 248 V 270"/>
+      <text x="148" y="264" font-size="13" class="muted">False</text>
+      <g class="node" id="n-el"><rect class="box" x="30" y="272" width="220" height="44" rx="4"/><text x="140" y="300" font-size="15" text-anchor="middle">print("It is cool.")</text></g>
+      <text x="604" y="111" font-size="13" class="muted">if</text>
+      <text x="604" y="213" font-size="13" class="muted">elif</text>
+      <text x="262" y="300" font-size="13" class="muted">else</text>
+    </svg>
+    <div class="stack">
+      <div class="wout" id="if-out" aria-live="polite"></div>
+      <p class="callout">Put the <b>most restrictive</b> condition first. Python stops at the first True condition.</p>
+    </div>
+  </div>
+  <aside class="notes">
+The order of conditions matters, because only the first True block runs.
+Drag the slider: watch which path lights up (41 → very hot, 30 → warm, 10 → cool).
+Now tick "incorrect order" with 41 °C: temperature > 25.0 is checked first, it is already True, so we print "It is warm." The very hot branch can never be reached for any temperature!
+Rule: from the most restrictive condition to the least restrictive. Next slide: run both versions.
+  </aside>
+</section>
+
+<!-- ============================================================ 10 -->
+<section>
+  <h2><span class="num">3</span>Order of conditions: test it</h2>
+  <p class="terms"><span>most restrictive first</span></p>
+  <div class="cols">
+    <div class="stack">
+      <p class="small"><span style="color:var(--bad);font-weight:700">✗ incorrect order</span></p>
+      <div class="py sm"><pre>
+temperature = 41.0
+
+if temperature > 25.0:
+    print("It is warm.")
+elif temperature > 40.0:
+    print("It is very hot.")
+</pre></div>
+    </div>
+    <div class="stack">
+      <p class="small"><span style="color:var(--good);font-weight:700">✓ correct order</span></p>
+      <div class="py sm"><pre>
+temperature = 41.0
+
+if temperature > 40.0:
+    print("It is very hot.")
+elif temperature > 25.0:
+    print("It is warm.")
+</pre></div>
+    </div>
+  </div>
+  <aside class="notes">
+Run the left box: "It is warm." (wrong). Run the right box: "It is very hot." (right).
+Ask: for which temperatures do both versions agree? (Anything 40.0 or below.) That is why such bugs survive testing: they only appear for some inputs.
+  </aside>
+</section>
+
+<!-- ============================================================ 11 -->
+<section>
+  <h2><span class="num">3.1</span>Engineering example: checking an operating limit</h2>
+  <p class="terms"><span>allowable stress</span><span>factor of safety</span></p>
+  <div class="cols">
+    <div class="py sm"><pre>
+measured_stress = 185.0
+allowable_stress = 200.0
+
+if measured_stress <= allowable_stress:
+    print("Within the allowable limit.")
+else:
+    print("Warning: limit exceeded.")
+</pre></div>
+    <div class="py sm"><pre>
+material_strength = 350.0
+applied_stress = 175.0
+
+factor_of_safety = (material_strength
+                    / applied_stress)
+
+if factor_of_safety >= 2.0:
+    print("Safety requirement satisfied.")
+else:
+    print("Safety requirement NOT met.")
+</pre></div>
+  </div>
+  <aside class="notes">
+Left: compare a measured stress with an allowable stress. if / else with two outcomes. Note <= : exactly at the limit is accepted.
+Right: calculate a factor of safety and check it against 2.0.
+Change applied_stress to 200.0 → factor 1.75 → not met.
+Message: if statements turn engineering criteria directly into code.
+(Messages are slightly shortened from the handout to fit the slide.)
+  </aside>
+</section>
+
+<!-- ============================================================ 12 -->
+<section>
+  <h2><span class="num">3.2</span>Nested conditional statements</h2>
+  <p class="terms"><span>nested</span><span>simplify with and</span></p>
+  <div class="cols">
+    <div class="stack">
+      <p class="small">nested: an <code>if</code> inside an <code>if</code></p>
+      <div class="py sm"><pre>
+temperature = 70.0
+pressure = 6.0
+
+if temperature < 80.0:
+    if pressure < 5.0:
+        print("Conditions acceptable.")
+    else:
+        print("Pressure too high.")
+else:
+    print("Temperature too high.")
+</pre></div>
+    </div>
+    <div class="stack">
+      <p class="small">the same check with <code>and</code></p>
+      <div class="py sm"><pre>
+temperature = 70.0
+pressure = 6.0
+
+if temperature < 80.0 and pressure < 5.0:
+    print("Conditions acceptable.")
+else:
+    print("A limit has been exceeded.")
+</pre></div>
+    </div>
+  </div>
+  <aside class="notes">
+A conditional statement can be placed inside another one: a nested conditional. Each level adds 4 more spaces of indentation.
+Left: the nested version can say WHICH limit was exceeded ("Pressure too high.").
+Right: and makes it flatter and easier to read, but only says that at least one limit was exceeded.
+Excessive nesting makes code hard to read; use logical operators where possible.
+  </aside>
+</section>
+
+<!-- ============================================================ 13 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">4</p>
+  <h1>Loops</h1>
+  <aside class="notes">Section 4: repetition with for and while.</aside>
+</section>
+
+<!-- ============================================================ 14 -->
+<section>
+  <h2><span class="num">4</span><code>for</code> versus <code>while</code></h2>
+  <p class="terms"><span>for → a series of values</span><span>while → a condition</span></p>
+  <div class="cols">
+    <div class="stack">
+      <p class="big-code" style="font-size:.85em"><b>for</b> item <b>in</b> series<b>:</b></p>
+      <svg class="dg" viewBox="0 0 440 150" role="img" aria-label="for loop: take the next item while items remain; runs once per value">
+        <rect class="box-acc" x="12" y="8" width="200" height="52" rx="6"/><text x="112" y="30" font-size="15" text-anchor="middle" class="acc">another item</text><text x="112" y="49" font-size="15" text-anchor="middle" class="acc">in the series?</text>
+        <path class="line" d="M112 60 V 86"/><path class="fill-ink" d="M112 95 l-6 -10 h12 z"/>
+        <text x="120" y="80" font-size="13" class="muted">yes: item = next value</text>
+        <rect class="box" x="37" y="96" width="150" height="42" rx="5"/><text x="112" y="122" font-size="15" text-anchor="middle">loop body</text>
+        <path class="line-acc" d="M37 117 H 4 V 34 H 4"/><path class="line-acc" d="M4 34 H 6"/><path class="fill-acc" d="M12 34 l-9 -5 v10 z"/>
+        <path class="line" d="M212 34 H 262"/><path class="fill-ink" d="M272 34 l-10 -6 v12 z"/>
+        <text x="222" y="26" font-size="13" class="muted">no</text><text x="278" y="39" font-size="15">done</text>
+        <g font-size="16" class="serif"><text x="214" y="108">runs <tspan font-weight="700">once per value</tspan>:</text><text x="214" y="128">you know how many</text><text x="214" y="146">times in advance</text></g>
+      </svg>
+      <div class="py short sm"><pre>
+for counter in range(3):
+    print("Counter:", counter)
+</pre></div>
+    </div>
+    <div class="stack">
+      <p class="big-code" style="font-size:.85em"><b>while</b> condition<b>:</b></p>
+      <svg class="dg" viewBox="0 0 440 150" role="img" aria-label="while loop: repeat as long as the condition is True; the loop body must change the condition">
+        <rect class="box-acc" x="12" y="8" width="200" height="52" rx="6"/><text x="112" y="39" font-size="15" text-anchor="middle" class="acc">condition True?</text>
+        <path class="line" d="M112 60 V 86"/><path class="fill-ink" d="M112 95 l-6 -10 h12 z"/>
+        <text x="120" y="80" font-size="13" class="muted">True</text>
+        <rect class="box" x="37" y="96" width="150" height="42" rx="5"/><text x="112" y="122" font-size="15" text-anchor="middle">loop body</text>
+        <path class="line-acc" d="M37 117 H 4 V 34 H 6"/><path class="fill-acc" d="M12 34 l-9 -5 v10 z"/>
+        <path class="line" d="M212 34 H 262"/><path class="fill-ink" d="M272 34 l-10 -6 v12 z"/>
+        <text x="222" y="26" font-size="13" class="muted">False</text><text x="278" y="39" font-size="15">done</text>
+        <g font-size="16" class="serif"><text x="214" y="108">repeats <tspan font-weight="700">as long as</tspan></text><text x="214" y="128">the condition is True;</text><text x="214" y="146" class="acc">the body must change it!</text></g>
+      </svg>
+      <div class="py short sm"><pre>
+counter = 0
+while counter < 3:
+    print("Counter:", counter)
+    counter += 1
+</pre></div>
+    </div>
+  </div>
+  <aside class="notes">
+Two loop types, and the difference is in the header line.
+for is followed by a SERIES of values (a range, a list, a string...): the body runs once per value, and the loop variable takes each value in turn. You know in advance how many passes there will be.
+while is followed by a logical CONDITION (a Boolean expression from section 2): the body repeats as long as the condition is True. Something inside the body must eventually make it False.
+Both boxes print the same three lines: run them.
+Rule of thumb: for when you have the values; while when you repeat until something happens (convergence, a sensor reading, user input).
+  </aside>
+</section>
+
+<!-- ============================================================ 15 -->
+<section>
+  <h2><span class="num">4.1</span><code>for</code> loops</h2>
+  <p class="terms"><span>iteration</span><span>loop variable</span></p>
+  <div class="cols">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 560 230" role="img" aria-label="range(5) supplies the values 0 to 4, one per iteration, to the loop variable">
+        <text x="20" y="40" font-size="20">range(5)</text>
+        <g font-size="18" text-anchor="middle">
+          <rect class="box-acc" x="140" y="16" width="56" height="40" rx="20"/><text x="168" y="42" class="acc">0</text>
+          <rect class="box-acc" x="220" y="16" width="56" height="40" rx="20"/><text x="248" y="42" class="acc">1</text>
+          <rect class="box-acc" x="300" y="16" width="56" height="40" rx="20"/><text x="328" y="42" class="acc">2</text>
+          <rect class="box-acc" x="380" y="16" width="56" height="40" rx="20"/><text x="408" y="42" class="acc">3</text>
+          <rect class="box-acc" x="460" y="16" width="56" height="40" rx="20"/><text x="488" y="42" class="acc">4</text>
+        </g>
+        <path class="line-muted" d="M168 56 V 120 M248 56 V 120 M328 56 V 120 M408 56 V 120 M488 56 V 120"/>
+        <g font-size="14" text-anchor="middle" class="muted">
+          <text x="168" y="138">pass 1</text><text x="248" y="138">pass 2</text><text x="328" y="138">pass 3</text><text x="408" y="138">pass 4</text><text x="488" y="138">pass 5</text>
+        </g>
+        <text x="20" y="190" font-size="17">each pass:  <tspan class="acc">iteration</tspan> = next value</text>
+        <text x="20" y="218" font-size="15" class="muted">5 values → the body runs 5 times; 5 itself is excluded</text>
+      </svg>
+    </div>
+    <div class="py"><pre>
+for iteration in range(5):
+    print("Iteration:", iteration)
+</pre></div>
+  </div>
+  <aside class="notes">
+A for loop iterates over an iterable object: a list, tuple, string, dictionary or range.
+range(5) does not create a list; it represents the integers 0, 1, 2, 3, 4. The final value 5 is excluded.
+In each iteration the loop variable (here called iteration) is assigned the next value.
+Run: five lines, 0 to 4.
+  </aside>
+</section>
+
+<!-- ============================================================ 16 -->
+<section>
+  <h2><span class="num">4.1.1</span>Using <code>range()</code></h2>
+  <p class="terms"><span>start</span><span>stop (excluded)</span><span>step</span></p>
+  <div class="cols wide-left">
+    <svg class="dg" viewBox="0 0 640 330" role="img" aria-label="Number lines showing the values produced by four range calls">
+      <g font-size="15">
+        <text x="10" y="44">range(4)</text>
+        <text x="10" y="114">range(2, 6)</text>
+        <text x="10" y="184">range(0, 10, 2)</text>
+        <text x="10" y="254">range(5, 0, -1)</text>
+      </g>
+      <g id="nl">
+        <path class="line" d="M170 40 H 620 M170 110 H 620 M170 180 H 620 M170 250 H 620"/>
+      </g>
+      <g font-size="12" text-anchor="middle" class="muted">
+        <text x="180" y="305">0</text><text x="224" y="305">1</text><text x="268" y="305">2</text><text x="312" y="305">3</text><text x="356" y="305">4</text><text x="400" y="305">5</text><text x="444" y="305">6</text><text x="488" y="305">7</text><text x="532" y="305">8</text><text x="576" y="305">9</text><text x="620" y="305">10</text>
+      </g>
+      <path class="line-muted" d="M180 22 V 290 M620 22 V 290" style="opacity:.4"/>
+      <!-- range(4): 0..3, stop 4 -->
+      <circle cx="180" cy="40" r="9" class="fill-acc"/><circle cx="224" cy="40" r="9" class="fill-acc"/><circle cx="268" cy="40" r="9" class="fill-acc"/><circle cx="312" cy="40" r="9" class="fill-acc"/>
+      <circle cx="356" cy="40" r="9" class="box" style="stroke-dasharray:3 3"/>
+      <!-- range(2,6) -->
+      <circle cx="268" cy="110" r="9" class="fill-acc"/><circle cx="312" cy="110" r="9" class="fill-acc"/><circle cx="356" cy="110" r="9" class="fill-acc"/><circle cx="400" cy="110" r="9" class="fill-acc"/>
+      <circle cx="444" cy="110" r="9" class="box" style="stroke-dasharray:3 3"/>
+      <!-- range(0,10,2) -->
+      <circle cx="180" cy="180" r="9" class="fill-acc"/><circle cx="268" cy="180" r="9" class="fill-acc"/><circle cx="356" cy="180" r="9" class="fill-acc"/><circle cx="444" cy="180" r="9" class="fill-acc"/><circle cx="532" cy="180" r="9" class="fill-acc"/>
+      <circle cx="620" cy="180" r="9" class="box" style="stroke-dasharray:3 3"/>
+      <!-- range(5,0,-1) -->
+      <circle cx="400" cy="250" r="9" class="fill-acc"/><circle cx="356" cy="250" r="9" class="fill-acc"/><circle cx="312" cy="250" r="9" class="fill-acc"/><circle cx="268" cy="250" r="9" class="fill-acc"/><circle cx="224" cy="250" r="9" class="fill-acc"/>
+      <circle cx="180" cy="250" r="9" class="box" style="stroke-dasharray:3 3"/>
+      <path class="line-acc" d="M392 268 H 236"/><path class="fill-acc" d="M226 268 l10 -6 v12 z"/>
+      <text x="420" y="324" font-size="13" class="muted">○ = stop value, not included</text>
+    </svg>
+    <div class="py sm"><pre>
+print(list(range(4)))
+print(list(range(2, 6)))
+print(list(range(0, 10, 2)))
+print(list(range(5, 0, -1)))
+</pre></div>
+  </div>
+  <aside class="notes">
+Three forms of range():
+range(stop): starts at 0, stops BEFORE stop → 0 1 2 3.
+range(start, stop): 2 3 4 5.
+range(start, stop, step): 0 2 4 6 8. A negative step counts backwards: 5 4 3 2 1.
+The dashed circles are the stop values: never included.
+list(...) is used here only to display all the values at once.
+Arguments must be integers, and the step cannot be 0 (try range(0, 10, 0) → ValueError).
+  </aside>
+</section>
+
+<!-- ============================================================ 17 -->
+<section>
+  <h2><span class="num">4.1.2</span>Iterating over a list</h2>
+  <p class="terms"><span>iterable</span><span>one element per pass</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 200" role="img" aria-label="The loop variable temperature takes each element of the list in turn">
+      <text x="10" y="30" font-size="16">temperatures</text>
+      <g font-size="17" text-anchor="middle">
+        <rect class="box" x="10" y="44" width="120" height="44"/><text x="70" y="72">20.5</text>
+        <rect class="box" x="140" y="44" width="120" height="44"/><text x="200" y="72">22.1</text>
+        <rect class="box" x="270" y="44" width="120" height="44"/><text x="330" y="72">25.8</text>
+        <rect class="box" x="400" y="44" width="120" height="44"/><text x="460" y="72">27.3</text>
+      </g>
+      <path class="line-acc" d="M70 88 V 130 M200 88 V 130 M330 88 V 130 M460 88 V 130"/>
+      <g font-size="14" text-anchor="middle" class="acc"><text x="70" y="150">pass 1</text><text x="200" y="150">pass 2</text><text x="330" y="150">pass 3</text><text x="460" y="150">pass 4</text></g>
+      <text x="10" y="188" font-size="15" class="muted">temperature = 20.5, then 22.1, then 25.8, then 27.3</text>
+    </svg>
+    <div class="py"><pre>
+temperatures = [20.5, 22.1, 25.8, 27.3]
+
+for temperature in temperatures:
+    print("Temperature:", temperature)
+</pre></div>
+  </div>
+  <aside class="notes">
+A for loop can go directly through the elements of a list; no index needed.
+During each iteration the variable temperature refers to one element.
+Good naming habit: plural for the list (temperatures), singular for the loop variable (temperature).
+  </aside>
+</section>
+
+<!-- ============================================================ 18 -->
+<section>
+  <h2><span class="num">4.1.3</span><code>enumerate()</code></h2>
+  <p class="terms"><span>index and value</span><span>start=1</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 230" role="img" aria-label="enumerate pairs each value with a counter starting at 0, or at 1 with start=1">
+      <g font-size="17" text-anchor="middle">
+        <rect class="box" x="120" y="80" width="120" height="44"/><text x="180" y="108">20.5</text>
+        <rect class="box" x="250" y="80" width="120" height="44"/><text x="310" y="108">22.1</text>
+        <rect class="box" x="380" y="80" width="120" height="44"/><text x="440" y="108">25.8</text>
+        <rect class="box-acc" x="155" y="20" width="50" height="36" rx="18"/><text x="180" y="44" class="acc">0</text>
+        <rect class="box-acc" x="285" y="20" width="50" height="36" rx="18"/><text x="310" y="44" class="acc">1</text>
+        <rect class="box-acc" x="415" y="20" width="50" height="36" rx="18"/><text x="440" y="44" class="acc">2</text>
+        <rect class="box-acc" x="155" y="150" width="50" height="36" rx="18"/><text x="180" y="174" class="acc">1</text>
+        <rect class="box-acc" x="285" y="150" width="50" height="36" rx="18"/><text x="310" y="174" class="acc">2</text>
+        <rect class="box-acc" x="415" y="150" width="50" height="36" rx="18"/><text x="440" y="174" class="acc">3</text>
+      </g>
+      <path class="line-muted" d="M180 56 V 80 M310 56 V 80 M440 56 V 80 M180 124 V 150 M310 124 V 150 M440 124 V 150"/>
+      <text x="10" y="44" font-size="14">default</text>
+      <text x="10" y="108" font-size="14" class="muted">values</text>
+      <text x="10" y="174" font-size="14">start=1</text>
+      <text x="10" y="220" font-size="14" class="muted">each pass gives a pair: (index, value)</text>
+    </svg>
+    <div class="py sm"><pre>
+temperatures = [20.5, 22.1, 25.8]
+
+for index, temperature in enumerate(temperatures):
+    print(index, temperature)
+
+for test, temperature in enumerate(temperatures,
+                                   start=1):
+    print("Test", test, ":", temperature)
+</pre></div>
+  </div>
+  <aside class="notes">
+enumerate() gives both the index and the value on each pass, so you need two loop variables separated by a comma.
+By default the counting starts at 0 (like list indices). start=1 is friendlier for "Test 1, Test 2..." labels.
+Run: first three lines 0/1/2, then Test 1/2/3.
+  </aside>
+</section>
+
+<!-- ============================================================ 19 -->
+<section>
+  <h2><span class="num">4.1.4</span><code>zip()</code></h2>
+  <p class="terms"><span>pairing two lists</span><span>stops at the shortest</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 220" role="img" aria-label="zip pairs the first element of times with the first of displacements, and so on">
+      <text x="10" y="40" font-size="15">times</text>
+      <text x="10" y="186" font-size="15">displacements</text>
+      <g font-size="17" text-anchor="middle">
+        <rect class="box" x="150" y="16" width="86" height="40"/><text x="193" y="42">0.0</text>
+        <rect class="box" x="246" y="16" width="86" height="40"/><text x="289" y="42">1.0</text>
+        <rect class="box" x="342" y="16" width="86" height="40"/><text x="385" y="42">2.0</text>
+        <rect class="box" x="438" y="16" width="86" height="40"/><text x="481" y="42">3.0</text>
+        <rect class="box" x="150" y="162" width="86" height="40"/><text x="193" y="188">0.0</text>
+        <rect class="box" x="246" y="162" width="86" height="40"/><text x="289" y="188">2.5</text>
+        <rect class="box" x="342" y="162" width="86" height="40"/><text x="385" y="188">5.1</text>
+        <rect class="box" x="438" y="162" width="86" height="40"/><text x="481" y="188">7.8</text>
+      </g>
+      <path class="line-acc" d="M193 56 V 162 M289 56 V 162 M385 56 V 162 M481 56 V 162"/>
+      <g font-size="13" text-anchor="middle" class="acc"><text x="193" y="114">pair 1</text><text x="289" y="114">pair 2</text><text x="385" y="114">pair 3</text><text x="481" y="114">pair 4</text></g>
+    </svg>
+    <div class="py sm"><pre>
+times = [0.0, 1.0, 2.0, 3.0]
+displacements = [0.0, 2.5, 5.1, 7.8]
+
+for time, displacement in zip(times,
+                              displacements):
+    print("Time:", time,
+          "Displacement:", displacement)
+</pre></div>
+  </div>
+  <aside class="notes">
+zip() goes through two (or more) lists side by side: pass 1 takes the first element of each, pass 2 the second, and so on.
+Useful when related measurements are stored in separate lists (time and displacement from the same test).
+zip stops when the SHORTEST list runs out, so related lists should have the same length. Demo: delete 3.0 from times and run.
+  </aside>
+</section>
+
+<!-- ============================================================ 20 -->
+<section>
+  <h2><span class="num">4.1.5</span>Accumulating results</h2>
+  <p class="terms"><span>running total</span><span>+=</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 230" role="img" aria-label="The running total grows from 0 to 46 as each load is added">
+      <text x="10" y="30" font-size="15" class="muted">loads = [12.5, 8.0, 15.5, 10.0]</text>
+      <g font-size="17" text-anchor="middle">
+        <rect class="box-code" x="10" y="60" width="80" height="44" rx="4"/><text x="50" y="88">0.0</text>
+        <rect class="box-acc" x="130" y="60" width="80" height="44" rx="4"/><text x="170" y="88">12.5</text>
+        <rect class="box-acc" x="250" y="60" width="80" height="44" rx="4"/><text x="290" y="88">20.5</text>
+        <rect class="box-acc" x="370" y="60" width="80" height="44" rx="4"/><text x="410" y="88">36.0</text>
+        <rect class="box-acc" x="470" y="60" width="80" height="44" rx="4" style="stroke-width:3"/><text x="510" y="88" font-weight="700">46.0</text>
+      </g>
+      <path class="line" d="M90 82 H 122 M210 82 H 242 M330 82 H 362 M450 82 H 462"/>
+      <g font-size="13" text-anchor="middle" class="acc"><text x="110" y="128">+12.5</text><text x="230" y="128">+8.0</text><text x="350" y="128">+15.5</text><text x="460" y="128">+10.0</text></g>
+      <text x="10" y="170" font-size="15">start at 0 <tspan class="muted">before</tspan> the loop,</text>
+      <text x="10" y="196" font-size="15">add one value on <tspan class="muted">every</tspan> pass</text>
+    </svg>
+    <div class="py sm"><pre>
+loads = [12.5, 8.0, 15.5, 10.0]
+
+total_load = 0.0
+for load in loads:
+    total_load += load
+
+average_load = total_load / len(loads)
+print("Total:", total_load, "kN")
+print("Average:", average_load, "kN")
+</pre></div>
+  </div>
+  <aside class="notes">
+A very common pattern: build up a result while the loop runs.
+1. Create the variable before the loop and set it to 0.
+2. Inside the loop, add to it: total_load += load is shorthand for total_load = total_load + load.
+3. After the loop (back to the left margin) use the result.
+len(loads) gives the number of elements (4). Output: Total 46.0, Average 11.5.
+Question: what goes wrong if total_load = 0.0 is moved inside the loop? (It is reset every pass → total 10.0.)
+  </aside>
+</section>
+
+<!-- ============================================================ 21 -->
+<section>
+  <h2><span class="num">4.2</span><code>while</code> loops</h2>
+  <p class="terms"><span>condition</span><span>counter</span><span>update!</span></p>
+  <div class="cols wide-left">
+    <div class="tracer" data-trace="w2-while"></div>
+    <div class="stack">
+      <p class="big-code" style="font-size:.75em"><b>while</b> counter &lt; 3<b>:</b></p>
+      <p class="small">checked <b>before every pass</b>; the loop stops when it becomes False</p>
+      <div class="py short sm"><pre>
+counter = 0
+
+while counter < 3:
+    print("Counter:", counter)
+    counter += 1
+</pre></div>
+    </div>
+  </div>
+  <aside class="notes">
+A while loop repeats while its condition is True. The condition is a Boolean expression, checked BEFORE each pass.
+Step through: watch counter change and the condition being checked 4 times (True, True, True, False).
+counter += 1 is essential: without it the condition stays True forever → infinite loop.
+Demo: delete counter += 1 and run → it never ends; press ■ Stop on the code box. (In Jupyter: the ■ interrupt button.)
+  </aside>
+</section>
+
+<!-- ============================================================ 22 -->
+<section>
+  <h2><span class="num">4.2.1</span>Engineering example: iterative calculation</h2>
+  <p class="terms"><span>tolerance</span><span>convergence</span><span>maximum iterations</span></p>
+  <div class="cols wide-right">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 480 300" role="img" aria-label="Bar chart on a log scale: the error halves each iteration and drops below the tolerance of 0.01 at iteration 7">
+        <g font-size="12" class="muted" text-anchor="end">
+          <text x="44" y="24">1</text><text x="44" y="94">0.1</text><text x="44" y="164">0.01</text><text x="44" y="234">0.001</text>
+        </g>
+        <path class="line-muted" d="M50 20 H 470 M50 90 H 470 M50 160 H 470 M50 230 H 470" style="opacity:.5"/>
+        <!-- bars: log10 values for 0.5..0.0078125 : y = 20 + (-log10 v)*70 -->
+        <g class="fill-acc">
+          <rect x="62" y="41" width="40" height="219"/>
+          <rect x="120" y="62" width="40" height="198"/>
+          <rect x="178" y="83" width="40" height="177"/>
+          <rect x="236" y="104" width="40" height="156"/>
+          <rect x="294" y="125" width="40" height="135"/>
+          <rect x="352" y="146" width="40" height="114"/>
+        </g>
+        <rect x="410" y="168" width="40" height="92" class="good" style="fill:var(--good)"/>
+        <path d="M50 160 H 470" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="8 5"/>
+        <rect x="56" y="140" width="110" height="17" fill="#fff" opacity=".9"/><text x="60" y="153" font-size="13" style="fill:var(--bad)">tolerance 0.01</text>
+        <path class="line" d="M50 260 H 470"/>
+        <g font-size="13" text-anchor="middle"><text x="82" y="280">1</text><text x="140" y="280">2</text><text x="198" y="280">3</text><text x="256" y="280">4</text><text x="314" y="280">5</text><text x="372" y="280">6</text><text x="430" y="280">7</text></g>
+        <text x="260" y="298" font-size="12" text-anchor="middle" class="muted">iteration (error halves each time; log scale)</text>
+      </svg>
+    </div>
+    <div class="py sm short"><pre>
+error = 1.0
+tolerance = 0.01
+iteration = 0
+maximum_iterations = 100
+while error > tolerance and iteration < maximum_iterations:
+    error = error / 2.0
+    iteration += 1
+    print("Iteration:", iteration, "Error:", error)
+if error <= tolerance:
+    print("The calculation converged.")
+else:
+    print("The calculation did not converge.")
+</pre></div>
+  </div>
+  <aside class="notes">
+Many numerical methods repeat a calculation until the error falls below a tolerance: equation solvers, optimisation...
+Here the error is halved each pass: 0.5, 0.25, ... 0.0078125 after 7 iterations, which is below 0.01, so the loop stops.
+An iterative method is NOT always guaranteed to converge, so we add a safeguard: iteration < maximum_iterations, combined with "and".
+After the loop, an if statement reports which condition ended it.
+Demo: set maximum_iterations = 5 → "did not converge". Or tolerance = 0.0001 → more iterations.
+Intentional infinite loops (while True:) are used for monitoring and data acquisition, but need a way out such as break: see the exercise at the end.
+  </aside>
+</section>
+
+<!-- ============================================================ 23 -->
+<section>
+  <h2><span class="num">5.1</span><code>break</code></h2>
+  <p class="terms"><span>stop the whole loop</span></p>
+  <div class="cols trace-left">
+    <div class="tracer wide" data-trace="w2-break"></div>
+    <div class="py sm"><pre>
+temperatures = [22.0, 24.5, 27.1,
+                85.0, 25.3]
+maximum = 80.0
+
+for temperature in temperatures:
+    if temperature > maximum:
+        print("Unsafe:", temperature)
+        break
+
+    print("Accepted:", temperature)
+</pre></div>
+  </div>
+  <aside class="notes">
+Sometimes the normal execution of a loop must change. break terminates the innermost loop immediately; the program continues after the loop.
+Engineering use: stop a search as soon as an unsafe measurement is found.
+Step through: 22.0, 24.5, 27.1 accepted; 85.0 triggers break; 25.3 is NEVER checked.
+(Variable names shortened on the slide: maximum = maximum_temperature in the handout; messages shortened.)
+Simple version from the handout: for i in range(10): if i == 5: break; print(i) → prints 0 to 4.
+  </aside>
+</section>
+
+<!-- ============================================================ 24 -->
+<section>
+  <h2><span class="num">5.2</span><code>continue</code></h2>
+  <p class="terms"><span>skip one pass</span></p>
+  <div class="cols trace-left">
+    <div class="tracer wide" data-trace="w2-continue"></div>
+    <div class="py sm"><pre>
+measurements = [12.5, -999.0, 13.1, 12.8]
+invalid_value = -999.0
+
+for measurement in measurements:
+    if measurement == invalid_value:
+        continue
+
+    print("Valid:", measurement)
+</pre></div>
+  </div>
+  <aside class="notes">
+continue skips the REST of the current iteration and moves on to the next one. The loop itself carries on.
+Engineering use: ignore an invalid sensor reading (here -999.0 is a common "no data" code) without stopping the analysis.
+Step through: 12.5 printed; -999.0 skipped; 13.1 and 12.8 printed.
+Contrast with break: break abandons the loop, continue abandons only one pass.
+Handout example: for i in range(5): if i == 2: continue; print(i) → 0 1 3 4.
+  </aside>
+</section>
+
+<!-- ============================================================ 25 -->
+<section>
+  <h2><span class="num">5.3</span><code>pass</code></h2>
+  <p class="terms"><span>placeholder</span><span>does nothing</span></p>
+  <div class="cols">
+    <div class="stack">
+      <table class="t" style="font-size:.66em">
+        <thead><tr><th>statement</th><th>what happens</th></tr></thead>
+        <tbody>
+          <tr><td><code>break</code></td><td>leaves the whole loop</td></tr>
+          <tr><td><code>continue</code></td><td>skips to the next pass</td></tr>
+          <tr class="hi"><td><code>pass</code></td><td>nothing at all: a placeholder where Python needs a statement</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="py"><pre>
+temperature = 25.0
+
+if temperature > 80.0:
+    pass   # TODO: shut down the system
+else:
+    print("Temperature in the expected range.")
+</pre></div>
+  </div>
+  <aside class="notes">
+pass performs no operation. Python requires at least one statement in every block; pass fills the gap while the real code is not written yet.
+pass does NOT end a loop and does NOT skip to the next iteration: do not confuse it with break or continue.
+Demo: delete the pass line and run → IndentationError (the block is empty).
+  </aside>
+</section>
+
+<!-- ============================================================ 26 -->
+<section>
+  <h2><span class="num">6</span>Nested loops</h2>
+  <p class="terms"><span>outer loop</span><span>inner loop</span><span>combinations</span></p>
+  <div class="cols">
+    <div class="stack">
+      <table class="t" style="font-size:.7em;text-align:center">
+        <thead><tr><th></th><th>load = 100.0</th><th>load = 200.0</th></tr></thead>
+        <tbody>
+          <tr><th>length = 1.0</th><td>pass 1</td><td>pass 2</td></tr>
+          <tr><th>length = 2.0</th><td>pass 3</td><td>pass 4</td></tr>
+          <tr><th>length = 3.0</th><td>pass 5</td><td>pass 6</td></tr>
+        </tbody>
+      </table>
+      <p class="small">the <b>inner</b> loop runs through every load before the <b>outer</b> loop moves to the next length: 3 × 2 = 6 passes</p>
+    </div>
+    <div class="py sm"><pre>
+lengths = [1.0, 2.0, 3.0]
+loads = [100.0, 200.0]
+
+for length in lengths:
+    for load in loads:
+        print("Length:", length, "Load:", load)
+</pre></div>
+  </div>
+  <aside class="notes">
+A loop inside another loop is a nested loop.
+The outer loop processes one length at a time; for each length, the inner loop runs through ALL the loads.
+The table shows the order of the 6 passes: read it row by row.
+Uses: parameter studies, matrices, numerical grids, 2-D measurement data (handout example: rows of a measurement grid).
+Cost grows quickly: 1000 lengths × 1000 loads = 1 000 000 passes.
+  </aside>
+</section>
+
+<!-- ============================================================ 27 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">7</p>
+  <h1>Exception handling</h1>
+  <aside class="notes">Section 7: responding to expected errors with try and except.</aside>
+</section>
+
+<!-- ============================================================ 28 -->
+<section>
+  <h2><span class="num">7</span><code>try</code> and <code>except</code></h2>
+  <p class="terms"><span>exception</span><span>try</span><span>except ValueError</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 330" role="img" aria-label="Python runs the try block; if it succeeds the program continues, if a ValueError is raised the except block runs instead">
+      <rect class="box-acc" x="150" y="14" width="260" height="56" rx="6"/>
+      <text x="280" y="38" font-size="16" text-anchor="middle" class="acc" font-weight="700">try:</text>
+      <text x="280" y="58" font-size="13" text-anchor="middle">number = int(input(...))</text>
+      <path class="line" d="M220 70 L 130 150"/><path class="fill-ink" d="M124 156 l3 -13 l9 9 z"/>
+      <path class="line" d="M340 70 L 430 150"/><path class="fill-ink" d="M436 156 l-12 -4 l9 -9 z"/>
+      <text x="160" y="112" font-size="14" text-anchor="end" style="fill:var(--good)">it worked</text>
+      <text x="400" y="112" font-size="14" style="fill:var(--bad)">ValueError raised</text>
+      <rect class="box" x="10" y="160" width="250" height="60" rx="5"/>
+      <text x="135" y="186" font-size="14" text-anchor="middle">rest of the try block</text>
+      <text x="135" y="206" font-size="12" text-anchor="middle" class="muted">print("You entered:", number)</text>
+      <rect class="box" x="300" y="160" width="250" height="60" rx="5" style="stroke:var(--bad)"/>
+      <text x="425" y="186" font-size="14" text-anchor="middle">except ValueError:</text>
+      <text x="425" y="206" font-size="12" text-anchor="middle" class="muted">print("Not a valid integer.")</text>
+      <path class="line" d="M135 220 V 270 H 425 V 220 M280 270 V 290"/><path class="fill-ink" d="M280 300 l-7 -12 h14 z"/>
+      <text x="280" y="322" font-size="14" text-anchor="middle">program carries on instead of crashing</text>
+    </svg>
+    <div class="py" data-input="12" data-hint="try abc in the input box"><pre>
+try:
+    number = int(input("Enter an integer: "))
+    print("You entered:", number)
+
+except ValueError:
+    print("Not a valid integer.")
+</pre></div>
+  </div>
+  <aside class="notes">
+An exception is an error detected while the program is running: invalid input, division by zero, a missing file, an invalid conversion. If it is not handled, Python stops the program (or notebook cell) with an error message.
+try: Python runs the statements in the try block.
+If int() cannot convert the input, it raises a ValueError, and Python jumps to the matching except block instead of crashing.
+Run with 12 → "You entered: 12". Type abc in the input box → "Not a valid integer." Try 12.5 too (also a ValueError for int()).
+Good practice: name the exception (except ValueError:) rather than a bare except:, which would hide unrelated programming errors.
+  </aside>
+</section>
+
+<!-- ============================================================ 29 -->
+<section>
+  <h2><span class="num">7.1</span>Handling more than one exception</h2>
+  <p class="terms"><span>ValueError</span><span>ZeroDivisionError</span></p>
+  <div class="cols">
+    <table class="t" style="font-size:.68em">
+      <thead><tr><th>you type</th><th>what happens</th><th>block that runs</th></tr></thead>
+      <tbody>
+        <tr><td><code>4</code></td><td>no error</td><td>rest of <code>try</code>: prints 0.25</td></tr>
+        <tr><td><code>abc</code></td><td><code>float("abc")</code> fails</td><td><code>except ValueError</code></td></tr>
+        <tr><td><code>0</code></td><td><code>1.0 / 0.0</code> fails</td><td><code>except ZeroDivisionError</code></td></tr>
+      </tbody>
+    </table>
+    <div class="py sm" data-input="4" data-hint="try 4, then 0, then abc"><pre>
+try:
+    value = float(input("Enter a non-zero value: "))
+    reciprocal = 1.0 / value
+
+    print("Reciprocal:", reciprocal)
+
+except ValueError:
+    print("The input must be numerical.")
+
+except ZeroDivisionError:
+    print("The value must not be zero.")
+</pre></div>
+  </div>
+  <aside class="notes">
+Different exceptions can be handled separately, each with its own except block.
+ValueError: the input cannot be converted to a float.
+ZeroDivisionError: the user entered 0 and we try to calculate 1/0.
+Run three times with 4, 0 and abc, following the table.
+Python checks the except blocks in order and runs the first one that matches.
+  </aside>
+</section>
+
+<!-- ============================================================ 30 -->
+<section>
+  <h2><span class="num">7.2–7.3</span>The <code>else</code> and <code>finally</code> clauses</h2>
+  <p class="terms"><span>else: only if no error</span><span>finally: always</span></p>
+  <div class="cols">
+    <div class="stack">
+      <table class="t" style="font-size:.66em">
+        <thead><tr><th>block</th><th>no error</th><th>error</th></tr></thead>
+        <tbody>
+          <tr><td><code>try</code></td><td class="tv-T">runs</td><td>stops at the error</td></tr>
+          <tr><td><code>except</code></td><td class="tv-F">skipped</td><td class="tv-T">runs</td></tr>
+          <tr><td><code>else</code></td><td class="tv-T">runs</td><td class="tv-F">skipped</td></tr>
+          <tr class="hi"><td><code>finally</code></td><td class="tv-T">runs</td><td class="tv-T">runs</td></tr>
+        </tbody>
+      </table>
+      <p class="small"><code>else</code> keeps the <code>try</code> block short; <code>finally</code> is for clean-up, such as closing a file</p>
+    </div>
+    <div class="py sm" data-input="12.5" data-hint="try abc"><pre>
+try:
+    value = float(input("Enter a value: "))
+
+except ValueError:
+    print("The input must be numerical.")
+
+else:
+    print("The entered value is:", value)
+
+finally:
+    print("Input processing has finished.")
+</pre></div>
+  </div>
+  <aside class="notes">
+else (optional): runs only if the try block finished WITHOUT an exception. It keeps the try block limited to the statements that can actually raise the expected error, so it is clear which line failed.
+finally (optional): runs whether or not an exception occurred. Used for things that must always happen: closing a file, releasing a resource.
+The handout shows them as two separate examples; here they are combined. Run with 12.5 (try, else, finally) and with abc (try, except, finally).
+Message: exception handling is for operations that may reasonably fail; it must not be used to hide programming errors.
+  </aside>
+</section>
+
+<!-- ============================================================ 31 -->
+<section>
+  <h2><span class="num">8</span>Summary</h2>
+  <div class="cols" style="font-size:.72em">
+    <ul>
+      <li>Statements normally run <b>in sequence</b></li>
+      <li><b>Boolean expressions</b>: <code>== != &gt; &lt; &gt;= &lt;=</code> → True / False</li>
+      <li>Combine with <code>and</code>, <code>or</code>, <code>not</code></li>
+      <li><code>if</code> / <code>elif</code> / <code>else</code>: the first True block runs; order matters</li>
+      <li>Indentation and <code>:</code> define the blocks</li>
+      <li>Nested conditions, or simplify with <code>and</code></li>
+    </ul>
+    <ul>
+      <li><code>for</code> goes through a <b>series</b>: <code>range()</code>, lists, <code>enumerate()</code>, <code>zip()</code></li>
+      <li><code>while</code> repeats while a <b>condition</b> is True; add a maximum number of iterations</li>
+      <li>Running totals: start at 0 before the loop</li>
+      <li><code>break</code> stops, <code>continue</code> skips, <code>pass</code> does nothing</li>
+      <li>Nested loops for combinations and grids</li>
+      <li><code>try</code> / <code>except</code> / <code>else</code> / <code>finally</code> for expected errors</li>
+    </ul>
+  </div>
+  <aside class="notes">
+Recap the map from slide 3: sequence, selection (if/elif/else, try/except) and repetition (for, while, with break/continue/pass).
+These are the building blocks of every numerical algorithm in the rest of the module.
+Point students to the full notes page and the practice notebook (Footbridge challenge part 2).
+  </aside>
+</section>
+
+<!-- ============================================================ 32 -->
+<section>
+  <h2>Your turn: engine health monitoring</h2>
+  <p class="terms"><span>while True</span><span>for</span><span>if</span></p>
+  <div class="cols wide-right">
+    <div class="task stack">
+      <p>The temperature inside an engine bay is monitored by <b>15 sensors</b>, <code>s1, s2, …, s15</code>.</p>
+      <p><code>read_sensors()</code> returns the current reading of every sensor, in °C, as a list of 15 numbers.</p>
+      <p>Write the code that checks every sensor <b>indefinitely</b> and prints</p>
+      <p class="big-code" style="font-size:.85em">temperature exceeded the safe limits on sensor number …</p>
+      <p>whenever a reading is above <b>287 °C</b>.</p>
+      <p class="small">The loop never ends on its own: press <b>■ Stop</b> to end it.</p>
+    </div>
+    <div class="py write tall sm" data-setup="engine" data-hint="read_sensors() is ready to use"><pre>
+safe_limit = 287    # °C
+
+# Write your code here
+
+</pre></div>
+  </div>
+  <aside class="notes">
+Exercise combining today's tools.
+Expected ingredients: while True: for monitoring indefinitely; inside it call read_sensors() once per sweep; a for loop over the 15 readings, with enumerate(..., start=1) to get sensor numbers 1-15; an if to compare with 287; print the message with the sensor number.
+read_sensors() is provided on this slide: it waits 0.5 s (one sweep) and returns 15 simulated readings around 255 °C, occasionally with one reading above the limit.
+Because the loop is infinite, use ■ Stop. Discussion: in a real system how would the loop end? (A shutdown signal, a key press, or break after a critical reading.)
+Give students 5–10 minutes; solution on the next slide.
+  </aside>
+</section>
+
+<!-- ============================================================ 33 -->
+<section>
+  <h2>Engine health monitoring: a possible solution</h2>
+  <p class="terms"><span>while True</span><span>enumerate(start=1)</span></p>
+  <p class="small" style="margin:0 0 8px"><code>while True</code>: one pass = one sweep of all 15 sensors &nbsp;·&nbsp; <code>for … enumerate(readings, start=1)</code>: sensor numbers 1 to 15 &nbsp;·&nbsp; <code>if</code>: compare with the limit &nbsp;·&nbsp; <b>■ Stop</b> ends it</p>
+  <div class="py sm" data-setup="engine"><pre>
+safe_limit = 287    # °C
+
+while True:
+    readings = read_sensors()
+    for number, temperature in enumerate(readings, start=1):
+        if temperature > safe_limit:
+            print('temperature exceeded the safe limits on sensor number', number)
+</pre></div>
+  <aside class="notes">
+Walk through the solution: outer infinite while loop = continuous monitoring; inner for loop = one check of each sensor.
+Run it and let it go for a few seconds, then press Stop.
+Extensions to discuss: print the temperature too; count how many times each sensor exceeded the limit (a list of 15 zeros and +=); stop with break after 3 consecutive exceedances; wrap read_sensors() in try/except in case a sensor fails.
+  </aside>
+</section>
+
+<!-- ============================================================ 34 -->
+<section style="display:flex;flex-direction:column;justify-content:center">
+  <h2>Practise</h2>
+  <p>Full notes, interactive examples and the practice notebook:</p>
+  <p class="big-code"><a href="week2.html">week2.html</a></p>
+  <p class="small">The notebook ends with <em>The Footbridge Inspection, part 2</em>.</p>
+  <aside class="notes">Remind students to try the practice notebook before next week (Python libraries, NumPy and Matplotlib).</aside>
+</section>
+
+</div></div>
+
+<!-- Setup code that runs silently before a code box -->
+<script type="text/plain" id="setup-engine">import random, time
+
+def read_sensors():
+    """Simulated engine-bay sensors s1..s15: one sweep every 0.5 s."""
+    time.sleep(0.5)
+    readings = [round(random.gauss(255, 12), 1) for _ in range(15)]
+    if random.random() < 0.5:
+        readings[random.randrange(15)] = round(random.uniform(288, 315), 1)
+    return readings
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/notes/notes.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="assets/traces.js"></script>
+<script src="assets/slides.js"></script>
+</body>
+</html>
