@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 3 slides: Python libraries, NumPy and Matplotlib | ENGI 1151</title>
+<meta name="description" content="ENGI 1151 week 3 presentation: Python libraries, NumPy arrays and Matplotlib plots, with runnable code on every slide.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+<link rel="stylesheet" href="assets/slides.css">
+</head>
+<body data-py-packages="numpy,matplotlib">
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ 1 -->
+<section class="title-slide" style="display:flex;flex-direction:column;justify-content:center">
+  <p class="course">ENGI 1151 · Computational Tools for Engineers and Scientists · Week 3</p>
+  <h1>Python libraries, NumPy and Matplotlib</h1>
+  <p class="byline">Dr Nima Gerami Seresht · Department of Engineering · Durham University</p>
+  <p class="py-status" data-py-status>Python: loading…</p>
+  <p class="small">Full notes, widgets and the practice notebook: <a href="week3.html">week3.html</a></p>
+  <aside class="notes">
+Welcome to week 3. Weeks 1 and 2: core Python (values, variables, lists, flow control). Today: using other people's tested code.
+Two libraries that every engineer using Python meets: NumPy for numerical arrays and Matplotlib for plots.
+Every code box is live Python: click Run to see the output, including figures.
+Check the status line says "Python, NumPy and Matplotlib: ready" before starting (about 20–30 s on the first load; NumPy and Matplotlib load in the background while this slide is showing).
+  </aside>
+</section>
+
+<!-- ============================================================ 2 -->
+<section>
+  <h2><span class="num">1</span>Modules, packages and libraries</h2>
+  <p class="terms"><span>module</span><span>package</span><span>library</span></p>
+  <div class="cols wide-left">
+    <svg class="dg" viewBox="0 0 640 420" role="img" aria-label="A library contains packages, a package contains modules, and a module contains functions. Matplotlib is the example: import matplotlib.pyplot loads the pyplot module.">
+      <rect class="box" x="6" y="6" width="628" height="408" rx="10"/>
+      <text x="24" y="36" font-size="19" font-weight="700">Library</text>
+      <text x="112" y="36" font-size="15" class="muted">e.g. Matplotlib: reusable code for one range of tasks</text>
+      <rect class="box-acc" x="24" y="54" width="592" height="262" rx="8"/>
+      <text x="42" y="82" font-size="18" font-weight="700" class="acc">Package</text>
+      <text x="132" y="82" font-size="15" class="muted">matplotlib/ (a folder of modules)</text>
+      <rect class="box" x="42" y="98" width="250" height="200" rx="6" style="stroke:var(--accent);stroke-width:2.4"/>
+      <text x="58" y="126" font-size="16" font-weight="700">Module</text><text x="132" y="126" font-size="16" class="acc">pyplot.py</text>
+      <g font-size="18"><text x="66" y="162">plot()</text><text x="66" y="190">scatter()</text><text x="66" y="218">xlabel()</text><text x="66" y="246">savefig()</text><text x="66" y="276" class="muted" font-size="15">… functions</text></g>
+      <rect class="box" x="312" y="98" width="140" height="70" rx="6"/><text x="328" y="126" font-size="16" font-weight="700">Module</text><text x="328" y="154" font-size="18">cm.py</text>
+      <rect class="box" x="466" y="98" width="140" height="70" rx="6"/><text x="482" y="126" font-size="16" font-weight="700">Module</text><text x="482" y="154" font-size="18">colors.py</text>
+      <text x="390" y="214" font-size="15" class="muted">… and many more modules</text>
+      <rect class="box-code" x="24" y="336" width="400" height="54" rx="6"/>
+      <text x="40" y="369" font-size="18"><tspan class="acc" font-weight="700">import</tspan> matplotlib.pyplot <tspan class="acc" font-weight="700">as</tspan> plt</text>
+      <path class="line-acc" d="M200 336 V 304"/><path class="fill-acc" d="M200 298 l-7 12 h14 z"/>
+      <text x="440" y="358" font-size="15" class="acc">loads one module,</text><text x="440" y="378" font-size="15" class="acc">not the whole library</text>
+    </svg>
+    <div class="stack" style="font-size:.74em">
+      <div class="panel"><h3>module</h3><p>one Python file (<code>.py</code>) with functions you can import</p></div>
+      <div class="panel"><h3>package</h3><p>a folder that groups related modules</p></div>
+      <div class="panel"><h3>library</h3><p>a general word for a collection of reusable code; it can contain packages and modules</p></div>
+      <p class="small">People often use the three words loosely.</p>
+    </div>
+  </div>
+  <aside class="notes">
+One of Python's main strengths is its ecosystem of modules, packages and libraries: tested code for common jobs, so we can focus on the engineering problem.
+Module: a single .py file with definitions (functions, classes) that another program can import.
+Package: a structured collection of modules, organised in folders.
+Library: general word for a collection of reusable code for a range of tasks; may contain several packages and modules.
+Matplotlib example: the library contains the matplotlib package, which contains modules such as pyplot, cm and colors; pyplot contains plot(), scatter(), xlabel(), savefig().
+import matplotlib.pyplot as plt loads one module: importing does not load every part of a library into memory.
+People use the three words loosely: don't worry about the exact boundary.
+  </aside>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+  <h2><span class="num">1</span>Why use packages?</h2>
+  <p class="terms"><span>standard library</span><span>third-party package</span><span>pip</span></p>
+  <div class="cols">
+    <div class="panel">
+      <h3>Standard library: comes with Python</h3>
+      <p class="big-code" style="font-size:.7em"><b>math</b> · <b>random</b> · <b>pathlib</b></p>
+      <p class="small">no installation needed: just <code>import</code></p>
+    </div>
+    <div class="panel">
+      <h3>Third-party: installed once with pip</h3>
+      <p class="big-code" style="font-size:.66em"><b>numpy</b> <span class="small">numerical arrays</span><br><b>matplotlib</b> <span class="small">plotting</span><br><b>scipy</b> <span class="small">optimisation, integration, statistics, signals</span></p>
+      <p class="small">installing with <code>pip</code>: see section 2 of the handout. In these slides they are already installed.</p>
+    </div>
+  </div>
+  <div class="cols" style="margin-top:16px">
+    <div class="stack" style="font-size:.74em">
+      <p><b>Benefits</b></p>
+      <ul>
+        <li>no need to write common algorithms from scratch</li>
+        <li>tested by large user communities</li>
+        <li>programs split into clear components</li>
+        <li>fast code, written in compiled languages</li>
+        <li>the same tools reused across projects</li>
+      </ul>
+    </div>
+    <div class="py" data-hint="standard library: no install"><pre>
+import math
+
+print(math.sqrt(2))
+print(math.pi)
+</pre></div>
+  </div>
+  <aside class="notes">
+Two kinds of package.
+Standard library: distributed with Python, e.g. math, random (week 2 engine simulation used it), pathlib for file paths. No installation, just import.
+Third-party: NumPy, Matplotlib, SciPy and thousands more; installed with a package manager, normally pip: python3 -m pip install numpy matplotlib scipy (macOS) or py -m pip install ... (Windows). Details in section 2 of the handout; in these slides and on the website they are already available.
+Benefits: no reinventing the wheel; well tested; modular programs; the heavy numerical work runs in compiled C/Fortran, so it is fast; reuse across projects.
+Run the math example: sqrt(2) and pi.
+Tip for assessed work: record package versions (np.__version__), because updates can change behaviour.
+  </aside>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+  <h2><span class="num">3</span>Importing packages and modules</h2>
+  <p class="terms"><span>import</span><span>alias: as</span><span>from … import …</span></p>
+  <div class="cols wide-left">
+    <div class="stack">
+      <table class="t">
+        <thead><tr><th>you write</th><th>name created</th><th>you then call</th></tr></thead>
+        <tbody>
+          <tr><td><code>import numpy</code></td><td><code>numpy</code></td><td><code>numpy.sqrt(2)</code></td></tr>
+          <tr class="hi"><td><code>import numpy as np</code></td><td><code>np</code></td><td><code>np.sqrt(2)</code> ← usual</td></tr>
+          <tr><td><code>from numpy import pi</code></td><td><code>pi</code></td><td><code>pi</code> (just this one name)</td></tr>
+        </tbody>
+      </table>
+      <p class="callout">Conventions: <code>np</code> for NumPy, <code>plt</code> for <code>matplotlib.pyplot</code>, <code>pd</code> for pandas. After <code>import numpy as np</code>, the name <code>numpy</code> does <b>not</b> exist.</p>
+      <p class="small">Each code box starts a fresh Python, like a restarted Jupyter kernel: every example imports what it needs.</p>
+    </div>
+    <div class="py"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+print('imports completed')
+
+from numpy import pi
+print(pi)
+print(np.sqrt(2))
+</pre></div>
+  </div>
+  <aside class="notes">
+After installing, a package must be imported before use; in a notebook the imports normally go in the first cell.
+Printing "imports completed" is a personal habit: a quick check that everything imported.
+as gives an alias, which shortens later code; np, plt and pd are community conventions, use them.
+from numpy import pi imports just one object, used without a prefix.
+Common mistake: after import numpy as np, writing numpy.array(...) gives NameError: numpy is not defined. Demo: change np.sqrt to numpy.sqrt and run.
+Imports last while the kernel is running; after a kernel restart, run the import cell again. Saving a notebook saves code and outputs, not the kernel state.
+  </aside>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">4</p>
+  <h1>Numerical computation with NumPy</h1>
+  <aside class="notes">Section 4: NumPy, short for Numerical Python: arrays and fast calculations on them.</aside>
+</section>
+
+<!-- ============================================================ 6 -->
+<section>
+  <h2><span class="num">4.1</span>NumPy arrays</h2>
+  <p class="terms"><span>ndarray</span><span>dimension</span><span>shape</span></p>
+  <div class="cols wide-left">
+    <svg class="dg" viewBox="0 0 640 400" role="img" aria-label="A one-dimensional array has shape (4,), a two-dimensional array has shape (2, 3), and a three-dimensional array has shape (2, 2, 3).">
+      <text x="10" y="30" font-size="17" font-weight="700">1-D</text><text x="60" y="30" font-size="15" class="muted">shape (4,)</text>
+      <g font-size="17" text-anchor="middle">
+        <rect class="box" x="10" y="44" width="52" height="42"/><text x="36" y="71">1</text>
+        <rect class="box" x="62" y="44" width="52" height="42"/><text x="88" y="71">2</text>
+        <rect class="box" x="114" y="44" width="52" height="42"/><text x="140" y="71">3</text>
+        <rect class="box" x="166" y="44" width="52" height="42"/><text x="192" y="71">4</text>
+      </g>
+      <text x="10" y="140" font-size="17" font-weight="700">2-D</text><text x="60" y="140" font-size="15" class="muted">shape (2, 3): rows, columns</text>
+      <g font-size="17" text-anchor="middle">
+        <rect class="box" x="40" y="156" width="52" height="42"/><text x="66" y="183">2</text>
+        <rect class="box" x="92" y="156" width="52" height="42"/><text x="118" y="183">3</text>
+        <rect class="box" x="144" y="156" width="52" height="42"/><text x="170" y="183">5</text>
+        <rect class="box" x="40" y="198" width="52" height="42"/><text x="66" y="225">7</text>
+        <rect class="box" x="92" y="198" width="52" height="42"/><text x="118" y="225">12</text>
+        <rect class="box" x="144" y="198" width="52" height="42"/><text x="170" y="225">1</text>
+      </g>
+      <path class="line-acc" d="M24 160 V 236"/><path class="fill-acc" d="M24 244 l-6 -11 h12 z"/><text x="16" y="270" font-size="14" class="acc">axis 0</text>
+      <path class="line-acc" d="M44 254 H 186"/><path class="fill-acc" d="M194 254 l-11 -6 v12 z"/><text x="204" y="259" font-size="14" class="acc">axis 1</text>
+      <text x="330" y="140" font-size="17" font-weight="700">3-D</text><text x="380" y="140" font-size="15" class="muted">shape (2, 2, 3)</text>
+      <g transform="translate(372 150)"><g opacity=".55">
+        <rect class="box-acc" x="28" y="0" width="156" height="84"/><path class="line" d="M80 0 V 84 M132 0 V 84 M28 42 H 184" style="stroke:var(--accent)"/></g>
+        <rect class="box" x="0" y="28" width="156" height="84"/><path class="line" d="M52 28 V 112 M104 28 V 112 M0 70 H 156"/>
+      </g>
+      <text x="372" y="290" font-size="14" class="muted">a stack of 2-D layers</text>
+      <text x="10" y="340" font-size="16">number of indices to reach one element</text>
+      <text x="10" y="366" font-size="16">= number of dimensions, <tspan class="acc" font-weight="700">a.ndim</tspan></text>
+    </svg>
+    <div class="py"><pre>
+import numpy as np
+
+a = np.array([1, 2, 3, 4])
+print(a)
+
+b = np.array([
+    [2, 3, 5],
+    [7, 12, 1]
+])
+print(b)
+</pre></div>
+  </div>
+  <aside class="notes">
+The central NumPy object is the ndarray: an n-dimensional array. Used for datasets, vectors and matrices, time series, discretised spatial domains, images.
+Create a 1-D array from a list with np.array([...]); a 2-D array from a nested list: one inner list per row.
+b has 2 rows and 3 columns: shape (2, 3). Arrays can have more dimensions, hence "n-dimensional".
+Run it: NumPy prints arrays without commas and lines the columns up.
+axis 0 runs down the rows, axis 1 runs across the columns: we will use these names for statistics later.
+  </aside>
+</section>
+
+<!-- ============================================================ 7 -->
+<section>
+  <h2><span class="num">4.2</span>Array data types</h2>
+  <p class="terms"><span>dtype</span><span>int64</span><span>float64</span></p>
+  <div class="cols">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 560 230" role="img" aria-label="The list 1, 2.5, 3 becomes an array where every value is a float64: 1., 2.5, 3.">
+        <text x="10" y="26" font-size="15" class="muted">Python list: any mix of types</text>
+        <g font-size="18" text-anchor="middle">
+          <rect class="box" x="10" y="38" width="70" height="44"/><text x="45" y="66">1</text>
+          <rect class="box" x="80" y="38" width="70" height="44"/><text x="115" y="66">2.5</text>
+          <rect class="box" x="150" y="38" width="70" height="44"/><text x="185" y="66">3</text>
+        </g>
+        <text x="236" y="56" font-size="13" class="muted">int, float, int</text>
+        <path class="line-acc" d="M115 88 V 132"/><path class="fill-acc" d="M115 140 l-7 -12 h14 z"/>
+        <text x="130" y="118" font-size="15" class="acc">np.array(…): one common type</text>
+        <g font-size="18" text-anchor="middle">
+          <rect class="box-acc" x="10" y="146" width="70" height="44"/><text x="45" y="174">1.</text>
+          <rect class="box-acc" x="80" y="146" width="70" height="44"/><text x="115" y="174">2.5</text>
+          <rect class="box-acc" x="150" y="146" width="70" height="44"/><text x="185" y="174">3.</text>
+        </g>
+        <text x="236" y="174" font-size="17" class="acc" font-weight="700">dtype float64</text>
+        <text x="10" y="220" font-size="14" class="muted">the trailing dot means "a float that happens to be whole"</text>
+      </svg>
+      <p class="small">Arrays can also hold Booleans, complex numbers and strings, but the speed comes from <b>one numerical type</b>.</p>
+    </div>
+    <div class="py" data-hint="int64 may show as int32 in the browser"><pre>
+import numpy as np
+
+integer_array = np.array([1, 2, 3])
+float_array = np.array([1.0, 2.0, 3.0])
+mixed_array = np.array([1, 2.5, 3])
+print(integer_array.dtype)
+print(float_array.dtype)
+print(mixed_array.dtype)
+
+values = np.array([1, 2, 3], dtype=float)
+print(values)
+</pre></div>
+  </div>
+  <aside class="notes">
+Unlike a list, an array stores all its elements with one common data type, the dtype.
+Mixing integers and floats: NumPy picks a type that can hold all of them, float64, so [1, 2.5, 3] becomes [1. 2.5 3.].
+You can ask for a type with dtype=float.
+Note for the live boxes: the browser version of Python is 32-bit WebAssembly, so the integer dtype may print as int32 instead of int64 as on a laptop. Same idea: a fixed-size whole number.
+Arrays can store Booleans, complex numbers, strings or Python objects, but the performance benefit comes from a consistent numerical type.
+  </aside>
+</section>
+
+<!-- ============================================================ 8 -->
+<section>
+  <h2><span class="num">4.3</span>Python lists versus NumPy arrays</h2>
+  <p class="terms"><span>element-wise</span><span>vectorised</span></p>
+  <div class="cols">
+    <div class="stack">
+      <p class="small" style="margin:0">Same operator, different meaning. Pick an operation:</p>
+      <div class="wchips" id="lva-chips"></div>
+      <div class="wpanel"><h4>python_list = [1, 2, 3]</h4><pre id="lva-list"></pre></div>
+      <div class="wpanel"><h4>numpy_array = np.array([1, 2, 3])</h4><pre id="lva-arr"></pre></div>
+    </div>
+    <div class="stack">
+      <table class="t" style="font-size:.6em">
+        <thead><tr><th>Python list</th><th>NumPy array</th></tr></thead>
+        <tbody>
+          <tr><td>any mix of types</td><td>one common type</td></tr>
+          <tr><td>operators act on the whole list</td><td>operators act <b>element-wise</b></td></tr>
+          <tr><td>slower for big numerical work</td><td>fast, compact, vectorised</td></tr>
+        </tbody>
+      </table>
+      <div class="py sm"><pre>
+import numpy as np
+
+python_list = [1, 2, 3]
+numpy_array = np.array([1, 2, 3])
+print(python_list * 2)
+print(numpy_array * 2)
+</pre></div>
+    </div>
+  </div>
+  <aside class="notes">
+Lists and arrays look similar but behave differently.
+Click through the operations on the left: * 2 repeats a list but doubles each array element; + 1 is an error for a list but adds 1 to every element of an array; + another list joins lists, but adds arrays element by element; ** and / do not work on lists at all.
+Arrays: one dtype, designed for numerical computation, operators act element-wise (vectorised: no loop needed), lower memory and faster for big data.
+Run the code box to confirm the first case in real Python.
+  </aside>
+</section>
+
+<!-- ============================================================ 9 -->
+<section>
+  <h2><span class="num">4.4</span>Array properties</h2>
+  <p class="terms"><span>shape</span><span>ndim</span><span>size</span><span>dtype</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 330" role="img" aria-label="The array 2 3 5 over 7 12 1 has shape (2, 3), ndim 2, size 6 and dtype int64.">
+      <g font-size="20" text-anchor="middle">
+        <rect class="box" x="90" y="60" width="70" height="52"/><text x="125" y="93">2</text>
+        <rect class="box" x="160" y="60" width="70" height="52"/><text x="195" y="93">3</text>
+        <rect class="box" x="230" y="60" width="70" height="52"/><text x="265" y="93">5</text>
+        <rect class="box" x="90" y="112" width="70" height="52"/><text x="125" y="145">7</text>
+        <rect class="box" x="160" y="112" width="70" height="52"/><text x="195" y="145">12</text>
+        <rect class="box" x="230" y="112" width="70" height="52"/><text x="265" y="145">1</text>
+      </g>
+      <path class="line-acc" d="M90 44 H 300 M90 38 V 50 M300 38 V 50"/><text x="195" y="30" font-size="15" text-anchor="middle" class="acc">3 columns</text>
+      <path class="line-acc" d="M74 60 V 164 M68 60 H 80 M68 164 H 80"/><text x="62" y="117" font-size="15" text-anchor="end" class="acc">2 rows</text>
+      <g font-size="17">
+        <text x="330" y="80"><tspan class="acc" font-weight="700">shape</tspan>  (2, 3)</text>
+        <text x="330" y="112"><tspan class="acc" font-weight="700">ndim</tspan>   2</text>
+        <text x="330" y="144"><tspan class="acc" font-weight="700">size</tspan>   6</text>
+        <text x="330" y="176"><tspan class="acc" font-weight="700">dtype</tspan>  int64</text>
+      </g>
+      <g font-size="14" class="muted">
+        <text x="20" y="230">shape: rows, columns (a tuple)</text>
+        <text x="20" y="256">ndim: number of dimensions = length of shape</text>
+        <text x="20" y="282">size: total number of elements = 2 × 3</text>
+        <text x="20" y="308">dtype: the one data type of every element</text>
+      </g>
+    </svg>
+    <div class="py"><pre>
+import numpy as np
+
+a = np.array([
+    [2, 3, 5],
+    [7, 12, 1]
+])
+print("Shape:", a.shape)
+print("Number of dimensions:", a.ndim)
+print("Number of elements:", a.size)
+print("Data type:", a.dtype)
+</pre></div>
+  </div>
+  <aside class="notes">
+Four properties to inspect any array. They are attributes, so no brackets: a.shape, not a.shape().
+shape: a tuple, (rows, columns) for 2-D. ndim: how many dimensions. size: how many elements in total. dtype: the type of every element.
+Checking shape is the first debugging step when NumPy code gives an error: most errors are shape mismatches.
+Run it and compare with the diagram (dtype may show int32 in the browser).
+  </aside>
+</section>
+
+<!-- ============================================================ 10 -->
+<section>
+  <h2><span class="num">4.5</span>Indexing and slicing arrays</h2>
+  <p class="terms"><span>index</span><span>slice start:stop</span><span>row, column</span></p>
+  <div class="cols">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 560 150" role="img" aria-label="The array 10, 20, 30, 40, 50 with indices 0 to 4 above and -5 to -1 below; values[1:4] selects 20, 30, 40.">
+        <g font-size="14" text-anchor="middle" class="muted"><text x="62" y="20">0</text><text x="162" y="20">1</text><text x="262" y="20">2</text><text x="362" y="20">3</text><text x="462" y="20">4</text></g>
+        <g font-size="19" text-anchor="middle">
+          <rect class="box" x="12" y="30" width="100" height="48"/><text x="62" y="61">10</text>
+          <rect class="box-acc" x="112" y="30" width="100" height="48"/><text x="162" y="61">20</text>
+          <rect class="box-acc" x="212" y="30" width="100" height="48"/><text x="262" y="61">30</text>
+          <rect class="box-acc" x="312" y="30" width="100" height="48"/><text x="362" y="61">40</text>
+          <rect class="box" x="412" y="30" width="100" height="48"/><text x="462" y="61">50</text>
+        </g>
+        <g font-size="14" text-anchor="middle" class="muted"><text x="62" y="98">-5</text><text x="162" y="98">-4</text><text x="262" y="98">-3</text><text x="362" y="98">-2</text><text x="462" y="98">-1</text></g>
+        <path class="line-acc" d="M112 112 V 122 H 412 V 112"/><text x="262" y="142" font-size="16" text-anchor="middle" class="acc">values[1:4]: stop 4 is excluded</text>
+      </svg>
+      <div class="py sm short"><pre>
+import numpy as np
+
+values = np.array([10, 20, 30, 40, 50])
+print(values[0], values[-1], values[1:4])
+
+matrix = np.array([[10, 20, 30],
+                   [40, 50, 60]])
+print(matrix[0, 1])
+print(matrix[:, 1])
+</pre></div>
+    </div>
+    <div class="stack">
+      <p class="widx">matrix[<input id="ix-in" type="text" value="0, 1" spellcheck="false" autocomplete="off" aria-label="Index inside the brackets">]</p>
+      <div class="wchips" id="ix-chips"></div>
+      <span class="ngrid" id="ix-grid"></span>
+      <pre class="wpre wpanel" id="ix-out" aria-live="polite"></pre>
+      <p class="small">row index first, then column; <code>:</code> means "all of them"</p>
+    </div>
+  </div>
+  <aside class="notes">
+1-D arrays index and slice like lists (week 1): index 0 is the first element, -1 the last; values[1:4] gives elements 1, 2, 3 (the stop is excluded).
+2-D arrays: give a row index and a column index separated by a comma: matrix[0, 1] is row 0, column 1 → 20.
+A colon selects everything along that axis: matrix[0, :] is all of row 0; matrix[:, 1] is all of column 1 → [20 50].
+Use the explorer on the right: type an index or click a chip; the selected cells light up and the printed result appears. Try a slice like 0:2, 1: and an out-of-range index like 2, 0 for the IndexError.
+Quick check for the class: what does matrix[:, 1] give? One value from each row in column 1: [20 50].
+  </aside>
+</section>
+
+<!-- ============================================================ 11 -->
+<section>
+  <h2><span class="num">5.1–5.2</span><code>np.arange()</code> and <code>np.linspace()</code></h2>
+  <p class="terms"><span>step</span><span>number of samples</span><span>endpoint</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 330" role="img" aria-label="np.arange(0, 10, 2) gives 0, 2, 4, 6, 8 with the stop 10 excluded; np.linspace(0, 1, 5) gives five samples with four equal gaps, both ends included.">
+      <text x="10" y="26" font-size="17"><tspan class="acc" font-weight="700">np.arange</tspan>(0, 10, 2)<tspan class="muted" font-size="14">   start, stop, step</tspan></text>
+      <path class="line" d="M30 80 H 530"/>
+      <g class="fill-acc"><circle cx="30" cy="80" r="8"/><circle cx="130" cy="80" r="8"/><circle cx="230" cy="80" r="8"/><circle cx="330" cy="80" r="8"/><circle cx="430" cy="80" r="8"/></g>
+      <circle cx="530" cy="80" r="8" fill="#fff" stroke="var(--ink)" stroke-width="2" stroke-dasharray="3 2"/>
+      <g font-size="14" text-anchor="middle"><text x="30" y="108">0</text><text x="130" y="108">2</text><text x="230" y="108">4</text><text x="330" y="108">6</text><text x="430" y="108">8</text><text x="530" y="108" class="muted">10</text></g>
+      <path class="line-acc" d="M30 56 V 50 H 130 V 56"/><text x="80" y="44" font-size="13" text-anchor="middle" class="acc">step 2</text>
+      <text x="530" y="132" font-size="13" text-anchor="end" class="muted">stop excluded</text>
+      <text x="10" y="186" font-size="17"><tspan class="acc" font-weight="700">np.linspace</tspan>(0, 1, 5)<tspan class="muted" font-size="14">   start, stop, num</tspan></text>
+      <path class="line" d="M30 240 H 530"/>
+      <g class="fill-acc"><circle cx="30" cy="240" r="8"/><circle cx="155" cy="240" r="8"/><circle cx="280" cy="240" r="8"/><circle cx="405" cy="240" r="8"/><circle cx="530" cy="240" r="8"/></g>
+      <g font-size="14" text-anchor="middle"><text x="30" y="268">0</text><text x="155" y="268">0.25</text><text x="280" y="268">0.5</text><text x="405" y="268">0.75</text><text x="530" y="268">1</text></g>
+      <g class="acc" font-size="13" text-anchor="middle"><text x="92" y="226">gap 1</text><text x="217" y="226">gap 2</text><text x="342" y="226">gap 3</text><text x="467" y="226">gap 4</text></g>
+      <text x="280" y="304" font-size="15" text-anchor="middle">5 samples → 4 equal gaps; both ends included</text>
+    </svg>
+    <div class="stack">
+      <div class="py"><pre>
+import numpy as np
+
+print(np.arange(0, 10, 2))
+print(np.linspace(0, 1, 5))
+
+print(np.arange(1, 1.3, 0.1))   # careful!
+</pre></div>
+      <p class="callout">You know the <b>step</b>: <code>arange</code>. You know the <b>number of points</b> and both ends: <code>linspace</code>.</p>
+    </div>
+  </div>
+  <aside class="notes">
+np.arange(start, stop, step): evenly spaced values with a given step. Start included, stop normally excluded, like range() from week 2.
+np.linspace(start, stop, num): a given NUMBER of samples, both ends included by default. The third argument is the number of points, not the number of segments: 5 points make 4 gaps.
+endpoint=False leaves the stop value out.
+Run the box. The last line is the trap: np.arange(1, 1.3, 0.1) gives [1. 1.1 1.2 1.3]: floating-point rounding makes the "excluded" stop appear. With a float step, prefer linspace.
+Quick check: np.linspace(0, 10, 5)? [0. 2.5 5. 7.5 10.]
+  </aside>
+</section>
+
+<!-- ============================================================ 12 -->
+<section>
+  <h2><span class="num">5.3</span><code>np.zeros()</code>, <code>np.ones()</code> and <code>np.eye()</code></h2>
+  <p class="terms"><span>initialise</span><span>shape as a tuple</span><span>identity matrix</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 560 360" role="img" aria-label="np.zeros(5) is a row of five zeros; np.ones((2, 3)) is a 2 by 3 grid of ones; np.eye(3) is a 3 by 3 identity matrix with ones on the diagonal.">
+      <text x="10" y="24" font-size="16"><tspan class="acc" font-weight="700">np.zeros</tspan>(5)</text>
+      <g font-size="16" text-anchor="middle">
+        <rect class="box" x="10" y="36" width="56" height="40"/><text x="38" y="62">0.</text>
+        <rect class="box" x="66" y="36" width="56" height="40"/><text x="94" y="62">0.</text>
+        <rect class="box" x="122" y="36" width="56" height="40"/><text x="150" y="62">0.</text>
+        <rect class="box" x="178" y="36" width="56" height="40"/><text x="206" y="62">0.</text>
+        <rect class="box" x="234" y="36" width="56" height="40"/><text x="262" y="62">0.</text>
+      </g>
+      <text x="10" y="124" font-size="16"><tspan class="acc" font-weight="700">np.ones</tspan>((2, 3))</text><text x="10" y="238" font-size="13" class="muted">shape given as a tuple</text>
+      <g font-size="16" text-anchor="middle">
+        <rect class="box" x="10" y="136" width="56" height="40"/><text x="38" y="162">1.</text>
+        <rect class="box" x="66" y="136" width="56" height="40"/><text x="94" y="162">1.</text>
+        <rect class="box" x="122" y="136" width="56" height="40"/><text x="150" y="162">1.</text>
+        <rect class="box" x="10" y="176" width="56" height="40"/><text x="38" y="202">1.</text>
+        <rect class="box" x="66" y="176" width="56" height="40"/><text x="94" y="202">1.</text>
+        <rect class="box" x="122" y="176" width="56" height="40"/><text x="150" y="202">1.</text>
+      </g>
+      <text x="300" y="124" font-size="16"><tspan class="acc" font-weight="700">np.eye</tspan>(3)</text>
+      <g font-size="16" text-anchor="middle">
+        <rect class="box-acc" x="300" y="136" width="56" height="40"/><text x="328" y="162">1.</text>
+        <rect class="box" x="356" y="136" width="56" height="40"/><text x="384" y="162">0.</text>
+        <rect class="box" x="412" y="136" width="56" height="40"/><text x="440" y="162">0.</text>
+        <rect class="box" x="300" y="176" width="56" height="40"/><text x="328" y="202">0.</text>
+        <rect class="box-acc" x="356" y="176" width="56" height="40"/><text x="384" y="202">1.</text>
+        <rect class="box" x="412" y="176" width="56" height="40"/><text x="440" y="202">0.</text>
+        <rect class="box" x="300" y="216" width="56" height="40"/><text x="328" y="242">0.</text>
+        <rect class="box" x="356" y="216" width="56" height="40"/><text x="384" y="242">0.</text>
+        <rect class="box-acc" x="412" y="216" width="56" height="40"/><text x="440" y="242">1.</text>
+      </g>
+      <text x="10" y="300" font-size="15" class="muted">create the array first, fill in the values later</text>
+      <text x="10" y="326" font-size="15" class="muted">(like starting a running total at 0 in week 2)</text>
+    </svg>
+    <div class="py"><pre>
+import numpy as np
+
+zero_vector = np.zeros(5)
+one_matrix = np.ones((2, 3))
+identity_matrix = np.eye(3)
+
+print(zero_vector)
+print(one_matrix)
+print(identity_matrix)
+</pre></div>
+  </div>
+  <aside class="notes">
+A common pattern: create an array of uniform values (all 0 or all 1) with the right shape, then fill in the elements in your code, e.g. results of a calculation for each time step.
+np.zeros(5): 1-D, five zeros. For more dimensions, give the shape as a tuple: np.ones((2, 3)), np.zeros((2, 3, 18)). Watch the double brackets.
+np.eye(3): the 3 × 3 identity matrix: ones on the diagonal, zeros elsewhere.
+All are floats by default: the dots in the output.
+  </aside>
+</section>
+
+<!-- ============================================================ 13 -->
+<section>
+  <h2><span class="num">5.4</span><code>np.meshgrid()</code>: from two vectors to a grid</h2>
+  <p class="terms"><span>discretise</span><span>grid point</span><span>coordinate arrays X, Y</span></p>
+  <div class="ctl" style="margin-top:0">
+    <label>points in <span class="mx">x</span> <input type="range" id="mg-nx" min="2" max="6" value="4"> <output id="mg-nxv" class="mx">4</output></label>
+    <label>points in <span class="my">y</span> <input type="range" id="mg-ny" min="2" max="4" value="3"> <output id="mg-nyv" class="my">3</output></label>
+  </div>
+  <div class="cols" style="grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:26px">
+    <div class="stack">
+      <svg class="dg" id="mg-svg" viewBox="0 0 500 330" role="img" aria-label="The x axis from 0 to 3 and the y axis from 0 to 2 are each cut into equally spaced points; every crossing of an x line and a y line is a grid point."></svg>
+      <p class="small" id="mg-pick" style="margin:0"></p>
+    </div>
+    <div class="stack">
+      <p class="big-code" style="font-size:.62em;margin:0"><b class="mx">X</b> <span class="small">x copied down every row</span></p>
+      <span class="ngrid gx mg" id="mg-X"></span>
+      <p class="big-code" style="font-size:.62em;margin:6px 0 0"><b class="my">Y</b> <span class="small">y copied across every column</span></p>
+      <span class="ngrid gy mg" id="mg-Y"></span>
+      <pre class="wpre wpanel" id="mg-code" style="font-size:16px"></pre>
+    </div>
+  </div>
+  <aside class="notes">
+Many engineering problems need a function of TWO variables evaluated over an area: a plate, a cross-section, a terrain. The computer cannot work with infinitely many points, so we discretise: cut the x range and the y range into a finite number of points.
+Slide the controls: x = np.linspace(0, 3, nx) cuts the x axis into nx points (blue), y = np.linspace(0, 2, ny) cuts the y axis into ny points (orange). Every crossing is a grid point: nx × ny points in total.
+np.meshgrid(x, y) returns two 2-D arrays with shape (ny, nx), one entry per grid point: X holds the x-coordinate of each point (x copied down every row), Y holds the y-coordinate (y copied across every column).
+Click a point: its coordinates are X[i, j] and Y[i, j]: same row i, same column j in both arrays. Note row 0 is the bottom line of points (y = 0) while it prints at the top of the array.
+More points = finer discretisation = smoother result, but more calculations.
+The code panel under the arrays updates with the sliders: it is exactly the NumPy code for the grid shown. Then a function of two variables is one line: Z = X**2 + Y**2 computes every point at once (handout example uses x = [1, 2, 3], y = [4, 5]: Z top-left = 1² + 4² = 17).
+  </aside>
+</section>
+
+<!-- ============================================================ 14 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">6</p>
+  <h1>Operations on NumPy arrays</h1>
+  <aside class="notes">Section 6: calculating with arrays: element-wise arithmetic, matrix multiplication, statistics and sorting.</aside>
+</section>
+
+<!-- ============================================================ 15 -->
+<section>
+  <h2><span class="num">6.1</span>Element-wise operations</h2>
+  <p class="terms"><span>element-wise</span><span>vectorised</span><span>np.sin()</span></p>
+  <div class="cols">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 520 210" role="img" aria-label="a = 1, 2, 3 plus b = 4, 5, 6 gives 5, 7, 9: each pair of elements in the same position is added.">
+        <text x="10" y="40" font-size="18" class="muted">a</text><text x="10" y="96" font-size="18" class="muted">b</text><text x="10" y="176" font-size="18" class="acc">a + b</text>
+        <g font-size="19" text-anchor="middle">
+          <rect class="box" x="100" y="14" width="70" height="42"/><text x="135" y="42">1</text>
+          <rect class="box" x="200" y="14" width="70" height="42"/><text x="235" y="42">2</text>
+          <rect class="box" x="300" y="14" width="70" height="42"/><text x="335" y="42">3</text>
+          <rect class="box" x="100" y="70" width="70" height="42"/><text x="135" y="98">4</text>
+          <rect class="box" x="200" y="70" width="70" height="42"/><text x="235" y="98">5</text>
+          <rect class="box" x="300" y="70" width="70" height="42"/><text x="335" y="98">6</text>
+          <rect class="box-acc" x="100" y="150" width="70" height="42"/><text x="135" y="178">5</text>
+          <rect class="box-acc" x="200" y="150" width="70" height="42"/><text x="235" y="178">7</text>
+          <rect class="box-acc" x="300" y="150" width="70" height="42"/><text x="335" y="178">9</text>
+        </g>
+        <path class="line-acc" d="M135 116 V 142 M235 116 V 142 M335 116 V 142"/>
+        <text x="386" y="66" font-size="15" class="acc">same position,</text><text x="386" y="88" font-size="15" class="acc">no loop</text>
+      </svg>
+      <p class="callout">Functions work element-wise too: <code>np.sin(array)</code> returns an array. <code>sin(π)</code> prints <code>1.22e-16</code>, not 0: <code>np.pi</code> is only an approximation (week 1 floating point).</p>
+    </div>
+    <div class="py"><pre>
+import numpy as np
+
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+print(a + b)
+print(a - b)
+print(a * b)
+print(a / b)
+
+angles = np.array([0, np.pi / 2, np.pi])
+print(np.sin(angles))
+</pre></div>
+  </div>
+  <aside class="notes">
+NumPy arithmetic acts element by element: a + b adds the elements in the same position. Same for -, *, /. No loop: this is called vectorised code, and it is much faster than a Python loop over a list.
+* between two arrays is element-wise multiplication: the shapes must be compatible (equal, for now).
+Passing an array to a NumPy function, like np.sin, applies the function to every element and returns a new array.
+sin(π) should be exactly 0 but prints 1.2246468e-16: floating-point precision again; np.pi is an approximation. Because that one value is tiny, NumPy prints the whole array in scientific notation.
+  </aside>
+</section>
+
+<!-- ============================================================ 16 -->
+<section>
+  <h2><span class="num">6.2</span>Matrix multiplication with <code>@</code></h2>
+  <p class="terms"><span>@ matrix product</span><span>* element-wise</span><span>transpose .T</span></p>
+  <div class="cols">
+    <div class="stack">
+      <div class="wradio">
+        <label><input type="radio" name="mm-op" value="mat" checked> A @ B (matrix)</label>
+        <label><input type="radio" name="mm-op" value="mul"> A * Y (element-wise)</label>
+      </div>
+      <div class="mmrow" id="mm-mats"></div>
+      <pre class="wpre wpanel" id="mm-out" aria-live="polite"></pre>
+      <p class="callout">Shapes: <code>(2, 3) @ (3, 2) → (2, 2)</code>. The inner sizes must match; the outer sizes give the result.</p>
+    </div>
+    <div class="py"><pre>
+import numpy as np
+
+A = np.array([[2, 4, 5],
+              [3, 1, 6]])
+B = np.array([[1, 4],
+              [0, 3],
+              [2, 5]])
+
+print(A @ B)
+print(A.T)
+print(A * B)
+</pre></div>
+  </div>
+  <aside class="notes">
+@ performs matrix multiplication. For 2-D arrays the number of columns of the first must equal the number of rows of the second.
+Each result element = row of A times column of B, multiplied pair by pair and added. Click a number in the result on the left to see the calculation, e.g. C[0, 0] = 2×1 + 4×0 + 5×2 = 12.
+Switch to * : element-wise multiplication needs arrays of the same shape and multiplies matching positions.
+Transpose: A.T or np.transpose(A) swaps rows and columns.
+Run the box: A @ B gives [[12 45] [15 45]], A.T is 3 × 2, and A * B fails with ValueError because shapes (2, 3) and (3, 2) do not match. The most common NumPy error message: read the shapes it reports.
+  </aside>
+</section>
+
+<!-- ============================================================ 17 -->
+<section>
+  <h2><span class="num">6.3</span>Summary statistics</h2>
+  <p class="terms"><span>mean, std</span><span>axis=0</span><span>axis=1</span></p>
+  <div class="cols">
+    <div class="stack">
+      <div class="wradio">
+        <label>np.<select id="ax-fn" aria-label="Function"><option>mean</option><option>sum</option><option>min</option><option>max</option></select>(data</label>
+        <label><input type="radio" name="ax-ax" value="none" checked> )</label>
+        <label><input type="radio" name="ax-ax" value="0"> , axis=0)</label>
+        <label><input type="radio" name="ax-ax" value="1"> , axis=1)</label>
+      </div>
+      <div id="ax-view"></div>
+      <pre class="wpre wpanel" id="ax-out" aria-live="polite"></pre>
+    </div>
+    <div class="py sm"><pre>
+import numpy as np
+
+measurements = np.array([12.4, 12.8, 13.1, 12.7])
+print("Mean:", np.mean(measurements))
+print("Maximum:", np.max(measurements))
+print("Std:", np.std(measurements))
+
+data = np.array([[1, 2, 3],
+                 [4, 5, 6]])
+print(np.mean(data))
+print(np.mean(data, axis=0))
+print(np.mean(data, axis=1))
+</pre></div>
+  </div>
+  <aside class="notes">
+NumPy summarises arrays in one call: np.sum, np.mean, np.min, np.max, np.std (standard deviation).
+For a 2-D array, without axis the calculation uses every element.
+axis=0 runs DOWN the rows and gives one value per column; axis=1 runs ALONG each row and gives one value per row. Use the widget: choose the function and the axis and watch the arrows.
+The handout says axis=0 "is the columns": that describes the result (one value per column). Think of the axis as the direction you travel.
+Run the box: mean 12.75, max 13.1, std about 0.25; data mean 3.5, axis=0 → [2.5 3.5 4.5], axis=1 → [2. 5.].
+We will use axis= in today's exercise: one value per sensor, one value per hour.
+  </aside>
+</section>
+
+<!-- ============================================================ 18 -->
+<section>
+  <h2><span class="num">6.4</span>Sorting</h2>
+  <p class="terms"><span>np.sort(): a copy</span><span>.sort(): in place</span></p>
+  <div class="cols">
+    <svg class="dg" viewBox="0 0 540 320" role="img" aria-label="np.sort(a) returns a new sorted array and leaves a unchanged; a.sort() sorts a itself.">
+      <text x="10" y="26" font-size="16"><tspan class="acc" font-weight="700">sorted_a = np.sort(a)</tspan></text>
+      <g font-size="18" text-anchor="middle">
+        <text x="20" y="72" font-size="16" text-anchor="start" class="muted">a</text>
+        <rect class="box" x="60" y="44" width="52" height="42"/><text x="86" y="72">3</text>
+        <rect class="box" x="112" y="44" width="52" height="42"/><text x="138" y="72">1</text>
+        <rect class="box" x="164" y="44" width="52" height="42"/><text x="190" y="72">4</text>
+        <rect class="box" x="216" y="44" width="52" height="42"/><text x="242" y="72">2</text>
+        <text x="300" y="72" font-size="14" text-anchor="start" class="muted">unchanged</text>
+        <text x="20" y="140" font-size="16" text-anchor="start" class="acc">sorted_a</text>
+        <rect class="box-acc" x="100" y="112" width="52" height="42"/><text x="126" y="140">1</text>
+        <rect class="box-acc" x="152" y="112" width="52" height="42"/><text x="178" y="140">2</text>
+        <rect class="box-acc" x="204" y="112" width="52" height="42"/><text x="230" y="140">3</text>
+        <rect class="box-acc" x="256" y="112" width="52" height="42"/><text x="282" y="140">4</text>
+        <text x="330" y="140" font-size="14" text-anchor="start" class="acc">a new array</text>
+      </g>
+      <text x="10" y="210" font-size="16"><tspan class="acc" font-weight="700">a.sort()</tspan></text>
+      <g font-size="18" text-anchor="middle">
+        <text x="20" y="258" font-size="16" text-anchor="start" class="muted">a</text>
+        <rect class="box-acc" x="60" y="230" width="52" height="42"/><text x="86" y="258">1</text>
+        <rect class="box-acc" x="112" y="230" width="52" height="42"/><text x="138" y="258">2</text>
+        <rect class="box-acc" x="164" y="230" width="52" height="42"/><text x="190" y="258">3</text>
+        <rect class="box-acc" x="216" y="230" width="52" height="42"/><text x="242" y="258">4</text>
+        <text x="300" y="258" font-size="14" text-anchor="start" class="acc">a itself is changed</text>
+      </g>
+      <text x="10" y="306" font-size="14" class="muted">2-D: np.sort(m, axis=1) sorts each row separately</text>
+    </svg>
+    <div class="py sm"><pre>
+import numpy as np
+
+a = np.array([3, 1, 4, 2])
+sorted_a = np.sort(a)
+print(sorted_a)
+print(a)          # unchanged
+
+a.sort()          # sorts a itself
+print(a)
+
+m = np.array([[3, 1, 2],
+              [6, 4, 5]])
+print(np.sort(m, axis=1))
+</pre></div>
+  </div>
+  <aside class="notes">
+np.sort(a) returns a sorted COPY: the original array is unchanged.
+The method a.sort() sorts the array IN PLACE: it changes a and returns None (so do not write a = a.sort()).
+For 2-D arrays choose the axis: axis=1 sorts each row separately; axis=0 sorts down each column (in the handout example nothing changes with axis=0 because every column is already in order).
+Engineering use: sorting measurements to find percentiles or the worst cases.
+  </aside>
+</section>
+
+<!-- ============================================================ 19 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">7</p>
+  <h1>Plotting with Matplotlib</h1>
+  <aside class="notes">Section 7: communicating results with plots. matplotlib.pyplot, imported as plt.</aside>
+</section>
+
+<!-- ============================================================ 20 -->
+<section>
+  <h2><span class="num">7</span>Anatomy of an engineering plot</h2>
+  <p class="terms"><span>axis label</span><span>units</span><span>legend</span><span>grid</span></p>
+  <div class="cols wide-left">
+    <svg class="dg" viewBox="0 0 680 430" role="img" aria-label="A labelled example plot of displacement against load, showing the title, axis labels with units, grid, legend, a line and measured points.">
+      <text x="330" y="30" font-size="18" text-anchor="middle" font-weight="700">Load–Displacement Test</text>
+      <rect x="90" y="48" width="480" height="300" fill="#fff" stroke="var(--ink)" stroke-width="1.2"/>
+      <g stroke="#c9ced6" stroke-width="1"><path d="M186 48 V 348 M282 48 V 348 M378 48 V 348 M474 48 V 348 M90 123 H 570 M90 198 H 570 M90 273 H 570"/></g>
+      <g font-size="13" text-anchor="middle"><text x="90" y="368">0</text><text x="186" y="368">1</text><text x="282" y="368">2</text><text x="378" y="368">3</text><text x="474" y="368">4</text><text x="570" y="368">5</text></g>
+      <g font-size="13" text-anchor="end"><text x="82" y="352">0</text><text x="82" y="277">1.5</text><text x="82" y="202">3</text><text x="82" y="127">4.5</text><text x="82" y="52">6</text></g>
+      <path d="M90 348 L 570 98" stroke="#000" stroke-width="2" fill="none"/>
+      <g fill="#d62728"><circle cx="186" cy="308" r="6"/><circle cx="282" cy="253" r="6"/><circle cx="378" cy="193" r="6"/><circle cx="474" cy="138" r="6"/><circle cx="570" cy="98" r="6"/></g>
+      <rect x="110" y="62" width="190" height="56" fill="#fff" stroke="#c9ced6" rx="4"/>
+      <path d="M122 80 h30" stroke="#000" stroke-width="2"/><text x="162" y="85" font-size="14">linear model</text>
+      <circle cx="137" cy="102" r="5" fill="#d62728"/><text x="162" y="107" font-size="14">measured</text>
+      <text x="330" y="396" font-size="15" text-anchor="middle">Load [kN]</text>
+      <text transform="translate(40 198) rotate(-90)" font-size="15" text-anchor="middle">Displacement [mm]</text>
+      <g class="acc" font-size="14">
+        <path class="line-acc" d="M470 30 H 600 V 14" /><text x="606" y="18">title</text>
+        <path class="line-acc" d="M400 392 H 600 V 410"/><text x="560" y="426">x label + unit</text>
+        <path class="line-acc" d="M300 80 H 330"/><text x="336" y="84">legend</text>
+        <path class="line-acc" d="M570 210 H 610"/><text x="614" y="214">grid</text>
+        <path class="line-acc" d="M18 300 V 330"/><text x="2" y="346">y label</text>
+      </g>
+    </svg>
+    <div class="stack" style="font-size:.74em">
+      <p><b>A clear engineering plot has</b></p>
+      <ul>
+        <li>axis labels</li>
+        <li><b>physical units</b>, e.g. <code>[kN]</code></li>
+        <li>a descriptive title, when useful</li>
+        <li>a legend for more than one dataset</li>
+        <li>readable line and marker styles</li>
+        <li>a suitable axis range and scale</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+Matplotlib makes static, animated and interactive visualisations; matplotlib.pyplot (plt) provides the plotting functions.
+A plot in a report must stand on its own: a reader should understand it without your code.
+Checklist: axis labels; physical units (in square brackets is a common convention); a title when useful; a legend when more than one dataset; line and marker styles that are readable (and distinguishable in black-and-white print); a sensible axis range and scale.
+Lines for models or continuous functions; markers for measured data points.
+  </aside>
+</section>
+
+<!-- ============================================================ 21 -->
+<section>
+  <h2><span class="num">7.1</span>Line plots with <code>plt.plot()</code></h2>
+  <p class="terms"><span>plt.plot(x, y)</span><span>keyword arguments</span><span>plt.show()</span></p>
+  <p class="small" style="margin:0 0 8px"><code>color="black"</code>, <code>"blue"</code>, <code>"red"</code> … · <code>linestyle="-"</code>, <code>"--"</code>, <code>":"</code>, <code>"-."</code> · <code>linewidth=2</code>: change them and run again</p>
+  <div class="py side" data-hint="the figure appears on the right"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(x)
+
+plt.plot(x, y, color="black",
+         linestyle="--", linewidth=2)
+plt.title("Sine Wave")
+plt.xlabel("Angle, x [rad]")
+plt.ylabel("sin(x)")
+plt.grid(True)
+plt.show()
+</pre></div>
+  <aside class="notes">
+A line plot shows how a quantity varies with time, position or another continuous variable.
+Recipe: make the x values with np.linspace (100 points gives a smooth curve), calculate y element-wise, then plt.plot(x, y).
+Keyword arguments change the look: color, linestyle ("-" solid, "--" dashed, ":" dotted, "-." dash-dot), linewidth. The handout lists more, including marker.
+Add title, axis labels with units and a grid; plt.show() displays the finished figure (here it appears on the right after Run).
+Demo: change "--" to ":" and black to "red" and run again. Try 10 points instead of 100 to see why we use many points.
+  </aside>
+</section>
+
+<!-- ============================================================ 22 -->
+<section>
+  <h2><span class="num">7.2</span>Plotting more than one dataset</h2>
+  <p class="terms"><span>label=</span><span>plt.legend()</span></p>
+  <div class="py side"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 2 * np.pi, 100)
+y_1 = np.sin(x)
+y_2 = np.cos(x)
+
+plt.plot(x, y_1, label="sin(x)", color="black")
+plt.plot(x, y_2, label="cos(x)", color="blue")
+plt.xlabel("Angle, x [rad]")
+plt.ylabel("Function value")
+plt.title("Sine and Cosine Functions")
+plt.grid(True)
+plt.legend()
+plt.show()
+</pre></div>
+  <aside class="notes">
+Call plt.plot once per dataset: they are drawn on the same axes.
+label= gives each line a name; plt.legend() displays the names. Without labels, the legend is empty.
+Use different colours AND styles so the plot still reads when printed in black and white: e.g. add linestyle="--" to the cosine.
+  </aside>
+</section>
+
+<!-- ============================================================ 23 -->
+<section>
+  <h2><span class="num">7.3</span>Scatter plots with <code>plt.scatter()</code></h2>
+  <p class="terms"><span>plt.scatter(x, y)</span><span>marker</span><span>s = size</span></p>
+  <div class="py side sm" data-hint="note: color, not colour"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+load = np.array([1, 2, 3, 4, 5])                  # kN
+displacement = np.array([0.8, 1.9, 3.1, 4.2, 5.0])  # mm
+
+plt.scatter(load, displacement,
+            color="black",   # the colour
+            marker="o",      # the marker style
+            s=50,            # the marker size
+            label="Experimental data")
+plt.title("Load–Displacement Measurements")
+plt.xlabel("Load [kN]")
+plt.ylabel("Displacement [mm]")
+plt.grid(True)
+plt.legend()
+plt.show()
+</pre></div>
+  <aside class="notes">
+A scatter plot shows individual points: the natural choice for experimental measurements and for looking at the relationship between two variables.
+Marker keywords: color, marker ("o" circle, "s" square, "^" triangle, "x"), s for size.
+American spelling in code: color, not colour. The same applies to every name in Python libraries.
+Discussion: the points lie close to a straight line: displacement roughly proportional to load (linear elastic). Fitting a line to them comes in a later week.
+  </aside>
+</section>
+
+<!-- ============================================================ 24 -->
+<section>
+  <h2><span class="num">7.4</span>Figures and axes: <code>fig, ax</code></h2>
+  <p class="terms"><span>plt.subplots()</span><span>figure</span><span>axes</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);margin-bottom:8px;align-items:center">
+    <svg class="dg" viewBox="0 0 520 84" role="img" aria-label="fig is the whole figure; ax is an array of two axes, ax[0] on the left and ax[1] on the right.">
+      <rect class="box" x="2" y="2" width="516" height="80" rx="6"/>
+      <text x="14" y="22" font-size="14" class="muted">fig: the whole figure</text>
+      <rect class="box-acc" x="14" y="30" width="238" height="44" rx="4"/><text x="133" y="58" font-size="17" text-anchor="middle" class="acc">ax[0]</text>
+      <rect class="box-acc" x="268" y="30" width="238" height="44" rx="4"/><text x="387" y="58" font-size="17" text-anchor="middle" class="acc">ax[1]</text>
+    </svg>
+    <p style="font-size:.6em;margin:0"><code>plt.plot()</code> → <code>ax[0].plot()</code><br><code>plt.title()</code> → <code>ax[0].set_title()</code><br><code>plt.xlabel()</code> → <code>ax[0].set_xlabel()</code></p>
+  </div>
+  <div class="py side sm"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, np.pi, 100)
+fig, ax = plt.subplots(nrows=1, ncols=2)
+ax[0].plot(x, np.sin(x))
+ax[0].set_title("Sine Wave")
+ax[0].set_xlabel("Angle, x [rad]")
+ax[0].grid(True)
+ax[1].plot(x, np.cos(x))
+ax[1].set_title("Cosine Wave")
+ax[1].set_xlabel("Angle, x [rad]")
+fig.tight_layout()     # stop the plots overlapping
+plt.show()
+</pre></div>
+  <aside class="notes">
+For more control, create the figure and axes explicitly: fig, ax = plt.subplots(nrows=1, ncols=2).
+It returns two things: fig, the complete figure, and ax, an array of axes (plotting areas), here two in one row: ax[0] on the left, ax[1] on the right.
+Plotting and formatting are applied to each axes object separately. The names change slightly: plt.title() becomes ax[0].set_title(), plt.xlabel() becomes ax[0].set_xlabel().
+This object-oriented style is the one to use for multiple subplots and complex figures, e.g. stress and deflection side by side.
+Handout version also sets y labels and turns the grid off on the right plot. fig.tight_layout() is an extra here: it adjusts the spacing so the two plots do not overlap.
+  </aside>
+</section>
+
+<!-- ============================================================ 25 -->
+<section>
+  <h2><span class="num">8</span>Three-dimensional surface plots</h2>
+  <p class="terms"><span>z = f(x, y)</span><span>plot_surface()</span><span>colourmap</span></p>
+  <svg class="dg" viewBox="0 0 1180 64" style="margin-bottom:8px" role="img" aria-label="Steps: linspace for x and y, meshgrid for X and Y, calculate Z, then plot_surface.">
+    <g font-size="17" text-anchor="middle">
+      <rect class="box" x="4" y="8" width="230" height="48" rx="6"/><text x="119" y="38">np.linspace: x, y</text>
+      <rect class="box" x="300" y="8" width="230" height="48" rx="6"/><text x="415" y="38">np.meshgrid: X, Y</text>
+      <rect class="box" x="596" y="8" width="250" height="48" rx="6"/><text x="721" y="38">Z = sin(√(X² + Y²))</text>
+      <rect class="box-acc" x="912" y="8" width="264" height="48" rx="6"/><text x="1044" y="38" class="acc">ax.plot_surface(X, Y, Z)</text>
+    </g>
+    <path class="line" d="M234 32 H 290 M530 32 H 586 M846 32 H 902"/><path class="fill-ink" d="M298 32 l-10 -6 v12 z M594 32 l-10 -6 v12 z M910 32 l-10 -6 v12 z"/>
+  </svg>
+  <div class="py side sm"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+
+x = np.linspace(-5, 5, 100)
+y = np.linspace(-5, 5, 100)
+X, Y = np.meshgrid(x, y)
+Z = np.sin(np.sqrt(X**2 + Y**2))
+
+fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+surface = ax.plot_surface(X, Y, Z, cmap=cm.viridis)
+fig.colorbar(surface, shrink=0.6, pad=0.12)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+plt.show()
+</pre></div>
+  <aside class="notes">
+A surface plot shows a function of two variables, z = f(x, y): everything from today comes together.
+linspace cuts each axis into 100 points; meshgrid makes the 100 × 100 grid; Z is calculated at every grid point in one line (element-wise); plot_surface draws it.
+The 3-D axes come from plt.subplots(subplot_kw={"projection": "3d"}). There is no plt.surface() function.
+cmap sets the colourmap (viridis here; try cm.coolwarm). fig.colorbar adds the scale linking colours to values: keep the object returned by plot_surface and pass it in (pad moves the bar away from the z axis). The handout version has no colour bar.
+This image is static; to look from another angle add ax.view_init(elev=40, azim=30) before plt.show() and run again. The surface at the top of week3.html can be rotated by dragging.
+Rendering 10 000 points takes a few seconds in the browser.
+  </aside>
+</section>
+
+<!-- ============================================================ 26 -->
+<section>
+  <h2><span class="num">9</span>Summary</h2>
+  <div class="cols" style="font-size:.72em">
+    <ul>
+      <li><b>Modules</b> ⊂ <b>packages</b> ⊂ <b>libraries</b>; standard library vs third-party (<code>pip</code>)</li>
+      <li><code>import numpy as np</code>, <code>import matplotlib.pyplot as plt</code></li>
+      <li>Arrays: one <b>dtype</b>; <code>shape</code>, <code>ndim</code>, <code>size</code></li>
+      <li>Indexing <code>a[i]</code>, <code>m[row, col]</code>, slices and <code>:</code></li>
+      <li>Create: <code>arange</code>, <code>linspace</code>, <code>zeros</code>, <code>ones</code>, <code>eye</code>, <code>meshgrid</code></li>
+    </ul>
+    <ul>
+      <li>Operators act <b>element-wise</b>; <code>@</code> is matrix multiplication</li>
+      <li><code>np.mean</code>, <code>np.max</code>, <code>np.std</code> … with <code>axis=0</code> / <code>axis=1</code></li>
+      <li><code>np.sort()</code> copy vs <code>.sort()</code> in place</li>
+      <li><code>plt.plot</code>, <code>plt.scatter</code>, labels with units, legend, grid</li>
+      <li><code>fig, ax = plt.subplots()</code>; <code>plot_surface</code> for z = f(x, y)</li>
+    </ul>
+  </div>
+  <aside class="notes">
+NumPy provides the efficient numerical arrays and calculations; Matplotlib communicates the results visually. Together they are the foundation of scientific computing in Python, and we will use them every week from now on.
+Not covered in the slides but in the handout: installing with pip (section 2) and saving figures with savefig (section 7.5): call savefig BEFORE plt.show().
+The summary on week3.html has a checklist students can tick off.
+  </aside>
+</section>
+
+<!-- ============================================================ 27 -->
+<section>
+  <h2>Your turn: engine-bay temperature log</h2>
+  <p class="terms"><span>axis=1</span><span>axis=0</span><span>for + enumerate</span><span>plt.plot</span></p>
+  <div class="cols task" style="font-size:.66em;gap:22px;margin-bottom:10px">
+    <div>
+      <p>The 15 engine-bay sensors from week 2 were logged every hour for a day. <code>readings</code> is ready to use: shape <b>(15, 24)</b>, one row per sensor <code>s1 … s15</code>, one column per hour, in °C.</p>
+      <p class="small">Safe limit: 287 °C.</p>
+    </div>
+    <ol style="margin:0 0 0 1.1em">
+      <li>Print the shape of <code>readings</code>.</li>
+      <li>Find the <b>maximum of each sensor</b> (one value per row).</li>
+      <li>For every sensor above the limit, print <code>temperature exceeded the safe limits on sensor number …</code></li>
+      <li>Plot the <b>hottest reading of each hour</b> against the hour, with the limit as a red dashed line, axis labels and a legend.</li>
+    </ol>
+  </div>
+  <div class="py side write" data-setup="sensors" data-hint="readings is ready to use"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+safe_limit = 287    # °C
+
+# Write your code here
+</pre></div>
+  <aside class="notes">
+This continues the engine-bay health-monitoring exercise from week 2, now with a day of logged data instead of a live loop.
+readings is provided on this slide (simulated data): a 2-D array, 15 rows (sensors) × 24 columns (hours).
+Ingredients: readings.shape; np.max(readings, axis=1) for one maximum per sensor (along each row); the week 2 for loop with enumerate(..., start=1) and an if for the message; np.max(readings, axis=0) for one maximum per hour; np.arange(24) for the hours; the limit line as safe_limit * np.ones(24); plt.plot twice, labels, legend, plt.show().
+Common mistake: mixing up the axes: axis=1 gives 15 values (one per sensor), axis=0 gives 24 values (one per hour). Check with .shape.
+Give students 10 minutes; solution on the next slide.
+  </aside>
+</section>
+
+<!-- ============================================================ 28 -->
+<section>
+  <h2>Engine-bay temperature log: a possible solution</h2>
+  <p class="terms"><span>axis=1: per sensor</span><span>axis=0: per hour</span></p>
+  <div class="py side xs" data-setup="sensors" style="--code-w:56%"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+safe_limit = 287    # °C
+print(readings.shape)
+sensor_max = np.max(readings, axis=1)     # one value per sensor
+for number, peak in enumerate(sensor_max, start=1):
+    if peak > safe_limit:
+        print('temperature exceeded the safe limits on sensor number',
+              number)
+
+hours = np.arange(24)
+hourly_max = np.max(readings, axis=0)     # one value per hour
+limit = safe_limit * np.ones(24)
+
+plt.plot(hours, hourly_max, color="black", label="hottest sensor")
+plt.plot(hours, limit, color="red", linestyle="--", label="safe limit")
+plt.xlabel("Hour")
+plt.ylabel("Temperature [°C]")
+plt.legend()
+plt.show()
+</pre></div>
+  <aside class="notes">
+Walk through: shape (15, 24). axis=1 travels along each row → 15 maxima, one per sensor. The for loop with enumerate(start=1) gives sensor numbers 1–15, exactly as in week 2; sensors 4, 9 and 13 exceed the limit.
+axis=0 travels down the columns → 24 values, the hottest reading in each hour. np.ones(24) times the limit makes a flat line for plotting.
+The plot shows when in the day the limit was crossed: around hours 10, 13 and 14–15, the hottest part of the working day.
+Extensions: print each peak value too; plot all 15 sensors (plt.plot(hours, readings.T)); count exceedances per sensor; use fig, ax with two subplots (per-sensor maxima as a scatter plot, hourly maxima as a line).
+  </aside>
+</section>
+
+<!-- ============================================================ 29 -->
+<section style="display:flex;flex-direction:column;justify-content:center">
+  <h2>Practise</h2>
+  <p>Full notes, interactive examples and the practice notebook:</p>
+  <p class="big-code"><a href="week3.html">week3.html</a></p>
+  <p class="small">The notebook ends with <em>The Footbridge Inspection, part 3</em>: analyse and plot the sensor data with NumPy and Matplotlib.</p>
+  <aside class="notes">Remind students to work through the practice notebook and the exercises on week3.html (including installing packages with pip and saving figures, which we skipped in the slides).</aside>
+</section>
+
+</div></div>
+
+<!-- Setup code that runs silently before a code box -->
+<script type="text/plain" id="setup-sensors">import numpy as np
+
+def _engine_log():
+    """Simulated engine-bay log: 15 sensors (rows) x 24 hours (columns), in degrees C."""
+    rng = np.random.default_rng(2026)
+    hour = np.arange(24)
+    daily_cycle = 12 * np.sin(2 * np.pi * (hour - 8) / 24)
+    log = np.round(255 + daily_cycle + rng.normal(0, 4, size=(15, 24)), 1)
+    log[3, 13] = 291.4                 # s4
+    log[8, 14:16] = [289.8, 296.2]     # s9
+    log[12, 10] = 288.7                # s13
+    return log
+
+readings = _engine_log()
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/notes/notes.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="assets/slides.js"></script>
+<script src="assets/slides-week3.js"></script>
+</body>
+</html>
