@@ -31,7 +31,9 @@
       } else if (m.t === 'fail') {
         setStatus('Python could not load: check the internet connection, then reload the page.');
       } else if (m.t === 'out' && current) {
-        current.write('\u0000IMG:' + m.s);
+        current.write(m.s);
+      } else if (m.t === 'img' && current) {
+        current.write('\u0000IMG:' + m.s);      // a Matplotlib figure (base64 PNG)
       } else if (m.t === 'done' && current && current.id === m.id) {
         const c = current; current = null;
         c.finish(m.err);
