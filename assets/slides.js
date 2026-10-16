@@ -8,19 +8,26 @@
   const statusEls = () => document.querySelectorAll('[data-py-status]');
   const setStatus = html => statusEls().forEach(el => { el.innerHTML = html; });
   let worker = null, ready = false, queue = [], current = null, nextId = 1;
+  // <body data-py-packages="numpy,matplotlib"> preloads packages while the title slide is showing
+  const PACKAGES = (document.body.dataset.pyPackages || '').split(',').map(s => s.trim()).filter(Boolean);
+  const NAMES = { numpy: 'NumPy', matplotlib: 'Matplotlib', scipy: 'SciPy', pandas: 'pandas' };
+  const pkgLabel = PACKAGES.map(p => NAMES[p] || p).join(' and ');
 
   function startWorker() {
     ready = false;
     setStatus('Python: loading… <span class="small">(10–20 s the first time)</span>');
     worker = new Worker('assets/pyworker.js', { type: 'module' });
     worker.onerror = () => setStatus('Python could not load: check the internet connection, then reload the page.');
+    if (PACKAGES.length) worker.postMessage({ t: 'preload', pkgs: PACKAGES });
     worker.onmessage = e => {
       const m = e.data;
       if (m.t === 'ready') {
         ready = true;
-        setStatus('Python: <b>ready</b>');
+        setStatus(PACKAGES.length ? `Python: <b>ready</b> · loading ${pkgLabel}…` : 'Python: <b>ready</b>');
         const q = queue; queue = [];
         q.forEach(send);
+      } else if (m.t === 'loaded') {
+        setStatus(m.err ? `Python: <b>ready</b> · ${pkgLabel} could not be preloaded; they load on first use` : `Python, ${pkgLabel}: <b>ready</b>`);
       } else if (m.t === 'fail') {
         setStatus('Python could not load: check the internet connection, then reload the page.');
       } else if (m.t === 'out' && current) {
@@ -90,8 +97,23 @@
     let lines = [], txt = null, frame = 0;
     const render = () => {
       frame = 0;
-      txt.textContent = lines.length ? lines.join('\n') + '\n' : '';
-      out.scrollTop = out.scrollHeight;
+      // text lines, plus Matplotlib figures sent as "\0IMG:<base64 png>" lines
+      const frag = document.createDocumentFragment();
+      let text = [], figures = 0;
+      const flushText = () => { if (text.length) frag.append(document.createTextNode(text.join('\n') + '\n')); text = []; };
+      lines.forEach(l => {
+        if (l.startsWith('\u0000IMG:')) {
+          flushText();
+          const img = new Image();
+          img.src = 'data:image/png;base64,' + l.slice(5);
+          img.alt = 'Matplotlib figure ' + (++figures);
+          frag.append(img);
+        } else text.push(l);
+      });
+      flushText();
+      txt.replaceChildren(frag);
+      out.classList.toggle('has-img', figures > 0);
+      out.scrollTop = figures ? 0 : out.scrollHeight;
     };
     function go() {
       out.hidden = false;

@@ -1,12 +1,23 @@
 /* Python for the presentation pages. Runs Pyodide in a background worker so
    that a long or infinite loop never freezes the slides: the Stop button
    simply terminates this worker and starts a fresh one.
-   (Pyodide 0.28+ only runs in module workers, hence the import below.) */
+   (Pyodide 0.28+ only runs in module workers, hence the import below.)
+   Matplotlib figures are drawn off-screen (Agg) and sent to the slide as PNG images. */
 import { loadPyodide } from 'https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyodide.mjs';
 const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v314.0.6/full/';
 
 const PRELUDE = `
-import ast, sys, traceback
+import ast, sys, os, io, base64, traceback
+os.environ["MPLBACKEND"] = "Agg"     # draw figures off-screen; the slide shows them as images
+
+def _show(*args, **kwargs):
+    """Replacement for plt.show(): send every open figure to the slide as a PNG image."""
+    import matplotlib.pyplot as plt
+    for num in plt.get_fignums():
+        buf = io.BytesIO()
+        plt.figure(num).savefig(buf, format="png", dpi=100, bbox_inches="tight")
+        print("\\x00IMG:" + base64.b64encode(buf.getvalue()).decode("ascii"))
+    plt.close("all")
 
 def _run(code, setup, inputs):
     """Run one code box in a fresh namespace. Returns an error line or None."""
@@ -22,6 +33,13 @@ def _run(code, setup, inputs):
         return value
 
     ns["input"] = _input
+    uses_mpl = "matplotlib" in code or "matplotlib" in setup
+    if uses_mpl:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        plt.close("all")
+        plt.show = _show
     try:
         if setup:
             exec(compile(setup, "<setup>", "exec"), ns)
@@ -34,10 +52,14 @@ def _run(code, setup, inputs):
                 print(repr(value))
         else:
             exec(compile(tree, "<slide>", "exec"), ns)
+        if uses_mpl:
+            _show()                  # figures that were drawn but never shown
     except SyntaxError as e:
         sys.stdout.flush()
         return f"line {e.lineno}: {type(e).__name__}: {e.msg}"
     except BaseException as e:
+        if uses_mpl:
+            plt.close("all")
         sys.stdout.flush()
         frames = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == "<slide>"]
         where = f"line {frames[-1].lineno}: " if frames else ""
@@ -68,10 +90,25 @@ const ready = (async () => {
   postMessage({ t: 'ready' });
 })().catch(err => postMessage({ t: 'fail', s: String(err) }));
 
-onmessage = async e => {
-  await ready;
-  const { id, code, setup, inputs } = e.data;
+// Package loading writes no progress or error text into the code-box output.
+const QUIET = errors => ({ messageCallback: () => {}, errorCallback: e => errors.push(e) });
+
+// Messages are handled one at a time, in order: an optional package preload
+// ({t: 'preload', pkgs}) and then the code boxes as they are run.
+let chain = ready;
+onmessage = e => { const m = e.data; chain = chain.then(() => handle(m)).catch(() => {}); };
+
+async function handle(m) {
+  if (m.t === 'preload') {
+    const errors = [];
+    try { await pyodide.loadPackage(m.pkgs, QUIET(errors)); } catch (x) { errors.push(String(x)); }
+    // on failure the code boxes simply try again when they need the package
+    postMessage(errors.length ? { t: 'loaded', err: errors.join(' ') } : { t: 'loaded' });
+    return;
+  }
+  const { id, code, setup, inputs } = m;
   try {
+    try { await pyodide.loadPackagesFromImports((setup || '') + '\n' + code, QUIET([])); } catch (x) { /* Python reports a missing module below */ }
     const run = pyodide.globals.get('_run');
     const err = run(code, setup || '', pyodide.toPy(inputs || []));
     run.destroy();
@@ -81,4 +118,4 @@ onmessage = async e => {
     flush();
     postMessage({ t: 'done', id, err: String(x.message || x).split('\n').filter(Boolean).pop() });
   }
-};
+}
