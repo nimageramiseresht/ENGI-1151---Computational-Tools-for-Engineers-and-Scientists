@@ -7,8 +7,9 @@ import { loadPyodide } from 'https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyod
 const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v314.0.6/full/';
 
 const PRELUDE = `
-import ast, sys, os, io, base64, traceback
+import ast, sys, os, io, base64, traceback, warnings
 os.environ["MPLBACKEND"] = "Agg"     # draw figures off-screen; the slide shows them as images
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 def _send_png(data):
     """Send one PNG (base64) to the slide. Figures travel outside stdout, so no
