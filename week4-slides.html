@@ -579,18 +579,18 @@ Next slide: what the inner and outer functions can see, and why engineers use th
     </div>
     <div class="py xs"><pre>
 import numpy as np
-
 def beam_response(w, L, E, I):
-    """Simply supported beam: load w [N/mm], span L [mm].
-    Returns moment [N mm] and deflection [mm]."""
-    def moment(x):
+      
+    def moment(x): #nested function 1
         M = w * x * (L - x) / 2      # w, L: from the outer
         return M
-    def deflection(x):
+      
+    def deflection(x): #nested function 2
         d = w * x * (L**3 - 2*L*x**2 + x**3) / (24 * E * I)
         return d
-    x = np.linspace(0, L, 3)     # supports, mid-span
-    return moment(x), deflection(x)
+    
+    x = np.linspace(0, L, 3)     #body of the main function
+    return moment(x), deflection(x) #calling the two nested functions
 
 M, d = beam_response(20, 6000, 200_000, 3.375e8)
 print("Moment [kN m]:", M / 1e6)
