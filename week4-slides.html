@@ -344,53 +344,14 @@ They can be assigned to separate variables in one line: unpacking. The order of 
 Note the input check: if b == 0, division is set to None instead of dividing, so no ZeroDivisionError. Try basic_operations(10, 0). Input checks come back in section 6.2.
   </aside>
 </section>
-
 <!-- ============================================================ 11 -->
-<section>
-  <h2><span class="num">5</span>Using functions to avoid repetition</h2>
-  <p class="terms"><span>reuse</span><span>works on arrays too</span></p>
-  <div class="cols">
-    <svg class="dg" viewBox="0 0 560 270" role="img" aria-label="One function, area_of_circle, is used for 5.0, for 10.0 and for a whole NumPy array of radii.">
-      <rect class="box-acc" x="170" y="96" width="220" height="70" rx="10"/>
-      <text x="280" y="126" font-size="17" text-anchor="middle" class="acc" font-weight="700">area_of_circle(r)</text>
-      <text x="280" y="150" font-size="15" text-anchor="middle">π r²: written once</text>
-      <g font-size="16">
-        <text x="10" y="44">5.0</text><text x="10" y="134">10.0</text><text x="10" y="224">[1. 2. 3. 4.]</text>
-        <text x="418" y="44">78.54</text><text x="418" y="134">314.16</text><text x="418" y="224">[3.14 12.57 …]</text>
-      </g>
-      <path class="line" d="M48 40 C 110 40, 120 110, 166 118 M60 130 H 166 M130 220 C 150 220, 140 150, 166 146"/>
-      <path class="line" d="M390 118 C 400 60, 400 40, 412 40 M390 130 H 412 M390 146 C 400 210, 400 220, 412 220"/>
-      <text x="10" y="262" font-size="14" class="muted">the arithmetic inside is element-wise, so arrays work (week 3)</text>
-    </svg>
-    <div class="py"><pre>
-import numpy as np
-
-def area_of_circle(radius):
-    area = np.pi * radius**2
-    return area
-
-print(area_of_circle(5.0))
-print(area_of_circle(10.0))
-
-radii = np.array([1.0, 2.0, 3.0, 4.0])
-print(area_of_circle(radii))
-</pre></div>
-  </div>
-  <aside class="notes">
-Instead of writing the area equation every time it is needed, define it once in a function and call it with different radii.
-The same function also accepts a NumPy array: the operations inside (**, *) are element-wise, as in week 3, so one definition handles a single number and a whole array.
-Engineering link: handout exercise 5.1 does this with the beam deflection formula for an array of loads.
-  </aside>
-</section>
-
-<!-- ============================================================ 12 -->
 <section class="divider" data-background-color="#68246D">
   <p class="dnum">6–10</p>
   <h1>Using functions well</h1>
   <aside class="notes">Part 2: where variables live, defaults and checks, documentation, lambda and nested functions, and the common mistakes.</aside>
 </section>
 
-<!-- ============================================================ 13 -->
+<!-- ============================================================ 12 -->
 <section>
   <h2><span class="num">6</span>Local and global variables</h2>
   <p class="terms"><span>local variable</span><span>global variable</span><span>scope</span></p>
@@ -419,7 +380,7 @@ A variable defined outside any function is global (next slide).
   </aside>
 </section>
 
-<!-- ============================================================ 14 -->
+<!-- ============================================================ 13 -->
 <section>
   <h2><span class="num">6</span>Pass values in as parameters</h2>
   <p class="terms"><span>global variable</span><span>parameter</span><span>reusable</span></p>
@@ -453,7 +414,7 @@ Note: the global weight and the local weight inside the function are two differe
   </aside>
 </section>
 
-<!-- ============================================================ 15 -->
+<!-- ============================================================ 14 -->
 <section>
   <h2><span class="num">6.1</span>Default parameter values</h2>
   <p class="terms"><span>default value</span><span>optional argument</span></p>
@@ -480,7 +441,7 @@ Rule: all parameters without defaults must come before parameters with defaults.
   </aside>
 </section>
 
-<!-- ============================================================ 16 -->
+<!-- ============================================================ 15 -->
 <section>
   <h2><span class="num">6.2</span>Checking function inputs</h2>
   <p class="terms"><span>input check</span><span>return None</span></p>
@@ -522,7 +483,7 @@ This simple input checking prevents some invalid engineering calculations from s
   </aside>
 </section>
 
-<!-- ============================================================ 17 -->
+<!-- ============================================================ 16 -->
 <section>
   <h2><span class="num">7</span>Documenting functions: docstrings</h2>
   <p class="terms"><span>docstring</span><span>help()</span></p>
@@ -561,41 +522,7 @@ Jupyter tip: Shift + Tab inside the brackets of a call shows the docstring witho
   </aside>
 </section>
 
-<!-- ============================================================ 18 -->
-<section>
-  <h2><span class="num">8</span>Lambda functions</h2>
-  <p class="terms"><span>lambda</span><span>one expression</span><span>automatic return</span></p>
-  <div class="cols">
-    <div class="stack">
-      <div class="panel"><h3>lambda parameters: expression</h3>
-        <pre class="code" style="margin:0"><code>add = lambda a, b: a + b</code></pre></div>
-      <div class="panel"><h3>the same function with def</h3>
-        <pre class="code" style="margin:0"><code>def add(a, b):
-    return a + b</code></pre></div>
-      <p class="small">One expression only; its value is returned automatically. For longer calculations, conditions or docstrings, use <code>def</code>.</p>
-    </div>
-    <div class="py"><pre>
-import numpy as np
-
-add = lambda a, b: a + b
-print(add(3, 5))
-
-kn_to_n = lambda force: force * 1000
-print(kn_to_n(2.5))
-
-c_to_k = lambda C: C + 273.15
-print(c_to_k(np.array([-10, 0, 25, 100])))
-</pre></div>
-  </div>
-  <aside class="notes">
-A lambda is a short function defined in one line: lambda parameters: expression.
-It contains a single expression whose value is returned automatically, with no return keyword. add = lambda a, b: a + b is equivalent to the def version.
-Useful for short unit conversions and simple formulas. For anything longer, with if statements, or needing documentation, use def.
-Run the box. Note c_to_k also works on an array (element-wise). Quick check: printing kn_to_n without calling it shows the function object, not a number.
-  </aside>
-</section>
-
-<!-- ============================================================ 19 -->
+<!-- ============================================================ 17 -->
 <section>
   <h2><span class="num">9</span>Nested functions</h2>
   <p class="terms"><span>nested function</span><span>inner function</span></p>
@@ -622,7 +549,7 @@ Next slide: what the inner and outer functions can see, and why engineers use th
   </aside>
 </section>
 
-<!-- ============================================================ 20 -->
+<!-- ============================================================ 18 -->
 <section>
   <h2><span class="num">9</span>Nested functions: who can see what, and why</h2>
   <p class="terms"><span>enclosing scope</span><span>helper function</span></p>
@@ -681,7 +608,41 @@ Caution: nest only when it makes the code clearer. General-purpose helpers (unit
   </aside>
 </section>
 
-<!-- ============================================================ 21 -->
+<!-- ============================================================ 19 -->
+<section>
+  <h2><span class="num">8</span>Lambda functions</h2>
+  <p class="terms"><span>lambda</span><span>one expression</span><span>automatic return</span></p>
+  <div class="cols">
+    <div class="stack">
+      <div class="panel"><h3>lambda parameters: expression</h3>
+        <pre class="code" style="margin:0"><code>add = lambda a, b: a + b</code></pre></div>
+      <div class="panel"><h3>the same function with def</h3>
+        <pre class="code" style="margin:0"><code>def add(a, b):
+    return a + b</code></pre></div>
+      <p class="small">One expression only; its value is returned automatically. For longer calculations, conditions or docstrings, use <code>def</code>.</p>
+    </div>
+    <div class="py"><pre>
+import numpy as np
+
+add = lambda a, b: a + b
+print(add(3, 5))
+
+kn_to_n = lambda force: force * 1000
+print(kn_to_n(2.5))
+
+c_to_k = lambda C: C + 273.15
+print(c_to_k(np.array([-10, 0, 25, 100])))
+</pre></div>
+  </div>
+  <aside class="notes">
+A lambda is a short function defined in one line: lambda parameters: expression.
+It contains a single expression whose value is returned automatically, with no return keyword. add = lambda a, b: a + b is equivalent to the def version.
+Useful for short unit conversions and simple formulas. For anything longer, with if statements, or needing documentation, use def.
+Run the box. Note c_to_k also works on an array (element-wise). Quick check: printing kn_to_n without calling it shows the function object, not a number.
+  </aside>
+</section>
+  
+<!-- ============================================================ 20 -->
 <section>
   <h2><span class="num">10</span>Common errors (1)</h2>
   <p class="terms"><span>NameError</span><span>forgotten brackets</span></p>
@@ -715,7 +676,7 @@ Forgetting brackets: greet without () refers to the function instead of calling 
   </aside>
 </section>
 
-<!-- ============================================================ 22 -->
+<!-- ============================================================ 21 -->
 <section>
   <h2><span class="num">10</span>Common errors (2)</h2>
   <p class="terms"><span>TypeError</span><span>None</span></p>
@@ -747,7 +708,7 @@ Quick check: v = calculate_cylinder_volume (no brackets), then v * 2? TypeError:
   </aside>
 </section>
 
-<!-- ============================================================ 23 -->
+<!-- ============================================================ 22 -->
 <section>
   <h2><span class="num">11</span>Summary</h2>
   <div class="cols" style="font-size:.72em">
@@ -773,7 +734,7 @@ The summary on week4.html has a checklist students can tick off.
   </aside>
 </section>
 
-<!-- ============================================================ 24 -->
+<!-- ============================================================ 23 -->
 <section>
   <h2>Your turn: an engine-bay toolkit</h2>
   <p class="terms"><span>def</span><span>default value</span><span>input check</span><span>docstring</span><span>lambda</span></p>
@@ -802,7 +763,7 @@ Give students 10 minutes; solution on the next slide.
   </aside>
 </section>
 
-<!-- ============================================================ 25 -->
+<!-- ============================================================ 24 -->
 <section>
   <h2>Engine-bay toolkit: a possible solution</h2>
   <p class="terms"><span>return a list</span><span>keyword argument</span></p>
@@ -839,7 +800,7 @@ Extension: add a second function hourly_peaks(readings) that returns np.max(read
   </aside>
 </section>
 
-<!-- ============================================================ 26 -->
+<!-- ============================================================ 25 -->
 <section style="display:flex;flex-direction:column;justify-content:center">
   <h2>Practise</h2>
   <p>Full notes, interactive examples and the practice notebook:</p>
