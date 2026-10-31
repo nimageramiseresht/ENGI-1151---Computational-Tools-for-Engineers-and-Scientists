@@ -63,7 +63,7 @@
         <span>median speed <output id="sim-mean">–</output> km/h</span>
         <button type="button" id="sim-replay">Run again</button>
       </div>
-      <figcaption class="sim-caption">Each sample is one simulated hour on the two-lane highway of section 9, with random traffic and random coefficients. The shape of the travel speed distribution appears as the samples pile up.</figcaption>
+      <figcaption class="sim-caption">Each sample is one simulated hour on the two-lane highway of section 10, with random traffic and random coefficients. The shape of the travel speed distribution appears as the samples pile up.</figcaption>
     </figure>
   </div>
 </header>
@@ -81,9 +81,10 @@
       <li><a data-n="6" href="#reading-results">Reading the results</a></li>
       <li><a data-n="7" href="#two-cars-code">Two cars in Python</a></li>
       <li class="plain"><a href="#part-b">Part B · Application</a></li>
-      <li><a data-n="8" href="#beam">Floor beam deflection</a></li>
-      <li><a data-n="9" href="#highway">Extra: highway speed</a></li>
-      <li><a data-n="10" href="#applications">Applications, reading</a></li>
+      <li><a data-n="8" href="#wind-farm">Wind farm power</a></li>
+      <li><a data-n="9" href="#beam">Extra: floor beam</a></li>
+      <li><a data-n="10" href="#highway">Extra: highway speed</a></li>
+      <li><a data-n="11" href="#applications">Applications, reading</a></li>
       <li class="plain"><a href="#notebook">Practice notebook</a></li>
     </ol>
   </nav>
@@ -172,23 +173,16 @@ N =   1000000   pi is about 3.1385</pre>
       <h3>Step 1: crisp numbers</h3>
       <p>With exact (crisp) speeds, \(v_A = 90\) km/h and \(v_B = 110\) km/h, the answer is deterministic: \(r = 200\) km/h. But no driver holds exactly 90 km/h, and we do not know in advance how fast a particular driver will go.</p>
 
-      <h3>Step 2: both speeds uniform</h3>
+      <h3>Step 2: speed intervals</h3>
       <div class="example">
         <p><span class="label">Example 1.</span> Two cars travel at speeds that are uniformly distributed between 65 km/h and 132 km/h. If they travel in opposite directions, what is their relative speed, represented as a probability distribution?</p>
       </div>
-      <p><strong>Interval arithmetic</strong> adds the limits: \([65, 132] + [65, 132] = [130, 264]\) km/h. That gives the range but says nothing about which values are likely. Probability theory gives the full answer: the sum of two independent uniform variables has a <strong>triangular</strong> distribution, here between 130 and 264 km/h with its peak at 197 km/h. Values in the middle are likely because many combinations of speeds produce them; the extremes need both cars at their slowest or fastest.</p>
+      <p>Suppose first that we only know each speed lies somewhere in the <strong>interval</strong> [65, 132] km/h. <strong>Interval arithmetic</strong> adds the lower bounds and adds the upper bounds, giving a new interval:</p>
+      <div class="math">$$[65,\ 132] + [65,\ 132] = [65 + 65,\ \ 132 + 132] = [130,\ 264]\ \text{km/h}$$</div>
       <figure class="diagram">
-        <svg class="dg" viewBox="0 0 680 190" role="img" aria-label="Two flat uniform distributions between 65 and 132 add up to a triangular distribution between 130 and 264 with its peak at 197.">
-          <path class="line" d="M10 140 H 160 M210 140 H 360 M400 140 H 670"/>
-          <rect class="area" x="30" y="70" width="110" height="70"/><rect class="area2" x="230" y="70" width="110" height="70"/>
-          <path class="area3" d="M420 140 L535 30 L650 140 Z"/><path class="line-muted" d="M535 30 V 140"/>
-          <text x="185" y="112" font-size="26" text-anchor="middle">+</text><text x="380" y="112" font-size="26" text-anchor="middle">=</text>
-          <g font-size="12" text-anchor="middle"><text x="30" y="158">65</text><text x="140" y="158">132</text><text x="230" y="158">65</text><text x="340" y="158">132</text><text x="420" y="158">130</text><text x="535" y="158">197</text><text x="650" y="158">264</text></g>
-          <g font-size="13" text-anchor="middle"><text x="85" y="56" class="acc">v_A ~ U(65, 132)</text><text x="285" y="56" class="blue">v_B ~ U(65, 132)</text><text x="535" y="20">r: triangular</text></g>
-          <text x="340" y="184" font-size="12" text-anchor="middle" class="muted">relative speed (km/h)</text>
-        </svg>
+        <svg class="dg" viewBox="0 0 680 222" role="img" aria-label="Two intervals from 65 to 132 km/h add up to the interval from 130 to 264 km/h."><rect class="area" x="79.1" y="30" width="174.8" height="22" rx="3"/><text x="73.1" y="46" font-size="13" text-anchor="end">65</text><text x="259.9" y="46" font-size="13">132</text><text x="166.5" y="24" font-size="13" text-anchor="middle" class="acc">v_A in [65, 132]</text><rect class="area2" x="79.1" y="90" width="174.8" height="22" rx="3"/><text x="73.1" y="106" font-size="13" text-anchor="end">65</text><text x="259.9" y="106" font-size="13">132</text><text x="166.5" y="84" font-size="13" text-anchor="middle" class="blue">v_B in [65, 132]</text><rect class="area3" x="248.7" y="150" width="349.6" height="22" rx="3"/><text x="242.7" y="166" font-size="13" text-anchor="end">130</text><text x="604.3" y="166" font-size="13">264</text><text x="423.5" y="144" font-size="13" text-anchor="middle">r = v_A + v_B in [130, 264]</text><path class="line" d="M40 196 H 640"/><path class="line" d="M40.0 196 v5"/><text x="40.0" y="214" font-size="12" text-anchor="middle" class="muted">50</text><path class="line" d="M170.4 196 v5"/><text x="170.4" y="214" font-size="12" text-anchor="middle" class="muted">100</text><path class="line" d="M300.9 196 v5"/><text x="300.9" y="214" font-size="12" text-anchor="middle" class="muted">150</text><path class="line" d="M431.3 196 v5"/><text x="431.3" y="214" font-size="12" text-anchor="middle" class="muted">200</text><path class="line" d="M561.7 196 v5"/><text x="561.7" y="214" font-size="12" text-anchor="middle" class="muted">250</text></svg>
       </figure>
-      <p>This case can still be solved by hand, with a convolution integral. It is a useful check for the simulation in section 7.</p>
+      <p>The interval tells us the <strong>range</strong> of possible relative speeds, and it is easy to calculate by hand. But it says nothing about which speeds are <strong>more likely</strong>: every value inside it is treated the same. Answering Example 1 as a probability distribution needs probability, and that is where simulation comes in: section 7.1 simulates Example 1.</p>
 
       <h3>Step 3: realistic distributions</h3>
       <p>Car A is a cautious driver: between 60 and 140 km/h but mostly 70 to 90 km/h. We model this with a beta distribution, which lives on \([0, 1]\), scaled and shifted: \(v_A = 60 + 80\,\text{Beta}(2, 5)\). Car B follows a normal distribution, \(v_B \sim N(\mu = 100, \sigma = 12)\) km/h.</p>
@@ -479,7 +473,7 @@ outliers: [61]
 P(time &gt; 40): 0.067</pre>
 <figure class="plot"><img src="assets/img/w5-boxplot.png" alt="Box plot of the 15 commute times: a narrow box from 32.5 to 35.5 minutes and one outlier at 61 minutes" width="562" height="413" loading="lazy"><figcaption>Box plot of the commute times: the accident day is drawn as a separate point.</figcaption></figure>
       <div class="note">
-        <p><span class="label">What to do with outliers.</span> Never delete them automatically: check them. A real rare event should stay in the results; in a simulation it is often exactly the risk you are looking for. An impossible value points to a modelling mistake: in the highway example of section 9, a normal distribution for the number of cars occasionally produces a negative number of cars, which creates absurd speeds. The fix there is a better input distribution, not deleting results.</p>
+        <p><span class="label">What to do with outliers.</span> Never delete them automatically: check them. A real rare event should stay in the results; in a simulation it is often exactly the risk you are looking for. An impossible value points to a modelling mistake: in the highway example of section 10, a normal distribution for the number of cars occasionally produces a negative number of cars, which creates absurd speeds. The fix there is a better input distribution, not deleting results.</p>
       </div>
 
       <h3>6.5 Comparing with the normal distribution</h3>
@@ -518,7 +512,7 @@ within ±3σ: 0.998</pre>
       <h2><span class="num">7</span>Worked example: the two cars in Python</h2>
       <p>We now simulate the two cars, following the five steps of section 4. This is the code written live in the lecture.</p>
       <h3>7.1 Check the simulation on the uniform case</h3>
-      <p>Always validate a simulation on a case you can solve by hand. With both speeds uniform on [65, 132] km/h (Example 1), the histogram must be the triangle between 130 and 264 km/h with its peak at 197 km/h.</p>
+      <p>Always check a simulation against what you already know. With both speeds uniform on [65, 132] km/h (Example 1), every simulated relative speed must lie inside the interval [130, 264] km/h found with interval arithmetic in section 3.</p>
 <figure class="code" data-runnable>
 <pre><code class="language-python">import numpy as np
 import matplotlib.pyplot as plt
@@ -538,7 +532,8 @@ plt.grid(True)
 plt.show()</code></pre>
 </figure>
 <pre class="out">min 130.6, max 263.8, mean 197.0 km/h</pre>
-<figure class="plot"><img src="assets/img/w5-cars-uniform.png" alt="Triangular histogram of relative speeds between 130 and 264 km/h with its peak near 197 km/h" width="584" height="432" loading="lazy"><figcaption>Both speeds uniform: the triangle predicted in section 3.</figcaption></figure>
+<figure class="plot"><img src="assets/img/w5-cars-uniform.png" alt="Histogram of relative speeds between 130 and 264 km/h, highest in the middle near 197 km/h and falling to zero at both ends" width="584" height="432" loading="lazy"><figcaption>Example 1 simulated: every value lies inside [130, 264] km/h, and values in the middle are far more likely than the extremes.</figcaption></figure>
+      <p>All values fall inside [130, 264] km/h, as interval arithmetic promised. The histogram adds what the interval cannot: speeds in the middle, near 197 km/h, are far more likely than the extremes, because many combinations of the two speeds produce them, while 130 km/h needs both cars at their very slowest. (Probability theory confirms the shape: the sum of two independent uniform variables has a triangular distribution.)</p>
       <h3>7.2 Realistic speeds</h3>
       <p>Car A: \(v_A = 60 + 80\,\text{Beta}(2, 5)\) km/h; car B: \(v_B \sim N(100, 12)\) km/h. We sample 10 000 pairs of drivers, calculate the relative speed, and analyse the results with the tools of section 6.</p>
 <figure class="code" data-runnable>
@@ -583,12 +578,104 @@ P(r &gt; 220 km/h) = 0.021</pre>
     <section id="part-b" class="part-head">
       <p class="tag">PART B</p>
       <h2>An engineering application</h2>
-      <p>One engineering problem, coded in class in about 20 minutes with a function (week 4), NumPy arrays (week 3) and the statistics of Part A.</p>
+      <p>One engineering problem, the power of a wind farm, coded in class in about 20 minutes with a function (week 4), 2-D NumPy arrays (week 3) and the statistics of Part A. Two extra worked problems follow for practice.</p>
     </section>
 
 <!-- =========================================================== 8 -->
+    <section id="wind-farm">
+      <h2><span class="num">8</span>How much power will the wind farm deliver?</h2>
+      <p>A wind farm has <strong>10 turbines</strong>, each with a rotor diameter of 80 m. The power a turbine extracts from the wind is</p>
+      <div class="math">$$P = \tfrac{1}{2}\,\rho\,A\,\eta\,\big(v\cos(\theta - 90^\circ)\big)^3$$</div>
+      <p>where \(\rho\) is the air density, \(A = \pi D^2/4\) the area swept by the rotor, \(\eta\) the efficiency of the turbine, \(v\) the wind speed and \(\theta\) the wind direction. The turbines face 90°, so only the component of the wind facing the rotor, \(v\cos(\theta - 90^\circ)\), counts. In every hour, each turbine sees its own random wind and works at its own random efficiency:</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>air density \(\rho\)</td><td>1.225 kg/m³ (fixed)</td></tr>
+          <tr><td>rotor diameter \(D\)</td><td>80 m (fixed)</td></tr>
+          <tr><td>wind speed \(v\)</td><td>Normal(\(\mu = 32,\ \sigma = 8\)) km/h</td></tr>
+          <tr><td>wind direction \(\theta\)</td><td>Normal(\(\mu = 90^\circ,\ \sigma = 22^\circ\))</td></tr>
+          <tr><td>efficiency \(\eta\)</td><td>Beta(2, 5): right-skewed, mean 0.29, mostly 0.15 to 0.45</td></tr>
+        </tbody>
+      </table></div>
+      <p>With the average inputs, the farm delivers 6.2 MW. It has a contract to supply <strong>5 MW</strong>. How often will it fall short?</p>
+      <div class="exercise">
+        <p><span class="label">Exercise 8.1.</span></p>
+        <ol>
+          <li>Write a function <code>turbine_power(v, theta, eta)</code> that returns the power of one turbine in MW. Convert the wind speed from km/h to m/s (divide by 3.6) and the angle from degrees to radians (<code>np.radians</code>).</li>
+          <li>Simulate \(N = 10\,000\) hours: draw \(v\), \(\theta\) and \(\eta\) as NumPy arrays of shape <code>(N, 10)</code>, one row per hour and one column per turbine.</li>
+          <li>Call the function <strong>once</strong> with the arrays to get the power of every turbine in every hour.</li>
+          <li>Add up the 10 turbines in each hour to get the farm power (<code>.sum(axis=1)</code>, week 3).</li>
+          <li>Calculate the mean, median and standard deviation of the farm power, and its 5th and 95th percentiles. Plot a histogram.</li>
+          <li>Calculate the probability that the farm delivers less than 5 MW.</li>
+        </ol>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+def turbine_power(v, theta, eta, rho=1.225, D=80):
+    """Power of a wind turbine in MW.
+    v: wind speed (km/h), theta: wind direction (degrees),
+    eta: efficiency (0 to 1), rho: air density (kg/m^3), D: rotor diameter (m).
+    The turbine faces 90 degrees; only the wind component facing it counts."""
+    A = np.pi * D**2 / 4                                    # swept area, m^2
+    v_eff = (v / 3.6) * np.cos(np.radians(theta - 90))      # m/s, facing the rotor
+    return 0.5 * rho * A * eta * v_eff**3 / 1e6             # W -&gt; MW
+
+np.random.seed(7)
+N, turbines = 10_000, 10
+
+# one row per hour, one column per turbine
+v = np.random.normal(32, 8, (N, turbines))          # km/h
+theta = np.random.normal(90, 22, (N, turbines))     # degrees
+eta = np.random.beta(2, 5, (N, turbines))           # right-skewed efficiency
+
+power = turbine_power(v, theta, eta)    # shape (N, 10): every turbine, every hour
+farm = power.sum(axis=1)                # shape (N,): total farm power per hour
+
+print("best guess (average inputs): %.2f MW" % (turbines * turbine_power(32, 90, 2 / 7)))
+print("mean %.2f, median %.2f, std %.2f MW" % (np.mean(farm), np.median(farm), np.std(farm)))
+print("5th to 95th percentile: %.2f to %.2f MW" % tuple(np.percentile(farm, [5, 95])))
+print("P(farm power &lt; 5 MW) = %.3f" % np.mean(farm &lt; 5))
+
+plt.hist(farm, bins=60, density=True, color="skyblue", edgecolor="black")
+plt.axvline(5, color="red", linestyle="--", label="contract: 5 MW")
+plt.xlabel("Wind farm power (MW)")
+plt.ylabel("Density")
+plt.legend()
+plt.show()</code></pre>
+</figure>
+<pre class="out">best guess (average inputs): 6.18 MW
+mean 6.02, median 5.77, std 1.98 MW
+5th to 95th percentile: 3.26 to 9.62 MW
+P(farm power &lt; 5 MW) = 0.334</pre>
+<figure class="plot"><img src="assets/img/w5-windfarm.png" alt="Right-skewed histogram of hourly wind farm power, peaking near 5 MW with a long tail to about 15 MW; a red dashed line at the 5 MW contract level" width="577" height="438" loading="lazy"><figcaption>Simulated farm power for 10 000 hours and the 5 MW contract.</figcaption></figure>
+          <p>The best-guess calculation with average inputs gives 6.2 MW, comfortably above the contract, yet the farm delivers less than 5 MW in about <strong>one hour in three</strong>. The distribution is right-skewed (power grows with the cube of the wind speed, and the efficiency is right-skewed too), so the median is below the mean. Note also that the average inputs do not give the average output: the model is non-linear.</p>
+          <p>Real turbines have a <em>rated power</em> they cannot exceed. Capping each turbine at 2 MW with <code>np.minimum</code> trims the long right tail. It is also worth checking for impossible values (section 6.4): a normal distribution can, very rarely, give a negative wind speed.</p>
+<figure class="code" data-runnable data-setup="wind">
+<pre><code class="language-python"># Extension: each turbine is rated at 2 MW and cannot produce more
+power_capped = np.minimum(turbine_power(v, theta, eta), 2.0)
+farm_capped = power_capped.sum(axis=1)
+print("capped: mean %.2f MW, P(farm power &lt; 5 MW) = %.3f" % (np.mean(farm_capped), np.mean(farm_capped &lt; 5)))
+print("turbine-hours with negative power (impossible):", np.sum(power &lt; 0))</code></pre>
+</figure>
+<pre class="out">capped: mean 5.74 MW, P(farm power &lt; 5 MW) = 0.348
+turbine-hours with negative power (impossible): 11</pre>
+          <p>Capping lowers the mean, but the chance of falling short changes only slightly, because shortfalls mostly happen in light winds, where the cap does not matter. About ten impossible negative values out of 100 000 turbine-hours have no visible effect here, but in another model they could; <code>np.maximum(v, 0)</code> would remove them.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 9 -->
     <section id="beam">
-      <h2><span class="num">8</span>Will the floor beam deflect too much?</h2>
+      <h2><span class="num">9</span>Extra exercise: will the floor beam deflect too much?</h2>
+      <p>This is the beam from the introduction (slide 4 of the lecture): the best-guess deflection looks fine, but is it?</p>
       <p>A simply supported steel floor beam in a laboratory supports vibration-sensitive equipment, so its mid-span deflection must stay below \(L/1000\). Under a uniformly distributed load \(w\), the mid-span deflection is (week 4, exercise 5.1)</p>
       <div class="math">$$\delta = \frac{5\,w\,L^4}{384\,E\,I}$$</div>
       <div class="tbl-wrap"><table class="tbl">
@@ -603,7 +690,7 @@ P(r &gt; 220 km/h) = 0.021</pre>
       </table></div>
       <p>With the average values, \(\delta = 5.0\) mm, comfortably below the limit. But the load on the floor and the stiffness of the steel both vary. The client accepts at most a 5 % chance that the deflection exceeds the limit.</p>
       <div class="exercise">
-        <p><span class="label">Exercise 8.1.</span></p>
+        <p><span class="label">Exercise 9.1.</span></p>
         <ol>
           <li>Write a function <code>max_deflection(w, L, E, I)</code> that returns \(\delta\).</li>
           <li>Draw \(N = 100\,000\) random values of \(w\) and \(E\) as NumPy arrays.</li>
@@ -670,9 +757,9 @@ I = 3.700e+08 mm^4:  P(deflection &gt; 6 mm) = 0.027</pre>
       </div>
     </section>
 
-<!-- =========================================================== 9 -->
+<!-- =========================================================== 10 -->
     <section id="highway">
-      <h2><span class="num">9</span>Extra worked example: travel speed on a two-lane highway</h2>
+      <h2><span class="num">10</span>Extra worked example: travel speed on a two-lane highway</h2>
       <div class="example">
         <p><span class="label">Example 2.</span> The average travel speed on a two-lane highway depends on the traffic composition, specifically the number of cars and trucks on the road. In a simple representation, the average travel speed <var>V</var> (km/h) can be estimated from the total volume and the truck proportion:</p>
         <div class="math">$$V = V_f\left(1 - \alpha\,\frac{N_c + N_t}{C} - \beta\,p_t\right)$$</div>
@@ -729,7 +816,7 @@ plt.grid(True)
 plt.show()</code></pre>
 </figure>
       <div class="exercise">
-        <p><span class="label">Exercise 9.1.</span> Rewrite the highway simulation without a <code>for</code> loop: sample every input as an array of 10 000 values (for example <code>np.random.normal(1200, 486, 10_000)</code>) and call <code>travel_speed</code> once. Then find the median, the 5th and 95th percentiles and the outliers, and check how many trials have a negative number of cars.</p>
+        <p><span class="label">Exercise 10.1.</span> Rewrite the highway simulation without a <code>for</code> loop: sample every input as an array of 10 000 values (for example <code>np.random.normal(1200, 486, 10_000)</code>) and call <code>travel_speed</code> once. Then find the median, the 5th and 95th percentiles and the outliers, and check how many trials have a negative number of cars.</p>
 <figure class="code sandbox" data-runnable>
 <pre><code class="language-python">import numpy as np
 
@@ -738,9 +825,9 @@ plt.show()</code></pre>
       </div>
     </section>
 
-<!-- =========================================================== 10 -->
+<!-- =========================================================== 11 -->
     <section id="applications">
-      <h2><span class="num">10</span>Applications and further reading</h2>
+      <h2><span class="num">11</span>Applications and further reading</h2>
       <p>Monte Carlo simulation is used in many engineering applications, including structural reliability analysis, circuit noise and tolerance modelling, project cost and schedule estimation, flood risk assessment and risk analysis in manufacturing.</p>
       <p>Mathias, S.A. (2023). EIA and Uncertainty Management. In: <em>Hydraulics, Hydrology and Environmental Engineering</em>. Springer, Cham. <a href="https://doi.org/10.1007/978-3-031-41973-7_30">doi.org/10.1007/978-3-031-41973-7_30</a></p>
     </section>
@@ -799,6 +886,35 @@ L, I = 6000, 3.375e8
 limit = L / 1000
 w = np.random.normal(20, 3, N)
 E = np.random.normal(200_000, 10_000, N)
+</script>
+
+<script type="text/plain" id="setup-wind" data-hint="The live window already has turbine_power, v, theta and eta from the solution above.">import numpy as np
+import matplotlib.pyplot as plt
+
+def turbine_power(v, theta, eta, rho=1.225, D=80):
+    """Power of a wind turbine in MW.
+    v: wind speed (km/h), theta: wind direction (degrees),
+    eta: efficiency (0 to 1), rho: air density (kg/m^3), D: rotor diameter (m).
+    The turbine faces 90 degrees; only the wind component facing it counts."""
+    A = np.pi * D**2 / 4                                    # swept area, m^2
+    v_eff = (v / 3.6) * np.cos(np.radians(theta - 90))      # m/s, facing the rotor
+    return 0.5 * rho * A * eta * v_eff**3 / 1e6             # W -> MW
+
+np.random.seed(7)
+N, turbines = 10_000, 10
+
+# one row per hour, one column per turbine
+v = np.random.normal(32, 8, (N, turbines))          # km/h
+theta = np.random.normal(90, 22, (N, turbines))     # degrees
+eta = np.random.beta(2, 5, (N, turbines))           # right-skewed efficiency
+
+power = turbine_power(v, theta, eta)    # shape (N, 10): every turbine, every hour
+farm = power.sum(axis=1)                # shape (N,): total farm power per hour
+
+print("best guess (average inputs): %.2f MW" % (turbines * turbine_power(32, 90, 2 / 7)))
+print("mean %.2f, median %.2f, std %.2f MW" % (np.mean(farm), np.median(farm), np.std(farm)))
+print("5th to 95th percentile: %.2f to %.2f MW" % tuple(np.percentile(farm, [5, 95])))
+print("P(farm power < 5 MW) = %.3f" % np.mean(farm < 5))
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>

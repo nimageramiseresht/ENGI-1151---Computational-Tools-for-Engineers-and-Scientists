@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <link rel="stylesheet" href="assets/slides.css">
 <style>
   /* week 5 widgets and layouts */
@@ -53,6 +54,11 @@
   .dg .blue { fill: #1D5FA3; }
   .ctl.sm { font-size: 17px; margin: 0 0 4px; }
   .ctl.sm input[type="range"] { width: 220px; }
+  .dg .area3 { fill: #EEF0F3; stroke: var(--ink); stroke-width: 1.5; }
+  .reveal .katex { font-size: 1.05em; }
+  .hb-tab2 { column-count: 2; column-gap: 18px; }
+  .rowgrid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 2fr); gap: 20px; align-items: center; }
+  .wind-t td:first-child { white-space: nowrap; }
 </style>
 </head>
 <body data-py-packages="numpy,matplotlib">
@@ -141,7 +147,7 @@ Note the estimate improves slowly: 100 times more points gives only about 10 tim
   <aside class="notes">
 Almost every input in an engineering calculation is uncertain: the load on a floor, the stiffness of steel, the number of vehicles on a road, how long a task takes, how much it costs.
 The usual approach is to plug in one best-guess value per input. That gives one answer, but tells us nothing about how wrong it could be.
-Example on the right (we will code this in Part B): a floor beam. With the average load and average stiffness, the deflection is 5.0 mm, comfortably below a 6 mm limit. But load and stiffness vary. Simulating 100 000 beams with random load and stiffness shows that about 11 per cent of them deflect more than 6 mm. The best guess hid a 1-in-9 chance of failing the limit.
+Example on the right: a floor beam (an extra exercise in the notes). With the average load and average stiffness, the deflection is 5.0 mm, comfortably below a 6 mm limit. But load and stiffness vary. Simulating 100 000 beams with random load and stiffness shows that about 11 per cent of them deflect more than 6 mm. The best guess hid a 1-in-9 chance of failing the limit.
 The questions we care about are about the whole distribution: range, most likely value, chance of exceeding a limit.
 For simple cases probability theory gives exact answers; for realistic models it quickly becomes impossible. Monte Carlo works for any model you can write as code.
   </aside>
@@ -251,47 +257,26 @@ But no driver holds exactly 90 km/h, and we do not know in advance how fast a pa
 </section>
 
 <!-- ============================================================ 8 -->
+
 <section>
-  <h2><span class="num">3</span>Two cars, step 2: both speeds uniform</h2>
-  <p class="terms"><span>uniform distribution</span><span>interval arithmetic</span></p>
-  <svg class="dg" viewBox="0 0 1180 320" role="img" aria-label="Two uniform distributions between 65 and 132 km/h are added. Interval arithmetic gives the range 130 to 264 km/h. The actual distribution of the sum is a triangle, peaking at 197 km/h.">
-    <g transform="translate(20,40)">
-      <path class="line" d="M0 160 H 260"/>
-      <rect class="area" x="40" y="60" width="180" height="100"/>
-      <text x="40" y="184" font-size="15" text-anchor="middle">65</text><text x="220" y="184" font-size="15" text-anchor="middle">132</text>
-      <text x="130" y="44" font-size="18" text-anchor="middle" class="acc" font-weight="700">v_A ~ U(65, 132)</text>
-      <text x="130" y="212" font-size="14" text-anchor="middle" class="muted">every speed equally likely</text>
-    </g>
-    <text x="320" y="160" font-size="40" text-anchor="middle">+</text>
-    <g transform="translate(360,40)">
-      <path class="line" d="M0 160 H 260"/>
-      <rect class="area2" x="40" y="60" width="180" height="100"/>
-      <text x="40" y="184" font-size="15" text-anchor="middle">65</text><text x="220" y="184" font-size="15" text-anchor="middle">132</text>
-      <text x="130" y="44" font-size="18" text-anchor="middle" class="blue" font-weight="700">v_B ~ U(65, 132)</text>
-    </g>
-    <text x="660" y="160" font-size="40" text-anchor="middle">=</text>
-    <g transform="translate(700,40)">
-      <path class="line" d="M0 160 H 460"/>
-      <path class="area" style="fill:#EEE;stroke:var(--ink)" d="M40 160 L230 20 L420 160 Z"/>
-      <path class="line-muted" d="M230 20 V 160"/>
-      <text x="40" y="184" font-size="15" text-anchor="middle">130</text><text x="230" y="184" font-size="15" text-anchor="middle">197</text><text x="420" y="184" font-size="15" text-anchor="middle">264</text>
-      <text x="230" y="12" font-size="18" text-anchor="middle" font-weight="700">r: triangular, peak at 197</text>
-      <path class="line-acc" d="M40 222 H 420"/><path class="fill-acc" d="M40 222 l12 -7 v14 z M420 222 l-12 -7 v14 z"/>
-      <text x="230" y="248" font-size="15" text-anchor="middle" class="acc">interval arithmetic:</text><text x="230" y="268" font-size="15" text-anchor="middle" class="acc">[65, 132] + [65, 132] = [130, 264]</text>
-    </g>
+  <h2><span class="num">3</span>Two cars, step 2: speed intervals</h2>
+  <p class="terms"><span>interval</span><span>lower bound</span><span>upper bound</span><span>interval arithmetic</span></p>
+  <p style="font-size:.72em;margin:0 0 6px">We only know that each car drives somewhere between 65 and 132 km/h.</p>
+  <svg class="dg" viewBox="0 0 1180 300" role="img" aria-label="Two intervals from 65 to 132 km/h are added: the lower bounds give 130, the upper bounds give 264, so the relative speed lies in the interval from 130 to 264 km/h.">
+    <rect class="area" x="155.2" y="40" width="291.3" height="30" rx="4"/><text x="145.2" y="61" font-size="17" text-anchor="end" font-weight="700">65</text><text x="456.5" y="61" font-size="17" font-weight="700">132</text><text x="300.9" y="32" font-size="17" text-anchor="middle" font-weight="700" class="acc">v_A ∈ [65, 132]</text><path class="line-muted" d="M155.2 70 V 262 M446.5 70 V 262"/><rect class="area2" x="155.2" y="120" width="291.3" height="30" rx="4"/><text x="145.2" y="141" font-size="17" text-anchor="end" font-weight="700">65</text><text x="456.5" y="141" font-size="17" font-weight="700">132</text><text x="300.9" y="112" font-size="17" text-anchor="middle" font-weight="700" class="blue">v_B ∈ [65, 132]</text><path class="line-muted" d="M155.2 150 V 262 M446.5 150 V 262"/><rect class="area3" x="437.8" y="200" width="582.6" height="30" rx="4"/><text x="427.8" y="221" font-size="17" text-anchor="end" font-weight="700">130</text><text x="1030.4" y="221" font-size="17" font-weight="700">264</text><text x="729.1" y="192" font-size="17" text-anchor="middle" font-weight="700">r = v_A + v_B ∈ [130, 264]</text><path class="line-muted" d="M437.8 230 V 262 M1020.4 230 V 262"/><path class="line" d="M90 262 H 1090"/><path class="line" d="M90.0 262 v6"/><text x="90.0" y="286" font-size="14" text-anchor="middle" class="muted">50</text><path class="line" d="M198.7 262 v6"/><text x="198.7" y="286" font-size="14" text-anchor="middle" class="muted">75</text><path class="line" d="M307.4 262 v6"/><text x="307.4" y="286" font-size="14" text-anchor="middle" class="muted">100</text><path class="line" d="M416.1 262 v6"/><text x="416.1" y="286" font-size="14" text-anchor="middle" class="muted">125</text><path class="line" d="M524.8 262 v6"/><text x="524.8" y="286" font-size="14" text-anchor="middle" class="muted">150</text><path class="line" d="M633.5 262 v6"/><text x="633.5" y="286" font-size="14" text-anchor="middle" class="muted">175</text><path class="line" d="M742.2 262 v6"/><text x="742.2" y="286" font-size="14" text-anchor="middle" class="muted">200</text><path class="line" d="M850.9 262 v6"/><text x="850.9" y="286" font-size="14" text-anchor="middle" class="muted">225</text><path class="line" d="M959.6 262 v6"/><text x="959.6" y="286" font-size="14" text-anchor="middle" class="muted">250</text><path class="line" d="M1068.3 262 v6"/><text x="1068.3" y="286" font-size="14" text-anchor="middle" class="muted">275</text><text x="1090" y="250" font-size="14" text-anchor="end" class="muted">speed (km/h)</text>
   </svg>
-  <div class="cols" style="font-size:.78em;margin-top:6px">
-    <p><b>Interval arithmetic</b> adds the limits: the range is 130 to 264 km/h. But it says nothing about which values are <b>likely</b>.</p>
-    <p>Probability theory gives the full answer: a <b>triangle</b>. Values near 197 km/h are common, the extremes are rare. Still solvable <b>by hand</b>.</p>
+  <p class="formula" style="font-size:.9em;margin:8px 0 10px !important">\([65,\ 132] + [65,\ 132] = [65 + 65,\ \ 132 + 132] = [130,\ 264]\ \text{km/h}\)</p>
+  <div class="cols" style="font-size:.76em">
+    <p><b>Interval arithmetic</b>: add the <b>lower bounds</b>, add the <b>upper bounds</b>. The result is a new interval.</p>
+    <p>It gives the <b>range</b> of possible relative speeds, but says nothing about which speeds are <b>more likely</b>.</p>
   </div>
   <aside class="notes">
-Step 2: we only know that each car drives somewhere between 65 and 132 km/h, any speed in between being equally likely. That is the uniform distribution U(65, 132): a flat rectangle.
-Interval arithmetic simply adds the limits: the slowest pair gives 130, the fastest pair 264 km/h. Useful, but it treats 130 and 197 as equally plausible, which they are not.
-Why a triangle? To get 130 both cars must be at their slowest: only one combination. To get 197 there are many combinations (65 + 132, 100 + 97, 132 + 65, …). So middle values are much more likely than extremes.
-The sum of two independent uniform variables is exactly triangular. This can be derived by hand with a convolution integral, so a closed-form answer still exists. Next step it does not.
+Step 2: we no longer know the exact speeds, only that each car drives somewhere between 65 and 132 km/h. Each speed is an interval.
+Interval arithmetic: to add two intervals, add the lower bounds and add the upper bounds. The slowest possible pair gives 65 + 65 = 130 km/h, the fastest pair 132 + 132 = 264 km/h. So the relative speed lies in the interval [130, 264] km/h.
+This is still simple to do by hand, and it is guaranteed to contain every possible answer.
+But an interval only gives the range. It cannot tell us whether 197 km/h is more likely than 130 km/h; every value inside is treated the same. To answer "how likely", we need probability distributions instead of intervals, which is the next step.
   </aside>
 </section>
-
 <!-- ============================================================ 9 -->
 <section>
   <h2><span class="num">3</span>Two cars, step 3: realistic distributions</h2>
@@ -320,7 +305,7 @@ The sum of two independent uniform variables is exactly triangular. This can be 
   <div class="cols" style="font-size:.74em">
     <div>
       <p>The exact answer needs a convolution integral:</p>
-      <p class="formula" style="font-size:1.05em"><i>f<sub>R</sub></i>(<i>r</i>) = ∫ <i>f<sub>A</sub></i>(<i>v</i>) · <i>f<sub>B</sub></i>(<i>r</i> − <i>v</i>) d<i>v</i></p>
+      <p class="formula" style="font-size:1.05em">\(f_R(r) = \displaystyle\int f_A(v)\, f_B(r - v)\, dv\)</p>
       <p class="small">For a beta plus a normal there is no closed-form result. With more inputs or a non-linear model it gets hopeless.</p>
     </div>
     <p class="callout" style="align-self:center">Too complex for pencil and paper → <b>compute</b> it instead: let the computer repeat the experiment thousands of times. That is <b>Monte Carlo simulation</b>.</p>
@@ -329,7 +314,7 @@ The sum of two independent uniform variables is exactly triangular. This can be 
 Step 3: realistic speeds. Car A is a cautious driver: speed between 60 and 140 km/h but mostly around 70 to 90. We model that with a beta distribution, which lives between 0 and 1, scaled to 60 + 80 × Beta(2, 5). It is skewed: a long tail towards high speeds.
 Car B follows a normal distribution with mean 100 km/h and standard deviation 12 km/h: the familiar bell curve.
 What is the distribution of the sum? In theory it is the convolution integral shown. In practice, for a beta plus a normal there is no closed-form answer; you would need numerical integration. And this is only two inputs added together; a real model has many inputs combined non-linearly.
-So we stop trying to derive the answer analytically and compute it: simulate thousands of pairs of drivers and look at the results. That is Monte Carlo simulation. We will code exactly this example at the end of Part A.
+So we stop trying to derive the answer analytically and compute it: simulate thousands of pairs of drivers and look at the results. That is Monte Carlo simulation. The full code for this example is in the notes, week5.html section 7.
   </aside>
 </section>
 
@@ -383,30 +368,30 @@ Repeat steps 2 and 3 N times, typically thousands or millions, storing every out
 </section>
 
 <!-- ============================================================ 11 -->
+
 <section>
   <h2><span class="num">4</span>Monte Carlo simulation in five steps</h2>
   <p class="terms"><span>define</span><span>assign distributions</span><span>sample</span><span>compute</span><span>analyse</span></p>
-  <table class="t">
-    <thead><tr><th>Step</th><th>What you do</th><th>Two cars</th></tr></thead>
+  <table class="t" style="font-size:.78em">
+    <thead><tr><th>Step</th><th>What you do</th></tr></thead>
     <tbody>
-      <tr><td><b>1</b> Define the problem</td><td>the output of interest and the uncertain inputs</td><td>output r; inputs v<sub>A</sub>, v<sub>B</sub></td></tr>
-      <tr><td><b>2</b> Assign distributions</td><td>a probability distribution for each input</td><td>v<sub>A</sub> = 60 + 80·Beta(2, 5); v<sub>B</sub> ~ N(100, 12)</td></tr>
-      <tr><td><b>3</b> Sample randomly</td><td>generate many random values of every input</td><td>N = 10 000 values of each speed</td></tr>
-      <tr><td><b>4</b> Compute the outputs</td><td>run the model once for every sample: an equation, a function or a complex model</td><td>r = v<sub>A</sub> + v<sub>B</sub>, 10 000 times</td></tr>
-      <tr><td><b>5</b> Analyse the results</td><td>histogram; mean, median, standard deviation; percentiles; chance of exceeding a limit</td><td>how fast do the cars usually close in?</td></tr>
+      <tr><td><b>1</b> Define the problem</td><td>identify the output of interest and the uncertain inputs</td></tr>
+      <tr><td><b>2</b> Assign distributions</td><td>describe each uncertain input with a probability distribution</td></tr>
+      <tr><td><b>3</b> Sample randomly</td><td>generate many random values of every input</td></tr>
+      <tr><td><b>4</b> Compute the outputs</td><td>run the model once for every sample: an equation, a function or a complex model</td></tr>
+      <tr><td><b>5</b> Analyse the results</td><td>create histograms; calculate the mean, median, standard deviation, percentiles and the chance of exceeding a limit</td></tr>
     </tbody>
   </table>
-  <p class="small" style="margin-top:10px">Steps 3 and 4 are where Python helps: NumPy draws thousands of random numbers in one line, and a function or array operation processes all of them.</p>
+  <p class="callout" style="font-size:.7em;margin-top:16px">Python helps in steps 3 to 5: NumPy draws thousands of random numbers in one line (step 3), a function or array operation processes all of them (step 4), and NumPy and Matplotlib turn the results into histograms and statistics (step 5).</p>
   <aside class="notes">
 The process as a recipe of five steps; use it to structure any Monte Carlo problem, including the coursework.
 1. Define the problem: what output do you want, and which inputs are uncertain?
 2. Assign a probability distribution to each uncertain input: from data, from standards, or from expert judgement.
-3. Generate many random samples of the inputs. The next section shows how computers make random numbers.
+3. Generate many random samples of the inputs. The next section shows how computers make random numbers; in Python one NumPy line gives thousands.
 4. Compute the output for every sample. A Python function (week 4) or array arithmetic (week 3).
-5. Analyse the results: histogram, summary statistics, and the probability of exceeding a limit. Section 6.
+5. Analyse the results. Python does the heavy lifting here too: plt.hist draws the histogram, and NumPy calculates the mean, median, standard deviation, percentiles and the chance of exceeding a limit. Section 6.
   </aside>
 </section>
-
 <!-- ============================================================ 12 -->
 <section class="divider" data-background-color="#68246D">
   <p class="dnum">5</p>
@@ -447,7 +432,8 @@ A good PRNG has a long period, uniform output, efficiency and reproducibility. B
   <p class="terms"><span>LCG</span><span>mod (remainder)</span><span>period</span></p>
   <div class="cols wide-left">
     <div class="stack">
-      <p class="formula" style="font-size:.8em"><i>X</i><sub><i>n</i>+1</sub> = (<i>a</i> · <i>X<sub>n</sub></i> + <i>c</i>) mod <i>m</i> &nbsp;&nbsp;&nbsp; <i>u<sub>n</sub></i> = <i>X<sub>n</sub></i> / <i>m</i> &nbsp;in [0, 1)</p>
+      <p class="formula" style="font-size:.8em;margin:0 0 2px !important">\(X_{n+1} = (a\,X_n + c) \bmod m\)</p>
+      <p class="formula" style="font-size:.8em;margin:0 0 6px !important">\(u_n = X_n / m \quad \text{in } [0,\ 1)\)</p>
       <p class="small" style="margin:0">mod <i>m</i>: the remainder after dividing by <i>m</i>, e.g. 16 mod 16 = 0, 31 mod 16 = 15. Python: <code>%</code></p>
       <div class="lcg-in">
         <label>a <input id="lcg-a" type="text" value="5" spellcheck="false" autocomplete="off"></label>
@@ -479,7 +465,7 @@ Large preset (a = 7^5 = 16807, c = 102435, m = 2^31 − 1, as in the lecture cod
   <div class="cols">
     <div class="stack">
       <p style="font-size:.7em">Random numbers on <b>[0, 1)</b> are the building block for every other distribution.</p>
-      <p class="formula" style="font-size:.78em"><b>U</b>(<i>a</i>, <i>b</i>) = <i>a</i> + <b>U</b>(0, 1) · (<i>b</i> − <i>a</i>)</p>
+      <p class="formula" style="font-size:.78em">\(U(a, b) = a + U(0, 1)\,(b - a)\)</p>
       <svg class="dg" viewBox="0 0 560 200" role="img" aria-label="u equal to 0.40 on the interval 0 to 1 maps to 91.8 on the interval 65 to 132.">
         <path class="line" d="M60 50 H 500"/><path class="line" d="M60 42 V 58 M500 42 V 58"/>
         <text x="60" y="30" font-size="15" text-anchor="middle">0</text><text x="500" y="30" font-size="15" text-anchor="middle">1</text>
@@ -495,7 +481,7 @@ Large preset (a = 7^5 = 16807, c = 102435, m = 2^31 − 1, as in the lecture cod
       <p class="small">Scale first, then shift. <code>(u + a) * (b - a)</code> is a common mistake: it does not give values between a and b.</p>
     </div>
     <div class="stack">
-      <p style="font-size:.66em;margin:0">Any distribution: <b>inverse transform</b> <i>x</i> = <i>F</i><sup>−1</sup>(<i>u</i>), where <i>F</i> is the cumulative distribution. Exponential, λ = 1.5: <i>x</i> = −ln(1 − <i>u</i>) / λ</p>
+      <p style="font-size:.66em;margin:0">Any distribution: <b>inverse transform</b> \(x = F^{-1}(u)\), where \(F\) is the cumulative distribution. Exponential, \(\lambda = 1.5\): \(x = -\ln(1 - u)/\lambda\)</p>
       <div class="ctl sm"><label>u <input type="range" id="it-u" min="0.01" max="0.99" step="0.01" value="0.46"> <b id="it-uv">0.46</b></label><button type="button" class="wbtn" id="it-draw">sample 1 000 values</button></div>
       <svg class="dg" id="it-svg" viewBox="0 0 560 360" role="img" aria-label="Cumulative distribution of the exponential distribution. A value u on the vertical axis is mapped through the curve to a value x on the horizontal axis."></svg>
     </div>
@@ -558,52 +544,33 @@ The newer NumPy interface, rng = np.random.default_rng(42) then rng.normal(...),
 </section>
 
 <!-- ============================================================ 18 -->
+
 <section>
-  <h2><span class="num">6.1</span>The repeated experiment</h2>
-  <p class="terms"><span>trial</span><span>number of trials N</span><span>convergence</span></p>
-  <div class="cols" style="grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)">
+  <h2><span class="num">6.1</span>Repeat the experiment, then build a histogram</h2>
+  <p class="terms"><span>trial</span><span>number of trials N</span><span>bin (band)</span><span>count</span></p>
+  <p style="font-size:.6em;margin:0 0 6px">One <b>trial</b>: draw <b style="color:var(--accent)">v<sub>A</sub> = 60 + 80·Beta(2, 5)</b> and <b style="color:#1D5FA3">v<sub>B</sub> ~ N(100, 12)</b>, then add them. The first 30 trials are shown; repeat the experiment to add more.</p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px">
+    <svg class="dg" id="hb-svg" viewBox="0 0 700 430" role="img" aria-label="Relative speeds from the trials so far, drawn as dots on a number line and divided into equal bins; the bar above each bin shows how many results fall inside it."></svg>
     <div class="stack">
-      <p style="font-size:.6em;margin:0">One trial: draw <span class="acc" style="color:var(--accent)"><b>v<sub>A</sub></b> = 60 + 80·Beta(2, 5)</span> and <span style="color:#1D5FA3"><b>v<sub>B</sub></b> ~ N(100, 12)</span>, then add them.</p>
-      <div class="wbar"><button type="button" class="wbtn run" data-mc="1">+1 trial</button><button type="button" class="wbtn run" data-mc="10">+10</button><button type="button" class="wbtn run" data-mc="100">+100</button><button type="button" class="wbtn run" data-mc="10000">+10 000</button><button type="button" class="wbtn" data-mc="0">Reset</button></div>
-      <table class="runs" id="mc-runs"></table>
-      <div class="wstat" id="mc-out" aria-live="polite"></div>
+      <div class="wbar"><button type="button" class="wbtn run" data-hb="1">+1 trial</button><button type="button" class="wbtn run" data-hb="10">+10</button><button type="button" class="wbtn run" data-hb="100">+100</button><button type="button" class="wbtn run" data-hb="10000">+10 000</button><button type="button" class="wbtn" data-hb="0">Reset</button></div>
+      <div class="wstat" id="hb-stat" aria-live="polite"></div>
+      <div class="ctl sm"><label>bins <input type="range" id="hb-k" min="2" max="20" step="1" value="6"> <b id="hb-kv">6</b></label></div>
+      <div class="wpanel"><h4>band (km/h) → count</h4><pre class="wpre" id="hb-tab" style="font-size:14px;line-height:1.3"></pre></div>
+      <p class="small" style="margin:0"><code>plt.hist(r, bins=6)</code> draws it; <code>np.histogram</code> gives the counts.</p>
     </div>
-    <svg class="dg" id="mc-svg" viewBox="0 0 620 400" role="img" aria-label="Histogram of the relative speeds from all trials so far."></svg>
   </div>
   <aside class="notes">
 Back to the two cars with the realistic distributions. One trial: draw a random speed for each car from its distribution and add them.
-Click +1 trial a few times. Each trial gives a different relative speed. One trial tells us almost nothing: it could be 165 or 210.
-Click +10, then +100: the histogram starts to take shape and the running mean wanders less.
-Click +10 000: the histogram becomes a smooth shape, the distribution of the relative speed: centred near 183 km/h, from about 120 to 250, slightly skewed to the right because of car A's long tail.
-This is convergence: the more trials, the more stable the results. The error of the mean shrinks like 1/√N, so 100 times more trials gives about 10 times more precision. That is why simulations use thousands to millions of trials, which only computers can do.
-Reset and repeat: a new random history, but with many trials the same final shape.
+The slide starts with 30 trials, shown as dots on the number line. Click +1 trial a few times: each trial gives a different relative speed (the newest is highlighted). One trial tells us almost nothing.
+Building the histogram: the range of the results, from the smallest to the largest value, is split into equal bands called bins. We count how many results fall into each bin and draw a bar whose height is the count. Move the slider: with 2 or 3 bins the shape is hidden; with 20 bins for 30 values most bins hold 0, 1 or 2 values and the picture is noisy. The counts always add up to N.
+Now repeat the experiment: +100, then +10 000. The dots disappear (too many to draw) but the histogram takes a smooth, stable shape: centred near 183 km/h, from about 120 to 250, slightly skewed to the right because of car A's long tail. With many results, more bins work well.
+This is convergence: the more trials, the more stable the results. The error of the mean shrinks like 1/√N, so 100 times more trials gives about 10 times more precision. That is why simulations use thousands to millions of trials.
+In Python, plt.hist(r, bins=6) draws the histogram; np.histogram gives the counts and the bin edges as arrays. With density=True, each bar is divided by N × bin width, so the total area is 1 and the histogram can be compared directly with a probability density function (6.5).
   </aside>
 </section>
-
 <!-- ============================================================ 19 -->
 <section>
-  <h2><span class="num">6.2</span>Building a histogram: bins and counts</h2>
-  <p class="terms"><span>bin (band)</span><span>bin width</span><span>count</span><span>density</span></p>
-  <div class="cols" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">
-    <svg class="dg" id="hb-svg" viewBox="0 0 700 430" role="img" aria-label="Thirty relative speeds drawn as dots on a number line, divided into equal bins; the bar above each bin shows how many dots fall inside it."></svg>
-    <div class="stack">
-      <div class="ctl sm"><label>bins <input type="range" id="hb-k" min="2" max="12" step="1" value="6"> <b id="hb-kv">6</b></label></div>
-      <div class="wpanel"><h4>band (km/h) → count</h4><pre class="wpre" id="hb-tab" style="font-size:15px;line-height:1.3"></pre></div>
-      <p class="small" style="margin:0"><code>plt.hist(r, bins=6)</code> draws it.<br><code>counts, edges = np.histogram(r, bins=6)</code> gives the numbers.<br><code>density=True</code> scales the bars so their total <b>area</b> is 1.</p>
-    </div>
-  </div>
-  <aside class="notes">
-A histogram is how we see the distribution of simulation results.
-The range of the data, from the smallest to the largest value, is split into equal bands called bins. We count how many results fall into each bin, and draw a bar whose height is the count.
-Here: 30 relative speeds from the simulation, shown as dots on the number line. Move the slider. With 2 or 3 bins the shape is hidden; with 12 bins for only 30 values most bins hold 0, 1 or 2 values and the picture is noisy. A sensible number of bins grows with the number of results: tens of bins for thousands of values.
-The table lists each band and its count; the counts always add up to 30.
-In Python, plt.hist(r, bins=6) draws the histogram; np.histogram gives the counts and the bin edges as arrays. With density=True, each bar is divided by N × bin width, so the total area is 1 and the histogram can be compared directly with a probability density function, as we do in 6.6.
-  </aside>
-</section>
-
-<!-- ============================================================ 20 -->
-<section>
-  <h2><span class="num">6.3</span>Centre and spread: mean, median, standard deviation</h2>
+  <h2><span class="num">6.2</span>Centre and spread: mean, median, standard deviation</h2>
   <p class="terms"><span>mean</span><span>median</span><span>standard deviation</span></p>
   <div class="cols">
     <div class="stack">
@@ -612,9 +579,9 @@ In Python, plt.hist(r, bins=6) draws the histogram; np.histogram gives the count
       </svg>
       <table class="t compact">
         <tbody>
-          <tr><td><b>mean</b> x̄ = (1/N) Σ x<sub>i</sub></td><td>the balance point</td></tr>
+          <tr><td><b>mean</b> \(\bar{x} = \frac{1}{N}\sum x_i\)</td><td>the balance point</td></tr>
           <tr><td><b>median</b></td><td>middle of the sorted values: half below, half above</td></tr>
-          <tr><td><b>std</b> σ = √( (1/N) Σ (x<sub>i</sub> − x̄)² )</td><td>typical distance from the mean</td></tr>
+          <tr><td><b>std</b> \(\sigma = \sqrt{\frac{1}{N}\sum (x_i - \bar{x})^2}\)</td><td>typical distance from the mean</td></tr>
         </tbody>
       </table>
     </div>
@@ -643,95 +610,74 @@ Run the code: 15 commute times. Mean 35.7, median 34.0, std 7.1. One accident da
   </aside>
 </section>
 
-<!-- ============================================================ 21 -->
+<!-- ============================================================ 20 -->
+
 <section>
-  <h2><span class="num">6.4</span>Mode and skewness</h2>
-  <p class="terms"><span>mode</span><span>skewness</span><span>symmetric</span></p>
-  <div class="cols">
-    <div class="stack" style="font-size:.66em">
-      <p><b>Mode</b>: the most frequent value. Most useful for <b>discrete</b> results (counts); for continuous results it is the tallest bar of the histogram.</p>
-      <p><b>Skewness</b> (advanced): which way the long tail points. <span style="white-space:nowrap">g = mean of ((x − x̄)/σ)³</span></p>
-      <svg class="dg" viewBox="0 0 560 170" role="img" aria-label="Left-skewed: long tail to the left, mean below median. Symmetric: mean equals median. Right-skewed: long tail to the right, mean above median.">
-        <path class="area" d="M10.0 112.7 L13.8 111.8 L17.5 110.8 L21.2 109.7 L25.0 108.5 L28.8 107.1 L32.5 105.6 L36.2 103.9 L40.0 102.1 L43.8 100.0 L47.5 97.8 L51.2 95.4 L55.0 92.7 L58.8 89.9 L62.5 86.8 L66.2 83.5 L70.0 80.0 L73.8 76.2 L77.5 72.2 L81.2 68.1 L85.0 63.7 L88.8 59.3 L92.5 54.8 L96.3 50.3 L100.0 46.0 L103.8 41.8 L107.5 38.0 L111.2 34.7 L115.0 32.1 L118.8 30.5 L122.5 30.0 L126.2 31.0 L130.0 33.6 L133.8 38.3 L137.5 45.3 L141.2 54.6 L145.0 66.4 L148.8 80.4 L152.5 95.8 L156.2 110.6 L160.0 120.0 Z"/><path class="line" d="M6 120 H 164"/><path class="area" d="M200.0 119.3 L203.8 118.9 L207.5 118.3 L211.2 117.4 L215.0 116.0 L218.8 114.2 L222.5 111.8 L226.2 108.6 L230.0 104.5 L233.8 99.5 L237.5 93.4 L241.2 86.5 L245.0 78.8 L248.8 70.5 L252.5 62.0 L256.2 53.7 L260.0 46.0 L263.8 39.4 L267.5 34.3 L271.2 31.1 L275.0 30.0 L278.8 31.1 L282.5 34.3 L286.2 39.4 L290.0 46.0 L293.8 53.7 L297.5 62.0 L301.2 70.5 L305.0 78.8 L308.8 86.5 L312.5 93.4 L316.2 99.5 L320.0 104.5 L323.8 108.6 L327.5 111.8 L331.2 114.2 L335.0 116.0 L338.8 117.4 L342.5 118.3 L346.2 118.9 L350.0 119.3 Z"/><path class="line" d="M196 120 H 354"/><path class="area" d="M390.0 120.0 L393.8 110.6 L397.5 95.8 L401.2 80.4 L405.0 66.4 L408.8 54.6 L412.5 45.3 L416.2 38.3 L420.0 33.6 L423.8 31.0 L427.5 30.0 L431.2 30.5 L435.0 32.1 L438.8 34.7 L442.5 38.0 L446.2 41.8 L450.0 46.0 L453.8 50.3 L457.5 54.8 L461.2 59.3 L465.0 63.7 L468.8 68.1 L472.5 72.2 L476.2 76.2 L480.0 80.0 L483.8 83.5 L487.5 86.8 L491.2 89.9 L495.0 92.7 L498.8 95.4 L502.5 97.8 L506.2 100.0 L510.0 102.1 L513.8 103.9 L517.5 105.6 L521.2 107.1 L525.0 108.5 L528.8 109.7 L532.5 110.8 L536.2 111.8 L540.0 112.7 Z"/><path class="line" d="M386 120 H 544"/><text x="85" y="16" font-size="15" text-anchor="middle" font-weight="700">left-skewed</text><text x="85" y="142" font-size="14" text-anchor="middle" class="acc">g &lt; 0</text><text x="85" y="162" font-size="14" text-anchor="middle" class="muted">mean &lt; median</text><text x="275" y="16" font-size="15" text-anchor="middle" font-weight="700">symmetric</text><text x="275" y="142" font-size="14" text-anchor="middle" class="acc">g = 0</text><text x="275" y="162" font-size="14" text-anchor="middle" class="muted">mean = median</text><text x="465" y="16" font-size="15" text-anchor="middle" font-weight="700">right-skewed</text><text x="465" y="142" font-size="14" text-anchor="middle" class="acc">g &gt; 0</text><text x="465" y="162" font-size="14" text-anchor="middle" class="muted">mean &gt; median</text>
-      </svg>
+  <h2><span class="num">6.3</span>Mode and skewness</h2>
+  <p class="terms"><span>mode</span><span>tallest bin</span><span>skewness</span><span>symmetric</span></p>
+  <div class="rowgrid">
+    <p style="font-size:.7em;margin:0"><b>Mode</b>: the most frequent value. For <b>discrete</b> results (counts) it is the tallest bar. For <b>continuous</b> results every value is different, so we take the <b>tallest histogram bin</b>.</p>
+    <div class="cols" style="gap:16px">
+      <svg class="dg" viewBox="0 0 380 230" role="img" aria-label="Bar chart of trucks per 5 minutes: 3 trucks occurs 8 times, the tallest bar, so the mode is 3."><text x="10" y="20" font-size="15" font-weight="700">discrete counts: the tallest bar</text><rect class="bar" x="40" y="163.8" width="44" height="16.2"/><text x="62" y="157.8" font-size="14" text-anchor="middle">1</text><text x="62" y="198" font-size="14" text-anchor="middle">1</text><rect class="bar" x="94" y="98.8" width="44" height="81.2"/><text x="116" y="92.8" font-size="14" text-anchor="middle">5</text><text x="116" y="198" font-size="14" text-anchor="middle">2</text><rect class="bar" x="148" y="50.0" width="44" height="130.0" style="fill:var(--accent)"/><text x="170" y="44.0" font-size="14" text-anchor="middle" class="acc" font-weight="700">8</text><text x="170" y="198" font-size="14" text-anchor="middle">3</text><rect class="bar" x="202" y="131.2" width="44" height="48.8"/><text x="224" y="125.2" font-size="14" text-anchor="middle">3</text><text x="224" y="198" font-size="14" text-anchor="middle">4</text><rect class="bar" x="256" y="147.5" width="44" height="32.5"/><text x="278" y="141.5" font-size="14" text-anchor="middle">2</text><text x="278" y="198" font-size="14" text-anchor="middle">5</text><rect class="bar" x="310" y="163.8" width="44" height="16.2"/><text x="332" y="157.8" font-size="14" text-anchor="middle">1</text><text x="332" y="198" font-size="14" text-anchor="middle">6</text><path class="line" d="M32 180 H 366"/><text x="200" y="222" font-size="13" text-anchor="middle" class="muted">trucks per 5 minutes (20 intervals)</text><text x="232" y="70" font-size="16" class="acc" font-weight="700">mode = 3</text><path class="line-acc" d="M228 66 L 196 62"/></svg>
+      <svg class="dg" viewBox="0 0 380 230" role="img" aria-label="Histogram of travel times; the tallest bin, 32.5 to 35 minutes, gives the mode."><text x="10" y="20" font-size="15" font-weight="700">continuous results: the tallest bin</text><rect class="bar" x="30.0" y="159.5" width="16.5" height="20.5"/><rect class="bar" x="46.5" y="98.6" width="16.5" height="81.4"/><rect class="bar" x="63.0" y="58.5" width="16.5" height="121.5"/><rect class="bar" x="79.5" y="50.0" width="16.5" height="130.0" style="fill:var(--accent)"/><rect class="bar" x="96.0" y="64.3" width="16.5" height="115.7"/><rect class="bar" x="112.5" y="87.1" width="16.5" height="92.9"/><rect class="bar" x="129.0" y="111.7" width="16.5" height="68.3"/><rect class="bar" x="145.5" y="131.0" width="16.5" height="49.0"/><rect class="bar" x="162.0" y="145.6" width="16.5" height="34.4"/><rect class="bar" x="178.5" y="157.1" width="16.5" height="22.9"/><rect class="bar" x="195.0" y="164.6" width="16.5" height="15.4"/><rect class="bar" x="211.5" y="171.0" width="16.5" height="9.0"/><rect class="bar" x="228.0" y="173.9" width="16.5" height="6.1"/><rect class="bar" x="244.5" y="176.4" width="16.5" height="3.6"/><rect class="bar" x="261.0" y="177.7" width="16.5" height="2.3"/><rect class="bar" x="277.5" y="178.4" width="16.5" height="1.6"/><rect class="bar" x="294.0" y="179.1" width="16.5" height="0.9"/><rect class="bar" x="310.5" y="179.5" width="16.5" height="0.5"/><rect class="bar" x="327.0" y="179.7" width="16.5" height="0.3"/><rect class="bar" x="343.5" y="179.8" width="16.5" height="0.2"/><path class="line" d="M30 180 H 360"/><text x="30.0" y="198" font-size="13" text-anchor="middle">25</text><text x="96.0" y="198" font-size="13" text-anchor="middle">35</text><text x="162.0" y="198" font-size="13" text-anchor="middle">45</text><text x="228.0" y="198" font-size="13" text-anchor="middle">55</text><text x="294.0" y="198" font-size="13" text-anchor="middle">65</text><text x="360.0" y="198" font-size="13" text-anchor="middle">75</text><text x="109.5" y="44" font-size="15" class="acc" font-weight="700">tallest bin: 32.5–35 min</text><text x="195" y="222" font-size="13" text-anchor="middle" class="muted">travel time (min)</text></svg>
     </div>
-    <div class="py sm"><pre>
-import numpy as np
-
-# trucks arriving at a weighbridge, per 5 minutes
-trucks = np.array([3, 2, 4, 3, 5, 3, 2, 1, 3, 4,
-                   2, 3, 6, 3, 2, 4, 3, 2, 5, 3])
-values, counts = np.unique(trucks, return_counts=True)
-print("values:", values)
-print("counts:", counts)
-print("mode:  ", values[np.argmax(counts)])
-
-times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
-                  34, 61, 35, 33, 37, 34, 32])
-z = (times - np.mean(times)) / np.std(times)
-print("skewness:", round(np.mean(z**3), 2))
-</pre></div>
+  </div>
+  <div class="rowgrid" style="margin-top:6px">
+    <div style="font-size:.7em">
+      <p style="margin:0"><b>Skewness</b>: which way the long tail points.</p>
+      <p class="formula" style="font-size:1.15em;margin:6px 0 !important">\(g = \dfrac{1}{N}\displaystyle\sum_{i=1}^{N}\left(\dfrac{x_i - \bar{x}}{\sigma}\right)^{3}\)</p>
+      <p class="small" style="margin:0">Cubing keeps the sign: a long right tail gives g &gt; 0.</p>
+    </div>
+    <svg class="dg" viewBox="0 0 760 205" role="img" aria-label="Left-skewed: long tail to the left, mean below the median. Symmetric: mean equals median. Right-skewed: long tail to the right, mean above the median."><path class="area" d="M10.0 141.1 L15.5 140.0 L21.0 138.8 L26.5 137.4 L32.0 135.9 L37.5 134.2 L43.0 132.4 L48.5 130.3 L54.0 128.1 L59.5 125.6 L65.0 122.9 L70.5 119.9 L76.0 116.7 L81.5 113.2 L87.0 109.4 L92.5 105.4 L98.0 101.1 L103.5 96.5 L109.0 91.6 L114.5 86.5 L120.0 81.3 L125.5 75.8 L131.0 70.3 L136.5 64.9 L142.0 59.5 L147.5 54.5 L153.0 49.8 L158.5 45.8 L164.0 42.6 L169.5 40.6 L175.0 40.0 L180.5 41.2 L186.0 44.5 L191.5 50.2 L197.0 58.7 L202.5 70.1 L208.0 84.5 L213.5 101.6 L219.0 120.4 L224.5 138.6 L230.0 150.0 Z"/><path class="line" d="M4 150 H 236"/><path class="line-bad" d="M144.9 30 V 150"/><path class="line-good" d="M152.4 30 V 150" stroke-dasharray="6 4"/><path class="area" d="M270.0 149.6 L275.5 149.3 L281.0 148.8 L286.5 148.0 L292.0 146.9 L297.5 145.2 L303.0 142.8 L308.5 139.5 L314.0 135.1 L319.5 129.5 L325.0 122.6 L330.5 114.3 L336.0 104.8 L341.5 94.3 L347.0 83.3 L352.5 72.3 L358.0 61.9 L363.5 52.9 L369.0 45.9 L374.5 41.5 L380.0 40.0 L385.5 41.5 L391.0 45.9 L396.5 52.9 L402.0 61.9 L407.5 72.3 L413.0 83.3 L418.5 94.3 L424.0 104.8 L429.5 114.3 L435.0 122.6 L440.5 129.5 L446.0 135.1 L451.5 139.5 L457.0 142.8 L462.5 145.2 L468.0 146.9 L473.5 148.0 L479.0 148.8 L484.5 149.3 L490.0 149.6 Z"/><path class="line" d="M264 150 H 496"/><path class="line-bad" d="M380.0 30 V 150"/><path class="line-good" d="M380.0 30 V 150" stroke-dasharray="6 4"/><path class="area" d="M530.0 150.0 L535.5 138.6 L541.0 120.4 L546.5 101.6 L552.0 84.5 L557.5 70.1 L563.0 58.7 L568.5 50.2 L574.0 44.5 L579.5 41.2 L585.0 40.0 L590.5 40.6 L596.0 42.6 L601.5 45.8 L607.0 49.8 L612.5 54.5 L618.0 59.5 L623.5 64.9 L629.0 70.3 L634.5 75.8 L640.0 81.3 L645.5 86.5 L651.0 91.6 L656.5 96.5 L662.0 101.1 L667.5 105.4 L673.0 109.4 L678.5 113.2 L684.0 116.7 L689.5 119.9 L695.0 122.9 L700.5 125.6 L706.0 128.1 L711.5 130.3 L717.0 132.4 L722.5 134.2 L728.0 135.9 L733.5 137.4 L739.0 138.8 L744.5 140.0 L750.0 141.1 Z"/><path class="line" d="M524 150 H 756"/><path class="line-bad" d="M615.1 30 V 150"/><path class="line-good" d="M607.5 30 V 150" stroke-dasharray="6 4"/><text x="120" y="18" font-size="16" text-anchor="middle" font-weight="700">left-skewed: g &lt; 0</text><text x="120" y="174" font-size="15" text-anchor="middle" class="muted">mean &lt; median</text><text x="380" y="18" font-size="16" text-anchor="middle" font-weight="700">symmetric: g = 0</text><text x="380" y="174" font-size="15" text-anchor="middle" class="muted">mean = median</text><text x="640" y="18" font-size="16" text-anchor="middle" font-weight="700">right-skewed: g &gt; 0</text><text x="640" y="174" font-size="15" text-anchor="middle" class="muted">mean &gt; median</text><path class="line-bad" d="M250 194 h28"/><text x="284" y="199" font-size="14" class="bad">mean</text><path class="line-good" d="M350 194 h28" stroke-dasharray="6 4"/><text x="384" y="199" font-size="14" class="good">median</text></svg>
   </div>
   <aside class="notes">
-Two more descriptors.
-Mode: the value that occurs most often. It is natural for discrete results such as counts: the number of trucks arriving per 5 minutes is most often 3. np.unique with return_counts=True lists each value and how often it occurs; argmax finds the position of the largest count. For continuous results every value is different, so the mode is read from the tallest histogram bar instead.
-Skewness (for those who want more): it measures asymmetry. Standardise each value (subtract the mean, divide by the standard deviation), cube it and average. Cubing keeps the sign, so a long right tail gives a positive skewness, a long left tail negative, and a symmetric distribution zero.
-Rule of thumb from the pictures: right-skewed means mean > median; left-skewed means mean < median.
-Run: the commute times have skewness 2.97, strongly right-skewed, all because of the one accident day. The two cars' relative speed from 6.1 has skewness of about 0.2: slightly right-skewed, from car A's tail.
+Two more descriptors of a set of results.
+Mode: the value that occurs most often. For discrete results such as counts it is simply the tallest bar: trucks arriving at a weighbridge in 20 five-minute intervals; 3 trucks occurred 8 times, more than any other count, so the mode is 3.
+For continuous results (speeds, times, deflections) every value is different, so no value repeats. Instead we take the tallest bin of the histogram: here travel times between 32.5 and 35 minutes. Note the mode then depends a little on the choice of bins.
+In Python: values, counts = np.unique(x, return_counts=True), then values[np.argmax(counts)]; for a histogram, the bin with the largest count from np.histogram. The code is in the notes, section 6.3.
+Skewness (for those who want more) measures asymmetry. Standardise each value (subtract the mean, divide by the standard deviation), cube it and average. Cubing keeps the sign, so values far above the mean dominate when the long tail is on the right.
+g = 0: symmetric, mean = median (= mode). g > 0: right-skewed, long right tail, mean pulled above the median. g < 0: left-skewed, mean below the median. Red solid line = mean, green dashed line = median in the pictures.
+The commute times with one accident day have skewness about 3, strongly right-skewed. The two cars' relative speed has skewness of about 0.2: slightly right-skewed, from car A's tail.
   </aside>
 </section>
+<!-- ============================================================ 21 -->
 
-<!-- ============================================================ 22 -->
 <section>
-  <h2><span class="num">6.5</span>Range, percentiles and outliers</h2>
-  <p class="terms"><span>percentile</span><span>interquartile range</span><span>outlier</span><span>box plot</span></p>
-  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)">
+  <h2><span class="num">6.4</span>Range, percentiles and outliers</h2>
+  <p class="terms"><span>range</span><span>percentile</span><span>interquartile range</span><span>outlier</span></p>
+  <div class="cols" style="gap:24px">
     <div class="stack">
-      <svg class="dg" viewBox="0 0 560 210" role="img" aria-label="Box plot of the commute times: box from 32.5 to 35.5 minutes with the median at 34, whiskers from 30 to 38, upper fence at 40, and one outlier at 61 minutes.">
-        <rect class="box-acc" x="93.8" y="48" width="42.5" height="44"/><path class="line-acc" d="M115.0 48 V 92" stroke-width="3.5"/><path class="line" d="M58.3 70 H 93.8 M136.2 70 H 171.7 M58.3 58 V 82 M171.7 58 V 82"/><circle cx="497.5" cy="70" r="7" class="fill-bad"/><path class="line-bad" d="M200.0 30 V 110" stroke-dasharray="5 4" stroke-width="1.5"/><text x="206.0" y="40" font-size="13" class="bad">upper fence = Q3 + 1.5 IQR = 40</text><text x="497.5" y="104" font-size="13" text-anchor="middle" class="bad">outlier 61</text><text x="115.0" y="40" font-size="13" text-anchor="middle" class="acc" font-weight="700">median 34</text><text x="90.8" y="110" font-size="13" text-anchor="end">Q1 32.5</text><text x="139.2" y="110" font-size="13">Q3 35.5</text><text x="58.3" y="52" font-size="13" text-anchor="middle" class="muted">30</text><text x="171.7" y="52" font-size="13" text-anchor="middle" class="muted">38</text><circle cx="86.7" cy="150" r="4.5" class="dot"/><circle cx="129.2" cy="150" r="4.5" class="dot"/><circle cx="72.5" cy="150" r="4.5" class="dot"/><circle cx="115.0" cy="150" r="4.5" class="dot"/><circle cx="171.7" cy="150" r="4.5" class="dot"/><circle cx="100.8" cy="150" r="4.5" class="dot"/><circle cx="143.3" cy="150" r="4.5" class="dot"/><circle cx="58.3" cy="150" r="4.5" class="dot"/><circle cx="115.0" cy="139" r="4.5" class="dot"/><circle cx="497.5" cy="150" r="4.5" class="dot out"/><circle cx="129.2" cy="139" r="4.5" class="dot"/><circle cx="100.8" cy="139" r="4.5" class="dot"/><circle cx="157.5" cy="150" r="4.5" class="dot"/><circle cx="115.0" cy="128" r="4.5" class="dot"/><circle cx="86.7" cy="139" r="4.5" class="dot"/><path class="line" d="M30 158 H 540"/><path class="line" d="M30.0 158 v6"/><text x="30.0" y="180" font-size="13" text-anchor="middle">28</text><path class="line" d="M86.7 158 v6"/><text x="86.7" y="180" font-size="13" text-anchor="middle">32</text><path class="line" d="M143.3 158 v6"/><text x="143.3" y="180" font-size="13" text-anchor="middle">36</text><path class="line" d="M200.0 158 v6"/><text x="200.0" y="180" font-size="13" text-anchor="middle">40</text><path class="line" d="M256.7 158 v6"/><text x="256.7" y="180" font-size="13" text-anchor="middle">44</text><path class="line" d="M313.3 158 v6"/><text x="313.3" y="180" font-size="13" text-anchor="middle">48</text><path class="line" d="M370.0 158 v6"/><text x="370.0" y="180" font-size="13" text-anchor="middle">52</text><path class="line" d="M426.7 158 v6"/><text x="426.7" y="180" font-size="13" text-anchor="middle">56</text><path class="line" d="M483.3 158 v6"/><text x="483.3" y="180" font-size="13" text-anchor="middle">60</text><path class="line" d="M540.0 158 v6"/><text x="540.0" y="180" font-size="13" text-anchor="middle">64</text><text x="285" y="202" font-size="13" text-anchor="middle" class="muted">commute time (min): each dot is one day</text>
-      </svg>
-      <ul style="font-size:.6em;margin-top:0">
-        <li><b>Range</b>: smallest to largest result.</li>
-        <li><b>p-th percentile</b>: p % of results lie below it; the <b>95th</b> is a common design value.</li>
-        <li><b>Chance of exceeding a limit</b>: <code>np.mean(x &gt; limit)</code></li>
-        <li><b>Outlier</b>: beyond Q1 − 1.5 IQR or Q3 + 1.5 IQR (IQR = Q3 − Q1).</li>
+      <p style="font-size:.62em;margin:0"><b>Range</b>: smallest to largest result. <b>p-th percentile</b>: p % of the results lie below it.</p>
+      <svg class="dg" viewBox="0 0 560 245" role="img" aria-label="A right-skewed distribution of travel times. The median, the 50th percentile, is marked; 95 per cent of the area lies left of the 95th percentile and 5 per cent to its right."><path class="area" d="M30.0 190 L30.0 190.0 L32.5 189.1 L35.1 186.4 L37.6 182.5 L40.2 177.4 L42.8 171.5 L45.3 165.0 L47.9 158.0 L50.4 150.8 L53.0 143.4 L55.5 135.9 L58.0 128.5 L60.6 121.3 L63.1 114.2 L65.7 107.5 L68.2 101.0 L70.8 94.9 L73.3 89.1 L75.9 83.7 L78.5 78.8 L81.0 74.2 L83.5 70.1 L86.1 66.4 L88.7 63.1 L91.2 60.2 L93.8 57.7 L96.3 55.5 L98.9 53.8 L101.4 52.4 L103.9 51.3 L106.5 50.6 L109.0 50.1 L111.6 50.0 L114.2 50.1 L116.7 50.5 L119.2 51.2 L121.8 52.0 L124.3 53.1 L126.9 54.3 L129.4 55.7 L132.0 57.3 L134.6 59.1 L137.1 60.9 L139.6 62.9 L142.2 65.0 L144.8 67.1 L147.3 69.4 L149.8 71.7 L152.4 74.1 L154.9 76.6 L157.5 79.0 L160.1 81.5 L162.6 84.1 L165.2 86.6 L167.7 89.2 L170.2 91.8 L172.8 94.3 L175.3 96.9 L177.9 99.4 L180.4 102.0 L183.0 104.5 L185.5 107.0 L188.1 109.4 L190.7 111.8 L193.2 114.2 L195.8 116.6 L198.3 118.9 L200.9 121.1 L203.4 123.4 L205.9 125.6 L208.5 127.7 L211.0 129.8 L213.6 131.8 L216.2 133.8 L218.7 135.8 L221.2 137.7 L223.8 139.5 L226.3 141.3 L228.9 143.1 L231.5 144.8 L234.0 146.4 L236.6 148.0 L239.1 149.6 L241.6 151.1 L244.2 152.6 L246.8 154.0 L249.3 155.4 L251.8 156.7 L254.4 158.0 L257.0 159.3 L259.5 160.5 L262.1 161.7 L264.6 162.8 L267.1 163.9 L269.7 164.9 L272.2 165.9 L274.8 166.9 L277.4 167.9 L279.9 168.8 L282.4 169.7 L285.0 170.5 L285.0 190 Z"/><path style="fill:#F6DCDA;stroke:var(--bad);stroke-width:2" d="M287.6 190 L287.6 171.3 L290.1 172.1 L292.7 172.8 L295.2 173.6 L297.8 174.3 L300.3 174.9 L302.9 175.6 L305.4 176.2 L308.0 176.8 L310.5 177.4 L313.1 177.9 L315.6 178.4 L318.1 178.9 L320.7 179.4 L323.2 179.9 L325.8 180.3 L328.3 180.8 L330.9 181.2 L333.4 181.6 L336.0 182.0 L338.6 182.3 L341.1 182.7 L343.6 183.0 L346.2 183.3 L348.8 183.6 L351.3 183.9 L353.9 184.2 L356.4 184.4 L358.9 184.7 L361.5 184.9 L364.1 185.2 L366.6 185.4 L369.2 185.6 L371.7 185.8 L374.2 186.0 L376.8 186.2 L379.4 186.4 L381.9 186.5 L384.4 186.7 L387.0 186.9 L389.5 187.0 L392.1 187.2 L394.6 187.3 L397.2 187.4 L399.8 187.5 L402.3 187.7 L404.8 187.8 L407.4 187.9 L409.9 188.0 L412.5 188.1 L415.1 188.2 L417.6 188.3 L420.2 188.3 L422.7 188.4 L425.2 188.5 L427.8 188.6 L430.4 188.6 L432.9 188.7 L435.5 188.8 L438.0 188.8 L440.6 188.9 L443.1 188.9 L445.6 189.0 L448.2 189.0 L450.8 189.1 L453.3 189.1 L455.8 189.2 L458.4 189.2 L460.9 189.3 L463.5 189.3 L466.1 189.3 L468.6 189.4 L471.1 189.4 L473.7 189.4 L476.2 189.4 L478.8 189.5 L481.4 189.5 L483.9 189.5 L486.4 189.6 L489.0 189.6 L491.6 189.6 L494.1 189.6 L496.7 189.6 L499.2 189.7 L501.8 189.7 L504.3 189.7 L506.9 189.7 L509.4 189.7 L511.9 189.7 L514.5 189.7 L517.0 189.8 L519.6 189.8 L522.1 189.8 L524.7 189.8 L527.2 189.8 L529.8 189.8 L532.3 189.8 L534.9 189.8 L537.5 189.8 L540.0 189.8 L540.0 190 Z"/><path class="line" d="M30 190 H 540"/><path class="line" d="M30.0 190 v6"/><text x="30.0" y="212" font-size="13" text-anchor="middle">25</text><path class="line" d="M132.0 190 v6"/><text x="132.0" y="212" font-size="13" text-anchor="middle">35</text><path class="line" d="M234.0 190 v6"/><text x="234.0" y="212" font-size="13" text-anchor="middle">45</text><path class="line" d="M336.0 190 v6"/><text x="336.0" y="212" font-size="13" text-anchor="middle">55</text><path class="line" d="M438.0 190 v6"/><text x="438.0" y="212" font-size="13" text-anchor="middle">65</text><path class="line" d="M540.0 190 v6"/><text x="540.0" y="212" font-size="13" text-anchor="middle">75</text><text x="285" y="234" font-size="13" text-anchor="middle" class="muted">travel time (min)</text><path class="line-good" d="M139.0 22 V 190" stroke-dasharray="6 4"/><text x="145.0" y="26" font-size="14" class="good" font-weight="700">50th percentile = median 35.7</text><path class="line-bad" d="M286.4 60 V 190"/><text x="292.4" y="56" font-size="14" class="bad" font-weight="700">95th percentile 50.1</text><text x="203.4" y="178" font-size="16" text-anchor="middle" class="acc" font-weight="700">95 % below</text><text x="326.4" y="160" font-size="16" class="bad" font-weight="700">5 % above</text></svg>
+      <ul style="font-size:.6em;margin:0 0 0 1em">
+        <li>The <b>95th percentile</b> is a common design value: only 5 % of outcomes are worse.</li>
+        <li><b>Chance of exceeding a limit</b> = fraction of results above it.</li>
       </ul>
     </div>
     <div class="stack">
-      <div class="py xs" data-hint="Q1, Q3: 25th, 75th percentiles"><pre>
-import numpy as np
-
-times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
-                  34, 61, 35, 33, 37, 34, 32])
-
-q1, q3 = np.percentile(times, [25, 75])
-iqr = q3 - q1
-high = q3 + 1.5 * iqr
-print("Q1:", q1, " Q3:", q3, " IQR:", iqr)
-print("outliers:", times[times > high])
-print("95th percentile:", round(np.percentile(times, 95), 1))
-print("P(time > 40):", round(np.mean(times > 40), 3))
-</pre></div>
+      <p class="formula" style="font-size:.66em;margin:0 !important">\(\text{IQR} = Q_3 - Q_1\)</p>
+      <p class="formula" style="font-size:.66em;margin:0 !important">outlier: below \(Q_1 - 1.5\,\text{IQR}\) &nbsp;or&nbsp; above \(Q_3 + 1.5\,\text{IQR}\)</p>
+      <svg class="dg" viewBox="0 0 560 256" role="img" aria-label="Box plot of 15 commute times: Q1 32.5, median 34, Q3 35.5, IQR 3. The fences are at 28 and 40 minutes; the value 61 lies beyond the upper fence and is an outlier."><rect class="box-acc" x="205.3" y="58" width="31.9" height="44"/><path class="line-acc" d="M221.2 58 V 102" stroke-width="3.5"/><path class="line" d="M178.8 80 H 205.3 M237.2 80 H 263.8 M178.8 68 V 92 M263.8 68 V 92"/><circle cx="508.1" cy="80" r="7" class="fill-bad"/><text x="508.1" y="110" font-size="14" text-anchor="middle" class="bad" font-weight="700">outlier 61</text><path class="line-bad" d="M157.5 26 V 198" stroke-dasharray="5 4" stroke-width="1.6"/><text x="151.5" y="30" font-size="14" text-anchor="end" class="bad">lower fence 28</text><path class="line-bad" d="M285.0 26 V 198" stroke-dasharray="5 4" stroke-width="1.6"/><text x="291.0" y="30" font-size="14" text-anchor="start" class="bad">upper fence 40</text><text x="202.3" y="120" font-size="13" text-anchor="end">Q1 32.5</text><text x="240.2" y="120" font-size="13">Q3 35.5</text><text x="221.2" y="50" font-size="13" text-anchor="middle" class="acc" font-weight="700">median 34</text><path class="line" d="M205.3 128 V 136 H 237.2 V 128"/><text x="221.2" y="152" font-size="13" text-anchor="middle">IQR = 3</text><circle cx="200.0" cy="196" r="4.2" class="dot"/><circle cx="231.9" cy="196" r="4.2" class="dot"/><circle cx="189.4" cy="196" r="4.2" class="dot"/><circle cx="221.2" cy="196" r="4.2" class="dot"/><circle cx="263.8" cy="196" r="4.2" class="dot"/><circle cx="210.6" cy="196" r="4.2" class="dot"/><circle cx="242.5" cy="196" r="4.2" class="dot"/><circle cx="178.8" cy="196" r="4.2" class="dot"/><circle cx="221.2" cy="186" r="4.2" class="dot"/><circle cx="508.1" cy="196" r="4.2" class="dot out"/><circle cx="231.9" cy="186" r="4.2" class="dot"/><circle cx="210.6" cy="186" r="4.2" class="dot"/><circle cx="253.1" cy="196" r="4.2" class="dot"/><circle cx="221.2" cy="176" r="4.2" class="dot"/><circle cx="200.0" cy="186" r="4.2" class="dot"/><path class="line" d="M30 204 H 540"/><path class="line" d="M30.0 204 v6"/><text x="30.0" y="224" font-size="13" text-anchor="middle">16</text><path class="line" d="M93.8 204 v6"/><text x="93.8" y="224" font-size="13" text-anchor="middle">22</text><path class="line" d="M157.5 204 v6"/><text x="157.5" y="224" font-size="13" text-anchor="middle">28</text><path class="line" d="M221.2 204 v6"/><text x="221.2" y="224" font-size="13" text-anchor="middle">34</text><path class="line" d="M285.0 204 v6"/><text x="285.0" y="224" font-size="13" text-anchor="middle">40</text><path class="line" d="M348.8 204 v6"/><text x="348.8" y="224" font-size="13" text-anchor="middle">46</text><path class="line" d="M412.5 204 v6"/><text x="412.5" y="224" font-size="13" text-anchor="middle">52</text><path class="line" d="M476.2 204 v6"/><text x="476.2" y="224" font-size="13" text-anchor="middle">58</text><path class="line" d="M540.0 204 v6"/><text x="540.0" y="224" font-size="13" text-anchor="middle">64</text><text x="285" y="248" font-size="13" text-anchor="middle" class="muted">commute time (min): each dot is one day</text></svg>
       <p class="callout" style="font-size:.58em">Outlier? <b>Check it.</b> A real rare event: keep it, it is often the risk you care about. An impossible value (a negative number of cars): fix the input model.</p>
     </div>
   </div>
   <aside class="notes">
 The mean and standard deviation describe the middle; engineering decisions often depend on the edges.
 Range: minimum to maximum. With many trials it grows, because rare extremes eventually appear, so on its own it is not a stable summary.
-Percentiles: the 25th percentile (Q1) has a quarter of the results below it, the 50th is the median, the 75th is Q3. The 95th percentile is often used as a design value: only 5 per cent of outcomes are worse.
-Probability of exceeding a limit: the fraction of trials above it. np.mean(x > limit) works because the comparison gives True/False values, counted as 1/0. We will use this in Part B.
-Outliers: values far from the rest. The box plot rule: anything more than 1.5 × IQR beyond the box. Here the box is 32.5 to 35.5, IQR 3, upper fence 40, so the 61-minute accident day is an outlier. plt.boxplot(times) draws this plot.
-What to do with outliers? Never delete them automatically. In a simulation, extreme results may be the rare failures you are looking for. But they can also reveal a modelling mistake: in the two-lane highway example in the notes, a normal distribution for the number of cars occasionally produces a negative number of cars, which creates absurd speeds. The fix there is a better input distribution, not deleting results.
+Percentiles (left picture): the p-th percentile has p per cent of the results below it. The 50th percentile is the median. The 95th percentile here is about 50 minutes: 95 per cent of journeys take less, 5 per cent take longer. It is a common design value: only 5 per cent of outcomes are worse. In Python: np.percentile(x, 95).
+The chance of exceeding a limit is just the fraction of trials above it: np.mean(x > limit). The comparison gives True/False values, counted as 1/0. We use this in Part B.
+Outliers (right picture), the box-plot rule. Q1 and Q3 are the 25th and 75th percentiles; the box spans them and its width is the interquartile range, IQR = Q3 − Q1. The fences are 1.5 IQR beyond the box: lower fence Q1 − 1.5 IQR, upper fence Q3 + 1.5 IQR. Any value outside the fences is an outlier.
+Commute times: Q1 = 32.5, Q3 = 35.5, IQR = 3, so the fences are 32.5 − 4.5 = 28 and 35.5 + 4.5 = 40 minutes. The accident day, 61 minutes, is beyond the upper fence: an outlier. plt.boxplot(times) draws this plot; the code is in the notes, section 6.4.
+What to do with outliers? Never delete them automatically. In a simulation, extreme results may be the rare failures you are looking for. But they can also reveal a modelling mistake: in the highway example in the notes, a normal distribution for the number of cars occasionally produces a negative number of cars, which creates absurd speeds. The fix there is a better input distribution, not deleting results.
   </aside>
 </section>
-
-<!-- ============================================================ 23 -->
+<!-- ============================================================ 22 -->
 <section>
-  <h2><span class="num">6.6</span>Comparing with the normal distribution</h2>
+  <h2><span class="num">6.5</span>Comparing with the normal distribution</h2>
   <p class="terms"><span>normal distribution</span><span>standard normal</span><span>z-score</span><span>pdf</span></p>
   <div class="cols3" style="font-size:.62em;margin-bottom:10px;gap:14px">
-    <div class="panel"><b>Normal pdf</b><p class="formula" style="font-size:1em;margin:4px 0 0 !important"><i>f</i>(<i>x</i>) = <span style="display:inline-block;vertical-align:middle;text-align:center"><span style="display:block;border-bottom:1px solid">1</span><span style="display:block">σ√(2π)</span></span> e<sup>−(<i>x</i> − μ)²/(2σ²)</sup></p></div>
-    <div class="panel"><b>Standard normal</b> N(0, 1): μ = 0, σ = 1.<br>Any normal value → <b>z = (x − μ) / σ</b></div>
+    <div class="panel"><b>Normal pdf</b><p class="formula" style="font-size:1em;margin:4px 0 0 !important">\(f(x) = \dfrac{1}{\sigma\sqrt{2\pi}}\, e^{-(x - \mu)^2 / (2\sigma^2)}\)</p></div>
+    <div class="panel"><b>Standard normal</b> N(0, 1): μ = 0, σ = 1.<br>Any normal value → \(z = \dfrac{x - \mu}{\sigma}\)</div>
     <div class="panel"><b>68–95–99.7 rule</b>: share of values within ±1σ, ±2σ, ±3σ of the mean</div>
   </div>
   <div class="py side sm" data-hint="figure on the right" style="--code-w:55%"><pre>
@@ -761,111 +707,59 @@ For a simulation result, compute its mean and std, draw the normal pdf with thos
   </aside>
 </section>
 
-<!-- ============================================================ 24 -->
-<section>
-  <h2>In class: simulate the two cars</h2>
-  <p class="terms"><span>np.random</span><span>array arithmetic</span><span>plt.hist</span><span>statistics</span></p>
-  <div class="cols task" style="font-size:.62em;gap:22px;margin-bottom:10px">
-    <div>
-      <p>Car A: <b>v<sub>A</sub> = 60 + 80 · Beta(2, 5)</b> km/h. Car B: <b>v<sub>B</sub> ~ Normal(100, 12)</b> km/h. They drive in opposite directions.</p>
-      <ol style="margin:0 0 0 1.1em">
-        <li>Draw <b>N = 10 000</b> speeds for each car (set a seed).</li>
-        <li>Relative speed r = v<sub>A</sub> + v<sub>B</sub>: one line, no loop.</li>
-        <li>Histogram of r, <code>density=True</code>, labelled axes.</li>
-      </ol>
-    </div>
-    <ol start="4" style="margin:0 0 0 1.1em">
-      <li>Mean, median, standard deviation and skewness of r.</li>
-      <li>5th and 95th percentiles; chance that r &gt; 220 km/h.</li>
-      <li>Overlay a normal pdf with the same mean and std. Is r normal?</li>
-      <li>Extra: both cars U(65, 132). Do you get the triangle, 130 to 264, peak 197?</li>
-    </ol>
-  </div>
-  <div class="py side write" data-hint="write the simulation here"><pre>
-import numpy as np
-import matplotlib.pyplot as plt
-
-np.random.seed(1)
-N = 10_000
-
-# 1. sample the speeds
-
-</pre></div>
-  <aside class="notes">
-Live coding: we write this simulation together, following the five steps. Students code along in this box or in Jupyter.
-Ingredients: np.random.beta(2, 5, N) scaled and shifted to 60 + 80 × beta; np.random.normal(100, 12, N); r = v_A + v_B adds the arrays element by element (week 3), no loop needed.
-Histogram: plt.hist(r, bins=50, density=True, edgecolor="black"), xlabel "Relative speed (km/h)", ylabel "Density", plt.show().
-Statistics: np.mean, np.median, np.std; skewness via z-scores; np.percentile(r, [5, 95]); np.mean(r > 220).
-Normal overlay: x = np.linspace(r.min(), r.max(), 200), pdf with the mean and std of r, plt.plot on the same axes.
-Expected results with about 10 000 samples: mean ≈ 183 km/h, median ≈ 182, std ≈ 17.5, skewness ≈ 0.2, 5th to 95th percentile ≈ 155 to 213 km/h, P(r > 220) ≈ 0.02. The normal fits reasonably but the histogram leans slightly right.
-Extra: with both uniform, the histogram is the triangle from slide 8, which checks the simulation against the exact answer. Always validate a simulation on a case you can solve by hand.
-A full worked solution is in the notes on week5.html, Part A.
-  </aside>
-</section>
-
-<!-- ============================================================ 25 -->
+<!-- ============================================================ 23 -->
 <section class="divider" data-background-color="#68246D">
   <p class="dnum">B</p>
   <h1>Part B<br>An engineering application</h1>
   <aside class="notes">Part B: one real engineering problem, coded in class in about 20 minutes, using a function, NumPy arrays and the statistics from Part A.</aside>
 </section>
 
-<!-- ============================================================ 26 -->
+<!-- ============================================================ 24 -->
+
 <section>
-  <h2><span class="num">7</span>In class (20 min): will the floor beam deflect too much?</h2>
-  <p class="terms"><span>def function</span><span>NumPy arrays</span><span>percentile</span><span>chance of exceedance</span></p>
-  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)">
+  <h2><span class="num">7</span>In class (20 min): how much power will the wind farm deliver?</h2>
+  <p class="terms"><span>def function</span><span>2-D arrays, axis=1</span><span>percentile</span><span>chance of falling short</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
     <div class="stack">
-      <svg class="dg" viewBox="0 0 560 190" role="img" aria-label="A simply supported beam of span L carries a uniformly distributed load w and deflects by delta at mid-span.">
-        <g class="acc">
-          <path class="line-acc" d="M60 30 H 500"/>
-          <path class="line-acc" d="M60 30 V 62 M104 30 V 62 M148 30 V 62 M192 30 V 62 M236 30 V 62 M280 30 V 62 M324 30 V 62 M368 30 V 62 M412 30 V 62 M456 30 V 62 M500 30 V 62"/>
-          <path class="fill-acc" d="M60 70 l-6 -10 h12 z M104 70 l-6 -10 h12 z M148 70 l-6 -10 h12 z M192 70 l-6 -10 h12 z M236 70 l-6 -10 h12 z M280 70 l-6 -10 h12 z M324 70 l-6 -10 h12 z M368 70 l-6 -10 h12 z M412 70 l-6 -10 h12 z M456 70 l-6 -10 h12 z M500 70 l-6 -10 h12 z"/>
-          <text x="514" y="44" font-size="17" font-weight="700">w</text>
-        </g>
-        <rect x="56" y="74" width="448" height="16" class="box"/>
-        <path class="line-muted" d="M60 90 Q 280 128 500 90" style="stroke-dasharray:none;stroke:var(--bad);stroke-width:2"/>
-        <path d="M60 90 l-14 22 h28 z M500 90 l-14 22 h28 z" class="box"/>
-        <path class="line" d="M280 92 V 108"/><text x="292" y="124" font-size="16" class="bad" font-weight="700">δ</text>
-        <path class="line" d="M60 150 H 500"/><path class="fill-ink" d="M60 150 l12 -7 v14 z M500 150 l-12 -7 v14 z"/>
-        <text x="280" y="174" font-size="16" text-anchor="middle">L = 6000 mm</text>
+      <svg class="dg" viewBox="0 0 560 170" role="img" aria-label="Ten wind turbines in a row face the wind blowing from 90 degrees; the wind direction varies by about 22 degrees either side.">
+        <path class="line" d="M30 150 V 74"/><circle cx="30" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M30 70 l0 -30 M30 70 l26 15 M30 70 l-26 15" stroke-width="3"/><path class="line" d="M74 150 V 74"/><circle cx="74" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M74 70 l0 -30 M74 70 l26 15 M74 70 l-26 15" stroke-width="3"/><path class="line" d="M118 150 V 74"/><circle cx="118" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M118 70 l0 -30 M118 70 l26 15 M118 70 l-26 15" stroke-width="3"/><path class="line" d="M162 150 V 74"/><circle cx="162" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M162 70 l0 -30 M162 70 l26 15 M162 70 l-26 15" stroke-width="3"/><path class="line" d="M206 150 V 74"/><circle cx="206" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M206 70 l0 -30 M206 70 l26 15 M206 70 l-26 15" stroke-width="3"/><path class="line" d="M250 150 V 74"/><circle cx="250" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M250 70 l0 -30 M250 70 l26 15 M250 70 l-26 15" stroke-width="3"/><path class="line" d="M294 150 V 74"/><circle cx="294" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M294 70 l0 -30 M294 70 l26 15 M294 70 l-26 15" stroke-width="3"/><path class="line" d="M338 150 V 74"/><circle cx="338" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M338 70 l0 -30 M338 70 l26 15 M338 70 l-26 15" stroke-width="3"/><path class="line" d="M382 150 V 74"/><circle cx="382" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M382 70 l0 -30 M382 70 l26 15 M382 70 l-26 15" stroke-width="3"/><path class="line" d="M426 150 V 74"/><circle cx="426" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M426 70 l0 -30 M426 70 l26 15 M426 70 l-26 15" stroke-width="3"/><path class="line" d="M10 150 H 450"/><text x="230" y="168" font-size="13" text-anchor="middle" class="muted">10 turbines, each facing 90°</text><path class="line-acc" d="M545 80 L 470 80" stroke-width="3"/><path class="line-muted" d="M545 54 L 470 80"/><path class="line-muted" d="M545 106 L 470 80"/><path class="fill-acc" d="M462 80 l14 -7 v14 z"/><text x="508" y="26" font-size="14" text-anchor="middle">wind</text><text x="508" y="128" font-size="13" text-anchor="middle" class="muted">θ ~ N(90°, 22°)</text>
       </svg>
-      <p class="formula" style="font-size:.78em">δ = 5 <i>w L</i><sup>4</sup> / (384 <i>E I</i>) &nbsp;<span class="small">(week 4, exercise 5.1)</span></p>
-      <table class="t compact" style="font-size:.64em">
+      <p class="formula" style="font-size:.8em;margin:0 !important">\(P = \tfrac{1}{2}\,\rho\,A\,\eta\,\big(v\cos(\theta - 90^\circ)\big)^{3}\)</p>
+      <table class="t compact wind-t" style="font-size:.6em">
         <tbody>
-          <tr><td>span L, second moment of area I</td><td>6000 mm, 3.375 × 10⁸ mm⁴ (fixed)</td></tr>
-          <tr class="hi"><td>load w</td><td>Normal(20, 3) N/mm</td></tr>
-          <tr class="hi"><td>Young's modulus E</td><td>Normal(200 000, 10 000) N/mm²</td></tr>
-          <tr><td>deflection limit (lab equipment)</td><td>L / 1000 = 6 mm</td></tr>
+          <tr><td>air density ρ; rotor diameter D</td><td>1.225 kg/m³; 80 m, \(A = \pi D^2/4\) (fixed)</td></tr>
+          <tr class="hi"><td>wind speed v</td><td>Normal(32, 8) km/h</td></tr>
+          <tr class="hi"><td>wind direction θ</td><td>Normal(90°, 22°); the turbines face 90°</td></tr>
+          <tr class="hi"><td>efficiency η</td><td>Beta(2, 5): right-skewed, mostly 0.15–0.45</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="task" style="font-size:.72em">
-      <p>A floor beam supports sensitive laboratory equipment. With the average values, δ = 5.0 mm: fine. But the load and the steel stiffness vary.</p>
+    <div class="task" style="font-size:.66em">
+      <p style="margin-top:0">A wind farm has <b>10 turbines</b>. In every hour, each turbine sees its own random wind speed and direction and works at its own random efficiency.</p>
       <ol style="margin:0 0 0 1.1em">
-        <li>Write a function <code>max_deflection(w, L, E, I)</code>.</li>
-        <li>Draw <b>N = 100 000</b> random values of w and E as NumPy arrays.</li>
-        <li>Call the function <b>once</b> with the arrays: one deflection per beam, no loop.</li>
-        <li>Mean, median and standard deviation of δ; 95th percentile.</li>
-        <li>Histogram of δ with the 6 mm limit as a vertical red line.</li>
-        <li>Probability that δ &gt; 6 mm.</li>
+        <li>Write <code>turbine_power(v, theta, eta)</code> that returns the power in MW (km/h → m/s, degrees → radians).</li>
+        <li>Simulate <b>N = 10 000</b> hours: v, θ and η as arrays of shape <b>(N, 10)</b>.</li>
+        <li>Call the function <b>once</b>: the power of every turbine in every hour.</li>
+        <li>Farm power: add up the 10 turbines, <code>.sum(axis=1)</code>.</li>
+        <li>Mean, median, std; 5th and 95th percentiles; histogram.</li>
+        <li>Chance that the farm delivers <b>less than 5 MW</b>.</li>
       </ol>
-      <p class="callout" style="margin-top:10px">The client accepts at most a <b>5 %</b> chance of exceeding the limit. Is the beam acceptable? What would you change?</p>
+      <p class="callout" style="margin-top:10px">With average inputs, the farm gives 6.2 MW. It has a contract to supply <b>5 MW</b>. How often will it fall short?</p>
     </div>
   </div>
   <aside class="notes">
 This is the engineering problem for Part B; I will code it in Jupyter with you. Aim for 20 minutes.
-Context: a simply supported steel floor beam in a laboratory, span 6 m. Sensitive equipment means a tight deflection limit, L/1000 = 6 mm (a typical floor limit is L/360, but vibration-sensitive equipment needs much less).
-Mid-span deflection under a uniform load: δ = 5wL⁴/(384EI), the function students wrote in week 4.
-With the average load (20 N/mm) and E = 200 000 N/mm², δ = 5.0 mm, below the limit. But the imposed load varies (std 3 N/mm) and the stiffness of steel varies slightly (std 10 000 N/mm²).
-Steps: write the function; w = np.random.normal(20, 3, N); E = np.random.normal(200_000, 10_000, N); d = max_deflection(w, 6000, E, 3.375e8), which works element-wise on arrays because the function only uses arithmetic (week 4, functions with arrays); then the statistics from section 6; plt.hist and plt.axvline(6, color="red", linestyle="--"); np.mean(d > 6).
-Expected results: mean ≈ 5.0 mm, median ≈ 5.0, std ≈ 0.79 mm, 95th percentile ≈ 6.3 mm, P(δ > 6 mm) ≈ 0.11. Slightly right-skewed because E is in the denominator.
-Discussion: about 11 per cent of beams would exceed the limit, more than the client's 5 per cent, so the beam is not acceptable even though the best-guess calculation said fine. Fixes: a stiffer section (larger I), checked by rerunning the simulation: e.g. I = 3.6 × 10⁸ mm⁴ brings the chance down to about 4 per cent. Or limit the load on the floor.
+Context: a wind farm of 10 turbines, rotor diameter 80 m. The power a turbine extracts is P = ½ ρ A η v³, where A is the swept area of the rotor and η the efficiency (power coefficient). Only the wind component facing the rotor counts, so the speed is multiplied by cos(θ − 90°): the turbines face 90°, and wind from another direction is less effective.
+Uncertain inputs: wind speed v ~ Normal(32, 8) km/h; wind direction θ ~ Normal(90°, 22°); efficiency η ~ Beta(2, 5), right-skewed, mean 0.29. (Real turbines cannot exceed η = 0.593, the Betz limit; Beta(2, 5) goes above that only about 4 per cent of the time, which is fine for this exercise.)
+Steps: def turbine_power(v, theta, eta, rho=1.225, D=80): convert v / 3.6 to m/s, A = np.pi * D**2 / 4, v_eff = v * np.cos(np.radians(theta - 90)), return 0.5 * rho * A * eta * v_eff**3 / 1e6 (MW).
+Sampling: np.random.normal(32, 8, (N, 10)), np.random.normal(90, 22, (N, 10)), np.random.beta(2, 5, (N, 10)): one row per hour, one column per turbine (week 3 2-D arrays). One function call gives a (N, 10) array of powers; farm = power.sum(axis=1) gives N farm powers.
+Analysis: np.mean, np.median, np.std, np.percentile(farm, [5, 95]), plt.hist(farm, bins=50), np.mean(farm < 5).
+Expected results: mean ≈ 6.0 MW, median ≈ 5.8 MW, std ≈ 2.0 MW, 5th to 95th percentile ≈ 3.3 to 9.6 MW, skewness ≈ 0.8 (right-skewed: power grows with v cubed), P(farm < 5 MW) ≈ 0.33.
+Discussion: the best-guess calculation with average inputs gives 6.2 MW, comfortably above 5 MW, yet the farm falls short in about one hour in three. Also note that average inputs do not give the average output (6.2 vs 6.0 MW) because the model is non-linear. Extension: cap each turbine at a rated power of 2 MW with np.minimum, or check for impossible values such as a negative wind speed (outliers, 6.4).
 The worked solution is hidden in Part B of week5.html.
   </aside>
 </section>
-
-<!-- ============================================================ 27 -->
+<!-- ============================================================ 25 -->
 <section>
   <h2>Summary</h2>
   <p class="terms"><span>Monte Carlo simulation</span><span>random numbers</span><span>histogram</span><span>statistics</span></p>
@@ -892,13 +786,13 @@ The analysis tools (histogram, mean, median, standard deviation, percentiles, ex
   </aside>
 </section>
 
-<!-- ============================================================ 28 -->
+<!-- ============================================================ 26 -->
 <section>
   <h2>Practise</h2>
   <p class="terms"><span>notebook</span><span>notes</span></p>
   <div class="cols" style="font-size:.78em">
     <div class="stack">
-      <p><b>Notes:</b> <a href="week5.html">week5.html</a>, Part A with the full two-cars code, Part B with the beam solution.</p>
+      <p><b>Notes:</b> <a href="week5.html">week5.html</a>, Part A with the full two-cars code, Part B with the wind farm solution.</p>
       <p><b>Notebook:</b> <code>week5_monte_carlo.ipynb</code> on the notes page: every example, plus exercises.</p>
       <p class="small">Further reading: Mathias, S.A. (2023). EIA and Uncertainty Management. In: <i>Hydraulics, Hydrology and Environmental Engineering</i>. Springer.</p>
     </div>
@@ -907,12 +801,13 @@ The analysis tools (histogram, mean, median, standard deviation, percentiles, ex
       <ul style="font-size:.9em">
         <li>Estimate π with NumPy: random x, y in [0, 1); share with x² + y² &lt; 1, times 4.</li>
         <li>Two-lane highway speed (notes, extra example): find the mean speed, then spot and explain the outliers.</li>
-        <li>Beam: find the smallest I that keeps P(δ &gt; 6 mm) below 5 %.</li>
+        <li>Wind farm: cap each turbine at its rated power of 2 MW with <code>np.minimum</code>. How does the chance of falling short change?</li>
+        <li>Floor beam (notes, extra exercise): the chance of exceeding the deflection limit.</li>
       </ul>
     </div>
   </div>
   <aside class="notes">
-Before next week: work through the notebook. The notes page has the full code for the two-cars simulation (Part A) and a hidden solution for the beam (Part B); try the beam yourself before opening it.
+Before next week: work through the notebook. The notes page has the full code for the two-cars simulation (Part A) and a hidden solution for the wind farm (Part B); try it yourself before opening it. The floor beam from slide 4 is an extra exercise with its own solution.
 Suggested extra exercises on the right. The π estimate in NumPy takes about five lines. The highway example in the notes produces surprising outliers: find out why (negative numbers of cars from the normal distribution).
   </aside>
 </section>
@@ -923,6 +818,8 @@ Suggested extra exercises on the right. The π estimate in NumPy takes about fiv
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/notes/notes.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <script src="assets/slides.js"></script>
 <script src="assets/slides-week5.js"></script>
 </body>
