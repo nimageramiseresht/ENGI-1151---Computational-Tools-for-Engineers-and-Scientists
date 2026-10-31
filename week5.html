@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Week 5: Monte Carlo simulation with Python | ENGI 1151</title>
-<meta name="description" content="Lecture notes with live, in-browser Python: basic Monte Carlo simulation for engineers and scientists.">
+<meta name="description" content="Lecture notes with live, in-browser Python: the theory of Monte Carlo simulation, random numbers, reading simulation results, and an engineering application.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +16,33 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
 
 <link rel="stylesheet" href="assets/site.css">
+<style>
+  /* week 5 page */
+  .part-head { border-top: 3px solid var(--accent); padding-top: 1rem; }
+  .part-head .tag { font-family: var(--mono); color: var(--accent); margin: 0; font-size: .95rem; letter-spacing: .04em; }
+  .part-head h2 { margin: .2rem 0 .75rem; font-size: 2.1rem; }
+  .tbl-wrap { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+  table.tbl { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+  table.tbl th, table.tbl td { border-bottom: 1px solid var(--grid); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  table.tbl th { border-bottom: 2px solid var(--ink); font-family: var(--mono); font-weight: 500; color: var(--muted); white-space: nowrap; }
+  table.tbl td code { white-space: nowrap; }
+  .cards3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.25rem 0 1.5rem; }
+  .cards3 .card { border: 1px solid var(--grid); padding: .75rem 1rem; font-size: .95rem; line-height: 1.55; }
+  .cards3 .card h4 { margin: 0 0 .4rem; color: var(--accent); }
+  .cards3 .card p { margin: 0 0 .5rem; }
+  .cards3 .card svg { display: block; width: 100%; height: auto; margin: 0 0 .5rem; }
+  @media (max-width: 760px) { .cards3 { grid-template-columns: 1fr; } }
+  .dg .area { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .dg .area2 { fill: rgba(59, 130, 196, .15); stroke: #3B82C4; stroke-width: 2; }
+  .dg .area3 { fill: var(--code-bg); stroke: var(--ink); stroke-width: 1.5; }
+  .dg .blue { fill: #3B82C4; }
+  .dg .bar { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+  figure.plot { margin: -1.5rem 0 1.75rem; border: 1px solid var(--grid); border-top: 0; background: var(--paper); padding: 0.75rem 1rem 0.6rem; }
+  figure.plot img { display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto; background: #fff; border-radius: 2px; }
+  figure.plot figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+  figure.plot::before { content: "Output"; display: block; font: 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  pre.out + figure.plot::before { content: none; }
+</style>
 </head>
 <body data-week="5" data-notebook="week5_monte_carlo.ipynb">
 
@@ -36,7 +63,7 @@
         <span>median speed <output id="sim-mean">–</output> km/h</span>
         <button type="button" id="sim-replay">Run again</button>
       </div>
-      <figcaption class="sim-caption">Each sample is one simulated hour on the two-lane highway in section 1, with random traffic and random coefficients. The shape of the travel speed distribution appears as the samples pile up.</figcaption>
+      <figcaption class="sim-caption">Each sample is one simulated hour on the two-lane highway of section 9, with random traffic and random coefficients. The shape of the travel speed distribution appears as the samples pile up.</figcaption>
     </figure>
   </div>
 </header>
@@ -45,29 +72,607 @@
   <nav class="toc" aria-label="Contents">
     <p>Contents</p>
     <ol>
-      <li><a href="#introduction">Introduction</a></li>
-      <li><a href="#how-it-works">How it works</a></li>
-      <li><a href="#random-numbers">Random numbers</a></li>
-      <li><a href="#processing">Processing the data</a></li>
-      <li><a href="#plotting">Plotting</a></li>
-      <li><a href="#applications">Applications</a></li>
-      <li><a href="#further-reading">Further reading</a></li>
+      <li class="plain"><a href="#part-a">Part A · Theory</a></li>
+      <li><a data-n="1" href="#what-is-mc">What and why</a></li>
+      <li><a data-n="2" href="#uncertainty">Types of uncertainty</a></li>
+      <li><a data-n="3" href="#two-cars">Two cars</a></li>
+      <li><a data-n="4" href="#how-it-works">How it works</a></li>
+      <li><a data-n="5" href="#random-numbers">Random numbers</a></li>
+      <li><a data-n="6" href="#reading-results">Reading the results</a></li>
+      <li><a data-n="7" href="#two-cars-code">Two cars in Python</a></li>
+      <li class="plain"><a href="#part-b">Part B · Application</a></li>
+      <li><a data-n="8" href="#beam">Floor beam deflection</a></li>
+      <li><a data-n="9" href="#highway">Extra: highway speed</a></li>
+      <li><a data-n="10" href="#applications">Applications, reading</a></li>
       <li class="plain"><a href="#notebook">Practice notebook</a></li>
     </ol>
   </nav>
 
   <main>
-    <section id="introduction">
-      <h2><span class="num">1</span>Introduction</h2>
-      <p>Monte Carlo simulation is a technique that uses randomness to solve problems that might be deterministic in principle. It is widely used in engineering to model uncertainty and simulate complex systems.</p>
-      <p>The method is named after the Monte Carlo Casino in Monaco, because of its reliance on chance. Instead of solving problems with exact formulas, Monte Carlo methods use repeated random sampling to approximate the answer.</p>
+    <section id="part-a" class="part-head">
+      <p class="tag">PART A</p>
+      <h2>The theory of Monte Carlo simulation</h2>
+      <p>What Monte Carlo simulation is and why engineers need it, the kinds of uncertainty we meet, where random numbers come from, and how to read the pile of results a simulation produces. One example runs through the whole of Part A: the relative speed of two cars.</p>
+    </section>
 
+<!-- =========================================================== 1 -->
+    <section id="what-is-mc">
+      <h2><span class="num">1</span>What is Monte Carlo simulation, and why do we need it?</h2>
+      <p><strong>Monte Carlo simulation</strong> is a computational method that uses <strong>repeated random sampling</strong> to estimate a result. Instead of one calculation with one set of input values, we run the same calculation thousands of times, each time with inputs drawn at random from their probability distributions, and study all the answers together: their range, their most likely value and their spread. It uses randomness to solve problems that might be deterministic in principle.</p>
+      <p>The method is named after the Monte Carlo Casino in Monaco, because of its reliance on chance. It was developed in the 1940s by scientists working on the Manhattan Project: Stanislaw Ulam and John von Neumann first used it to study neutron diffusion. It has since become a standard tool in science and engineering.</p>
+      <p><strong>Why we need it.</strong> Engineering inputs are rarely known exactly: loads, material properties, traffic volumes, task durations and costs all vary. A calculation with one <em>best guess</em> per input gives one answer, but not how far off it could be. The questions we usually need to answer are about the whole range of outcomes:</p>
+      <ul>
+        <li>What range of outcomes is possible?</li>
+        <li>What is the most likely outcome?</li>
+        <li>What is the chance of exceeding a limit?</li>
+      </ul>
+      <p>For simple models, probability theory gives exact answers. For realistic models it quickly becomes impossible. Monte Carlo simulation works for <strong>any model you can write as code</strong>.</p>
+      <div class="example">
+        <p><span class="label">A first taste: estimating π.</span> Throw random points uniformly into the unit square. The quarter circle \(x^2 + y^2 &lt; 1\) covers an area of \(\pi/4\), so the share of points that land inside it approaches \(\pi/4\). Four times that share estimates π. The more points, the better the estimate.</p>
+      </div>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+np.random.seed(0)
+for n in [100, 10_000, 1_000_000]:
+    x = np.random.rand(n)
+    y = np.random.rand(n)
+    inside = np.mean(x**2 + y**2 &lt; 1)     # share inside the circle
+    print("N = %9d   pi is about %.4f" % (n, 4 * inside))</code></pre>
+</figure>
+<pre class="out">N =       100   pi is about 3.2400
+N =     10000   pi is about 3.1452
+N =   1000000   pi is about 3.1385</pre>
+      <p>The estimate improves slowly: 100 times more points gives only about 10 times smaller error. The error of a Monte Carlo estimate shrinks like \(1/\sqrt{N}\), which is why simulations use thousands to millions of trials.</p>
+    </section>
+
+<!-- =========================================================== 2 -->
+    <section id="uncertainty">
+      <h2><span class="num">2</span>Types of uncertainty</h2>
+      <p>Engineering models meet three kinds of uncertainty.</p>
+      <div class="cards3">
+        <div class="card">
+          <h4>Deterministic</h4>
+          <svg class="dg" viewBox="0 0 240 120" role="img" aria-label="A single spike at one value."><path class="line" d="M10 100 H 230"/><path class="line-acc" d="M120 100 V 14" stroke-width="4"/><circle cx="120" cy="14" r="5" class="fill-acc"/></svg>
+          <p>The value is <strong>known exactly</strong>; the same inputs always give the same output.</p>
+          <p><em>e.g.</em> the span of a beam set by the design; \(g = 9.81\) m/s².</p>
+        </div>
+        <div class="card">
+          <h4>Stochastic (random)</h4>
+          <svg class="dg" viewBox="0 0 240 120" role="img" aria-label="A bell-shaped probability distribution."><path class="line" d="M10 100 H 230"/><g transform="translate(10,0)"><path class="area" d="M0.0 99.5 L6.9 99.0 L13.7 98.2 L20.6 96.9 L27.5 94.8 L34.4 91.8 L41.3 87.5 L48.1 81.8 L55.0 74.4 L61.9 65.5 L68.8 55.2 L75.6 44.2 L82.5 33.2 L89.4 23.2 L96.2 15.1 L103.1 9.8 L110.0 8.0 L116.9 9.8 L123.8 15.1 L130.6 23.2 L137.5 33.2 L144.4 44.2 L151.2 55.2 L158.1 65.5 L165.0 74.4 L171.9 81.8 L178.8 87.5 L185.6 91.8 L192.5 94.8 L199.4 96.9 L206.2 98.2 L213.1 99.0 L220.0 99.5 Z"/></g></svg>
+          <p>The value <strong>varies</strong> from one occurrence to the next, described by a <strong>probability distribution</strong>.</p>
+          <p><em>e.g.</em> traffic volume, wind speed, the strength of concrete cubes.</p>
+        </div>
+        <div class="card">
+          <h4>Resolutional (fuzzy)</h4>
+          <svg class="dg" viewBox="0 0 240 120" role="img" aria-label="A triangular fuzzy number between 90 and 110 with full membership at 100."><path class="line" d="M30 100 H 230 M30 100 V 10"/><path class="area2" d="M60 100 L130 16 L200 100 Z"/><text x="24" y="20" font-size="12" text-anchor="end">1</text><text x="24" y="104" font-size="12" text-anchor="end">0</text><text x="60" y="116" font-size="12" text-anchor="middle">90</text><text x="130" y="116" font-size="12" text-anchor="middle">100</text><text x="200" y="116" font-size="12" text-anchor="middle">110</text></svg>
+          <p>The value is <strong>vague</strong>: “about 100 km/h”. A <strong>fuzzy number</strong> gives each value a membership between 0 and 1.</p>
+          <p><em>e.g.</em> expert judgement. Not covered further in this module.</p>
+        </div>
+      </div>
+      <p>Almost every real system behaves randomly to some degree, so treating its inputs as random variables (<strong>stochastic analysis</strong>) describes it best. Monte Carlo simulation is the most general way to carry out a stochastic analysis.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Field</th><th>Random inputs</th><th>Question a simulation answers</th></tr></thead>
+        <tbody>
+          <tr><td>Structural</td><td>wind, snow and floor loads; steel and concrete strength</td><td>chance of failure or of excessive deflection</td></tr>
+          <tr><td>Transport</td><td>traffic volume, vehicle speeds, share of trucks</td><td>travel time, queue length at a junction</td></tr>
+          <tr><td>Manufacturing</td><td>dimensions within tolerance, machine breakdowns</td><td>will the parts fit? scrap rate</td></tr>
+          <tr><td>Electrical</td><td>resistor and capacitor tolerances, noise</td><td>range of the output voltage</td></tr>
+          <tr><td>Water and environment</td><td>rainfall, river flow</td><td>flood level exceeded once in 100 years</td></tr>
+          <tr><td>Project management</td><td>activity durations, material prices</td><td>chance of finishing on time and on budget</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+<!-- =========================================================== 3 -->
+    <section id="two-cars">
+      <h2><span class="num">3</span>Two cars: from crisp numbers to simulation</h2>
+      <p>Two cars travel in opposite directions. Their <strong>relative speed</strong>, the rate at which the gap between them closes, is the sum of their speeds: \(r = v_A + v_B\). We make the example more realistic in three steps.</p>
+
+      <h3>Step 1: crisp numbers</h3>
+      <p>With exact (crisp) speeds, \(v_A = 90\) km/h and \(v_B = 110\) km/h, the answer is deterministic: \(r = 200\) km/h. But no driver holds exactly 90 km/h, and we do not know in advance how fast a particular driver will go.</p>
+
+      <h3>Step 2: both speeds uniform</h3>
       <div class="example">
         <p><span class="label">Example 1.</span> Two cars travel at speeds that are uniformly distributed between 65 km/h and 132 km/h. If they travel in opposite directions, what is their relative speed, represented as a probability distribution?</p>
       </div>
+      <p><strong>Interval arithmetic</strong> adds the limits: \([65, 132] + [65, 132] = [130, 264]\) km/h. That gives the range but says nothing about which values are likely. Probability theory gives the full answer: the sum of two independent uniform variables has a <strong>triangular</strong> distribution, here between 130 and 264 km/h with its peak at 197 km/h. Values in the middle are likely because many combinations of speeds produce them; the extremes need both cars at their slowest or fastest.</p>
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 190" role="img" aria-label="Two flat uniform distributions between 65 and 132 add up to a triangular distribution between 130 and 264 with its peak at 197.">
+          <path class="line" d="M10 140 H 160 M210 140 H 360 M400 140 H 670"/>
+          <rect class="area" x="30" y="70" width="110" height="70"/><rect class="area2" x="230" y="70" width="110" height="70"/>
+          <path class="area3" d="M420 140 L535 30 L650 140 Z"/><path class="line-muted" d="M535 30 V 140"/>
+          <text x="185" y="112" font-size="26" text-anchor="middle">+</text><text x="380" y="112" font-size="26" text-anchor="middle">=</text>
+          <g font-size="12" text-anchor="middle"><text x="30" y="158">65</text><text x="140" y="158">132</text><text x="230" y="158">65</text><text x="340" y="158">132</text><text x="420" y="158">130</text><text x="535" y="158">197</text><text x="650" y="158">264</text></g>
+          <g font-size="13" text-anchor="middle"><text x="85" y="56" class="acc">v_A ~ U(65, 132)</text><text x="285" y="56" class="blue">v_B ~ U(65, 132)</text><text x="535" y="20">r: triangular</text></g>
+          <text x="340" y="184" font-size="12" text-anchor="middle" class="muted">relative speed (km/h)</text>
+        </svg>
+      </figure>
+      <p>This case can still be solved by hand, with a convolution integral. It is a useful check for the simulation in section 7.</p>
 
-      <p>Some basic arithmetic operations can be carried out on probability distributions directly. When the behaviour of a system becomes more complex, however, it is very hard to determine analytically the distribution that describes it. Consider the next example.</p>
+      <h3>Step 3: realistic distributions</h3>
+      <p>Car A is a cautious driver: between 60 and 140 km/h but mostly 70 to 90 km/h. We model this with a beta distribution, which lives on \([0, 1]\), scaled and shifted: \(v_A = 60 + 80\,\text{Beta}(2, 5)\). Car B follows a normal distribution, \(v_B \sim N(\mu = 100, \sigma = 12)\) km/h.</p>
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 190" role="img" aria-label="A skewed beta-based distribution for car A and a normal distribution for car B add up to an unknown distribution.">
+          <g transform="translate(20,20)"><path class="area" d="M0.0 120.0 L6.0 92.2 L12.0 69.9 L18.0 52.4 L24.0 39.2 L30.0 29.8 L36.0 23.6 L42.0 20.2 L48.0 19.1 L54.0 20.1 L60.0 22.6 L66.0 26.4 L72.0 31.3 L78.0 36.9 L84.0 43.1 L90.0 49.5 L96.0 56.2 L102.0 62.8 L108.0 69.3 L114.0 75.6 L120.0 81.5 L126.0 87.1 L132.0 92.2 L138.0 96.9 L144.0 101.1 L150.0 104.8 L156.0 108.0 L162.0 110.7 L168.0 113.0 L174.0 114.9 L180.0 116.4 L186.0 117.6 L192.0 118.4 L198.0 119.0 L204.0 119.5 L210.0 119.7 L216.0 119.9 L222.0 120.0 L228.0 120.0 L234.0 120.0 L240.0 120.0 Z"/><path class="line" d="M0 120 H 240"/></g>
+          <g transform="translate(300,20)"><path class="area2" d="M0.0 119.6 L6.0 119.3 L12.0 118.8 L18.0 118.0 L24.0 116.9 L30.0 115.2 L36.0 112.8 L42.0 109.6 L48.0 105.2 L54.0 99.7 L60.0 92.8 L66.0 84.6 L72.0 75.1 L78.0 64.7 L84.0 53.8 L90.0 42.9 L96.0 32.6 L102.0 23.7 L108.0 16.7 L114.0 12.3 L120.0 10.8 L126.0 12.3 L132.0 16.7 L138.0 23.7 L144.0 32.6 L150.0 42.9 L156.0 53.8 L162.0 64.7 L168.0 75.1 L174.0 84.6 L180.0 92.8 L186.0 99.7 L192.0 105.2 L198.0 109.6 L204.0 112.8 L210.0 115.2 L216.0 116.9 L222.0 118.0 L228.0 118.8 L234.0 119.3 L240.0 119.6 Z"/><path class="line" d="M0 120 H 240"/></g>
+          <text x="275" y="100" font-size="26" text-anchor="middle">+</text><text x="565" y="100" font-size="26" text-anchor="middle">=</text>
+          <text x="630" y="108" font-size="44" text-anchor="middle" class="muted">?</text>
+          <g font-size="12" text-anchor="middle"><text x="20" y="158">60</text><text x="140" y="158">100</text><text x="260" y="158">140</text><text x="300" y="158">60</text><text x="420" y="158">100</text><text x="540" y="158">140</text></g>
+          <g font-size="13" text-anchor="middle"><text x="140" y="14" class="acc">v_A = 60 + 80·Beta(2, 5)</text><text x="420" y="14" class="blue">v_B ~ N(100, 12)</text></g>
+          <text x="340" y="184" font-size="12" text-anchor="middle" class="muted">speed (km/h)</text>
+        </svg>
+      </figure>
+      <p>The exact distribution of the sum is the convolution integral</p>
+      <div class="math">$$f_R(r) = \int f_A(v)\, f_B(r - v)\, dv$$</div>
+      <p>For a beta plus a normal there is no closed-form result, and with more inputs or a non-linear model the integral becomes hopeless. So we stop trying to derive the answer and <strong>compute</strong> it instead: let the computer repeat the experiment thousands of times. That is Monte Carlo simulation, and we code it in section 7.</p>
+    </section>
 
+<!-- =========================================================== 4 -->
+    <section id="how-it-works">
+      <h2><span class="num">4</span>How Monte Carlo simulation works</h2>
+      <p>Every Monte Carlo simulation has the same structure:</p>
+      <ul>
+        <li><strong>Inputs</strong> are randomly sampled from their probability distributions.</li>
+        <li><strong>The process</strong> (the model) computes an output for every set of sampled inputs. The model itself is deterministic: an equation, a Python function or a large simulation model.</li>
+        <li><strong>The outputs</strong>, collected together, form a new distribution, which we plot as a histogram and summarise with statistics.</li>
+      </ul>
+      <figure class="diagram">
+        <svg class="dg" viewBox="0 0 680 170" role="img" aria-label="Inputs are sampled, the model computes one output, this repeats N times, and the outputs form a histogram.">
+          <rect class="box" x="4" y="40" width="130" height="80" rx="6"/><text x="69" y="74" font-size="13" text-anchor="middle" font-weight="600">input</text><text x="69" y="94" font-size="13" text-anchor="middle">distributions</text>
+          <path class="line" d="M136 80 H 160"/><path class="fill-ink" d="M168 80 l-9 -5 v10 z"/>
+          <rect class="box-code" x="170" y="40" width="130" height="80" rx="6"/><text x="235" y="74" font-size="13" text-anchor="middle" font-weight="600">random</text><text x="235" y="94" font-size="13" text-anchor="middle">sample i</text>
+          <path class="line" d="M302 80 H 326"/><path class="fill-ink" d="M334 80 l-9 -5 v10 z"/>
+          <rect class="box-acc" x="336" y="40" width="130" height="80" rx="6"/><text x="401" y="74" font-size="13" text-anchor="middle" font-weight="600">model</text><text x="401" y="94" font-size="13" text-anchor="middle">output i</text>
+          <path class="line" d="M468 80 H 492"/><path class="fill-ink" d="M500 80 l-9 -5 v10 z"/>
+          <rect class="box" x="502" y="20" width="174" height="120" rx="6"/>
+          <rect class="bar" x="514.0" y="127.9" width="6.8" height="0.1"/><rect class="bar" x="520.8" y="127.7" width="6.8" height="0.3"/><rect class="bar" x="527.6" y="127.2" width="6.8" height="0.8"/><rect class="bar" x="534.5" y="124.4" width="6.8" height="3.6"/><rect class="bar" x="541.3" y="118.9" width="6.8" height="9.1"/><rect class="bar" x="548.1" y="106.8" width="6.8" height="21.2"/><rect class="bar" x="554.9" y="88.8" width="6.8" height="39.2"/><rect class="bar" x="561.7" y="67.6" width="6.8" height="60.4"/><rect class="bar" x="568.5" y="47.3" width="6.8" height="80.7"/><rect class="bar" x="575.4" y="36.0" width="6.8" height="92.0"/><rect class="bar" x="582.2" y="32.0" width="6.8" height="96.0"/><rect class="bar" x="589.0" y="37.3" width="6.8" height="90.7"/><rect class="bar" x="595.8" y="54.8" width="6.8" height="73.2"/><rect class="bar" x="602.6" y="72.6" width="6.8" height="55.4"/><rect class="bar" x="609.5" y="89.5" width="6.8" height="38.5"/><rect class="bar" x="616.3" y="102.4" width="6.8" height="25.6"/><rect class="bar" x="623.1" y="113.9" width="6.8" height="14.1"/><rect class="bar" x="629.9" y="120.0" width="6.8" height="8.0"/><rect class="bar" x="636.7" y="124.8" width="6.8" height="3.2"/><rect class="bar" x="643.5" y="126.1" width="6.8" height="1.9"/><rect class="bar" x="650.4" y="127.2" width="6.8" height="0.8"/><rect class="bar" x="657.2" y="127.8" width="6.8" height="0.2"/><path class="line" d="M512 128 H 666"/>
+          <path class="line-acc" d="M401 38 V 14 H 235 V 34" stroke-dasharray="6 4"/><path class="fill-acc" d="M235 38 l-5 -9 h10 z"/>
+          <text x="318" y="10" font-size="12" text-anchor="middle" class="acc">repeat N times</text>
+          <text x="589" y="160" font-size="12" text-anchor="middle" class="muted">a new distribution</text>
+        </svg>
+      </figure>
+      <p>As a recipe in five steps:</p>
+      <ol class="steps">
+        <li><strong>Define the problem.</strong> Identify the output of interest and the uncertain input parameters. <em>Two cars: output r; inputs \(v_A\), \(v_B\).</em></li>
+        <li><strong>Assign probability distributions.</strong> Describe the uncertainty of each input with an appropriate distribution, from data, standards or expert judgement. <em>\(v_A = 60 + 80\,\text{Beta}(2,5)\), \(v_B \sim N(100, 12)\).</em></li>
+        <li><strong>Random sampling.</strong> Generate many random samples of the inputs. <em>10 000 values of each speed.</em></li>
+        <li><strong>Determine the outputs.</strong> Calculate the system output for each random sample. This can be a simple equation, a Python function, or a large, complex simulation model. <em>\(r = v_A + v_B\), 10 000 times.</em></li>
+        <li><strong>Analyse the results.</strong> Histogram; summary statistics such as the mean, median and standard deviation; percentiles; the chance of exceeding a limit.</li>
+      </ol>
+    </section>
+
+<!-- =========================================================== 5 -->
+    <section id="random-numbers">
+      <h2><span class="num">5</span>Random numbers</h2>
+      <p>Step 3 of every simulation needs random numbers. Where do they come from?</p>
+
+      <h3>5.1 True random and pseudorandom numbers</h3>
+      <p><strong>True random numbers</strong> come from a physical process: dice, coin tosses, radioactive decay, atmospheric or thermal noise. They are genuinely unpredictable, which matters for cryptography and lotteries, but they are slow to generate, need special hardware, and cannot be repeated to check a result.</p>
+      <p><strong>Pseudorandom numbers</strong> come from an algorithm, a <strong>pseudorandom number generator (PRNG)</strong>, which starts from a number called the <strong>seed</strong>. They look random and pass statistical tests of randomness, but the whole sequence is determined by the seed.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th></th><th>Advantages</th><th>Drawbacks</th></tr></thead>
+        <tbody>
+          <tr><td>True random</td><td>truly unpredictable</td><td>slow; needs hardware; cannot be repeated</td></tr>
+          <tr><td>Pseudorandom</td><td>fast; lightweight; <strong>reproducible</strong> (same seed, same numbers); good statistical properties</td><td>deterministic, so predictable if you know the algorithm and seed; <strong>periodic</strong>: the sequence eventually repeats</td></tr>
+        </tbody>
+      </table></div>
+      <p>A good PRNG has a <strong>long period</strong>, produces <strong>uniformly distributed</strong> numbers, is <strong>efficient</strong> and is <strong>reproducible</strong>. Built-in generators include <code>rand</code>/<code>srand</code> in C, the <code>random</code> module in Python, <code>rand</code>/<code>randi</code> in MATLAB, and NumPy’s <code>np.random</code>, which we use. Simulations use pseudorandom numbers; from here on we simply call them random numbers.</p>
+
+      <h3>5.2 Inside a PRNG: the linear congruential generator</h3>
+      <p>The simplest PRNG is the <strong>linear congruential generator (LCG)</strong>. Each number is calculated from the previous one:</p>
+      <div class="math">$$X_{n+1} = (a\,X_n + c) \bmod m, \qquad u_n = \frac{X_n}{m} \in [0, 1)$$</div>
+      <p>where \(\bmod\) is the remainder after division (<code>%</code> in Python), \(a\) is the multiplier, \(c\) the increment, \(m\) the modulus and \(X_0\) the seed. With \(a = 5\), \(c = 1\), \(m = 16\) and \(X_0 = 3\): \((5 \times 3 + 1) \bmod 16 = 0\), then \((5 \times 0 + 1) \bmod 16 = 1\), then 6, 15, 12, … After 16 numbers the sequence is back at 3 and repeats: its <strong>period</strong> is 16, far too short for a simulation. Practical generators use a very large \(m\).</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def rand_gen(seed, a, c, m, size):
+    """Linear congruential generator: size numbers in [0, 1)."""
+    numbers = np.zeros(size)
+    numbers[0] = seed
+    for i in range(1, size):
+        numbers[i] = (a * numbers[i - 1] + c) % m
+    return numbers / m
+
+print(rand_gen(3, 5, 1, 16, 20) * 16)   # X values: period 16
+
+u = rand_gen(3, 7**5, 102435, 2**31 - 1, 10_000)
+print(" ".join("%.4f" % x for x in u[:5]))
+print("mean %.3f (U(0, 1) has mean 0.5)" % u.mean())</code></pre>
+</figure>
+<pre class="out">[ 3.  0.  1.  6. 15. 12. 13.  2. 11.  8.  9. 14.  7.  4.  5. 10.  3.  0.
+  1.  6.]
+0.0000 0.0001 0.1964 0.1419 0.6822
+mean 0.505 (U(0, 1) has mean 0.5)</pre>
+      <p>Real generators are more sophisticated (NumPy uses PCG64 by default; Python’s <code>random</code> uses the Mersenne Twister), with periods of \(2^{128}\) or more, but the idea is the same. In NumPy, <code>np.random.seed()</code> sets the seed: the same seed gives exactly the same numbers, which makes a simulation reproducible.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+np.random.seed(42)
+print(np.random.rand(3))
+np.random.seed(42)
+print(np.random.rand(3))      # the same three numbers again
+print(np.random.rand(3))      # the sequence continues</code></pre>
+</figure>
+<pre class="out">[0.37454012 0.95071431 0.73199394]
+[0.37454012 0.95071431 0.73199394]
+[0.59865848 0.15601864 0.15599452]</pre>
+
+      <h3>5.3 Random numbers in NumPy</h3>
+      <p>NumPy can generate random numbers from many well-known distributions, including uniform, normal, beta, exponential, chi-square and binomial. Each function returns a NumPy array.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Function</th><th>Gives</th></tr></thead>
+        <tbody>
+          <tr><td><code>np.random.seed(42)</code></td><td>fixes the starting point: the same numbers every run</td></tr>
+          <tr><td><code>np.random.rand(n)</code></td><td>n values from U(0, 1); <code>np.random.rand(2, 3)</code> gives a 2 × 3 array</td></tr>
+          <tr><td><code>np.random.uniform(a, b, n)</code></td><td>U(a, b)</td></tr>
+          <tr><td><code>np.random.normal(μ, σ, n)</code></td><td>normal distribution, mean μ, standard deviation σ</td></tr>
+          <tr><td><code>np.random.randn(n)</code></td><td>standard normal N(0, 1)</td></tr>
+          <tr><td><code>np.random.beta(α, β, n)</code></td><td>beta distribution, values between 0 and 1</td></tr>
+          <tr><td><code>np.random.exponential(1/λ, n)</code></td><td>exponential distribution with rate λ</td></tr>
+        </tbody>
+      </table></div>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+x = np.random.rand()       # one random sample from U[0, 1]
+y = np.random.rand(10)     # ten random samples from U[0, 1]
+z = np.random.rand(2, 3)   # a 2x3 matrix of samples from U[0, 1]
+
+print(x, y, z, sep="\n\n")</code></pre>
+</figure>
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout writes <code>np.random.rand((2, 3))</code>. <code>rand</code> takes each dimension as a separate argument, so the tuple version raises a <code>TypeError</code>. Use <code>np.random.rand(2, 3)</code>, or <code>np.random.random((2, 3))</code> if you prefer a tuple.</p>
+      </div>
+<figure class="code" data-runnable data-setup="numpy">
+<pre><code class="language-python"># 3x4 matrix from a normal distribution with mean 0 and standard deviation 10
+x_normal = np.random.normal(loc=0, scale=10, size=(3, 4))
+
+# 2x2 matrix from a beta distribution with parameters 0.5 and 0.75
+y_beta = np.random.beta(a=0.5, b=0.75, size=(2, 2))
+
+# 5x5 matrix from the standard normal distribution (mean 0, std 1)
+z_snormal = np.random.randn(5, 5)
+
+print(x_normal, y_beta, z_snormal, sep="\n\n")</code></pre>
+</figure>
+      <p>The newer NumPy interface, <code>rng = np.random.default_rng(42)</code> followed by <code>rng.normal(...)</code>, <code>rng.uniform(...)</code> and so on, works the same way; you will meet it in the NumPy documentation. Either is fine in this module.</p>
+
+      <h3>5.4 From U(0, 1) to any distribution</h3>
+      <p>Random numbers from the uniform distribution on [0, 1] are the building block of every other distribution. A sample from an arbitrary uniform distribution \(U(a, b)\) is obtained by <strong>scaling, then shifting</strong>:</p>
+      <div class="math">$$U(a, b) = a + U(0, 1)\,(b - a)$$</div>
+      <p>For example, \(u = 0.40\) gives the car speed \(65 + 0.40 \times (132 - 65) = 91.8\) km/h.</p>
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout gives \((U(0,1) + a)(b - a)\). That expression spans \([a(b-a),\ (1+a)(b-a)]\), not \([a, b]\): for \(a = 0.6,\ b = 0.9\) it gives values between 0.18 and 0.48. Scale first, then shift, as above. Run the check below to see the difference.</p>
+      </div>
+<figure class="code" data-runnable data-setup="numpy">
+<pre><code class="language-python">a, b = 0.6, 0.9
+u = np.random.rand(100_000)
+
+correct = a + u * (b - a)
+handout = (u + a) * (b - a)
+
+print("a + U(b - a):     min %.3f  max %.3f" % (correct.min(), correct.max()))
+print("(U + a)(b - a):   min %.3f  max %.3f" % (handout.min(), handout.max()))</code></pre>
+</figure>
+      <p>For any other distribution, the <strong>inverse transform method</strong> uses the cumulative distribution function \(F(x)\), the probability of a value up to \(x\), which climbs from 0 to 1. Draw \(u\) from U(0, 1) and solve \(F(x) = u\):</p>
+      <div class="math">$$x = F^{-1}(u)$$</div>
+      <p>Example: the exponential distribution, with probability density \(f(x) = \lambda e^{-\lambda x}\) and \(F(x) = 1 - e^{-\lambda x}\), gives \(x = -\ln(1 - u)/\lambda\). With \(\lambda = 1.5\) and \(u = 0.46\), \(x = 0.411\).</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def inv_exponential(u, lam):
+    return -np.log(1 - u) / lam
+
+print(round(inv_exponential(0.46, 1.5), 3))         # the worked example
+
+np.random.seed(3)
+x = inv_exponential(np.random.rand(100_000), 1.5)   # 100 000 exponential samples
+print("mean %.3f (exact value 1/λ = %.3f)" % (x.mean(), 1 / 1.5))</code></pre>
+</figure>
+<pre class="out">0.411
+mean 0.670 (exact value 1/λ = 0.667)</pre>
+      <p>Distributions such as the normal, whose \(F\) has no simple inverse, are generated with other methods (for example <em>rejection sampling</em>). You do not need to code any of these: NumPy’s functions do it for you.</p>
+    </section>
+
+<!-- =========================================================== 6 -->
+    <section id="reading-results">
+      <h2><span class="num">6</span>Reading the results</h2>
+      <p>A simulation produces thousands of output values. One trial tells us almost nothing; as the number of trials grows, the collection of results settles into a stable shape (<strong>convergence</strong>). Two tools describe that shape: the histogram, and summary statistics. The examples below use small datasets so that you can check the numbers by hand; the same functions work on 100 000 simulation results.</p>
+
+      <h3>6.1 Histograms: bins and counts</h3>
+      <p>The range of the results, from the smallest to the largest value, is split into equal bands called <strong>bins</strong>. The number of results in each bin is its <strong>count</strong>, drawn as the height of a bar. Too few bins hide the shape; too many make it noisy. With <code>density=True</code>, each bar is divided by \(N \times\) bin width, so the total area is 1 and the histogram can be compared with a probability density function.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+# 30 relative speeds from the two-cars simulation, km/h
+r = np.array([181.5, 164.4, 176.0, 188.6, 194.8, 182.9, 164.6, 175.3, 164.6, 193.4,
+              152.3, 169.9, 187.7, 174.6, 214.2, 187.7, 196.8, 189.2, 184.5, 163.2,
+              169.0, 190.9, 166.9, 154.7, 166.2, 170.2, 185.0, 167.9, 186.6, 204.3])
+
+counts, edges = np.histogram(r, bins=6)
+print("bin edges:", np.round(edges, 1))
+print("counts:   ", counts, " total", counts.sum())</code></pre>
+</figure>
+<pre class="out">bin edges: [152.3 162.6 172.9 183.2 193.6 203.9 214.2]
+counts:    [ 2 10  5  9  2  2]  total 30</pre>
+      <p><code>plt.hist(r, bins=6)</code> draws the same histogram.</p>
+
+      <h3>6.2 Centre and spread: mean, median and standard deviation</h3>
+      <ul>
+        <li><strong>Mean</strong> \(\bar{x} = \frac{1}{N}\sum x_i\): the balance point of the histogram.</li>
+        <li><strong>Median</strong>: the middle of the sorted values; half the results lie below it, half above.</li>
+        <li><strong>Standard deviation</strong> \(\sigma = \sqrt{\frac{1}{N}\sum (x_i - \bar{x})^2}\): the typical distance from the mean, a measure of spread. <code>np.std</code> divides by \(N\); <code>np.std(x, ddof=1)</code> divides by \(N - 1\) (the sample formula). With thousands of results the difference is negligible.</li>
+      </ul>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+# commute time on 15 days, in minutes
+times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
+                  34, 61, 35, 33, 37, 34, 32])
+
+print("mean:  ", round(np.mean(times), 1))
+print("median:", np.median(times))
+print("std:   ", round(np.std(times), 1))</code></pre>
+</figure>
+<pre class="out">mean:   35.7
+median: 34.0
+std:    7.1</pre>
+      <p>One day with an accident (61 minutes) pulls the mean up by almost two minutes, while the median hardly moves. For skewed results, report both.</p>
+
+      <h3>6.3 Mode and skewness</h3>
+      <p>The <strong>mode</strong> is the most frequent value. It is most useful for discrete results such as counts; for continuous results every value is different, so the mode is read from the tallest bar of the histogram.</p>
+      <p><strong>Skewness</strong> (for those who want more) measures asymmetry: which way the long tail points.</p>
+      <div class="math">$$g = \frac{1}{N}\sum\left(\frac{x_i - \bar{x}}{\sigma}\right)^3$$</div>
+      <p>\(g = 0\) for a symmetric distribution (mean = median), \(g &gt; 0\) for a long right tail (mean &gt; median) and \(g &lt; 0\) for a long left tail (mean &lt; median).</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+# trucks arriving at a weighbridge, per 5 minutes
+trucks = np.array([3, 2, 4, 3, 5, 3, 2, 1, 3, 4,
+                   2, 3, 6, 3, 2, 4, 3, 2, 5, 3])
+values, counts = np.unique(trucks, return_counts=True)
+print("values:", values)
+print("counts:", counts)
+print("mode:  ", values[np.argmax(counts)])
+
+times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
+                  34, 61, 35, 33, 37, 34, 32])
+z = (times - np.mean(times)) / np.std(times)
+print("skewness:", round(np.mean(z**3), 2))</code></pre>
+</figure>
+<pre class="out">values: [1 2 3 4 5 6]
+counts: [1 5 8 3 2 1]
+mode:   3
+skewness: 2.97</pre>
+
+      <h3>6.4 Range, percentiles and outliers</h3>
+      <p>Engineering decisions often depend on the edges of the distribution rather than its middle.</p>
+      <ul>
+        <li><strong>Range</strong>: smallest to largest result. It grows with the number of trials, because rare extremes eventually appear.</li>
+        <li><strong>Percentiles</strong>: \(p\) % of the results lie below the \(p\)-th percentile. The 25th, 50th and 75th percentiles are the quartiles Q1, the median and Q3. The <strong>95th percentile</strong> is a common design value: only 5 % of outcomes are worse.</li>
+        <li><strong>Chance of exceeding a limit</strong>: the fraction of trials above it, <code>np.mean(x &gt; limit)</code>. The comparison gives an array of <code>True</code>/<code>False</code> values, which count as 1 and 0.</li>
+        <li><strong>Outliers</strong>: values far from the rest. The box-plot rule of thumb flags values more than 1.5 IQR beyond the quartiles, where the interquartile range is IQR = Q3 − Q1.</li>
+      </ul>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
+                  34, 61, 35, 33, 37, 34, 32])
+
+q1, q3 = np.percentile(times, [25, 75])
+iqr = q3 - q1
+high = q3 + 1.5 * iqr
+print("Q1:", q1, " Q3:", q3, " IQR:", iqr, " upper fence:", high)
+print("outliers:", times[times &gt; high])
+print("95th percentile:", round(np.percentile(times, 95), 1))
+print("P(time &gt; 40):", round(np.mean(times &gt; 40), 3))
+
+plt.boxplot(times)
+plt.ylabel("Commute time (min)")
+plt.show()</code></pre>
+</figure>
+<pre class="out">Q1: 32.5  Q3: 35.5  IQR: 3.0  upper fence: 40.0
+outliers: [61]
+95th percentile: 44.9
+P(time &gt; 40): 0.067</pre>
+<figure class="plot"><img src="assets/img/w5-boxplot.png" alt="Box plot of the 15 commute times: a narrow box from 32.5 to 35.5 minutes and one outlier at 61 minutes" width="562" height="413" loading="lazy"><figcaption>Box plot of the commute times: the accident day is drawn as a separate point.</figcaption></figure>
+      <div class="note">
+        <p><span class="label">What to do with outliers.</span> Never delete them automatically: check them. A real rare event should stay in the results; in a simulation it is often exactly the risk you are looking for. An impossible value points to a modelling mistake: in the highway example of section 9, a normal distribution for the number of cars occasionally produces a negative number of cars, which creates absurd speeds. The fix there is a better input distribution, not deleting results.</p>
+      </div>
+
+      <h3>6.5 Comparing with the normal distribution</h3>
+      <p>The normal distribution describes many natural phenomena (measurement errors, material properties, sums of many small effects), so it is worth testing simulation results against it. Its probability density function with mean \(\mu\) and standard deviation \(\sigma\) is</p>
+      <div class="math">$$f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)$$</div>
+      <p>The <strong>standard normal</strong> distribution N(0, 1) has \(\mu = 0\) and \(\sigma = 1\). Any normal value converts to it with the <strong>z-score</strong> \(z = (x - \mu)/\sigma\), the number of standard deviations from the mean. About 68 %, 95 % and 99.7 % of values lie within ±1σ, ±2σ and ±3σ of the mean (the 68–95–99.7 rule).</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(0)
+z = np.random.randn(10_000)        # standard normal samples
+x = np.linspace(-4, 4, 200)
+pdf = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi)
+
+plt.hist(z, bins=40, density=True, color="skyblue",
+         edgecolor="black", label="10 000 samples")
+plt.plot(x, pdf, color="red", linewidth=2, label="N(0, 1) pdf")
+plt.xlabel("z")
+plt.ylabel("Density")
+plt.legend()
+plt.show()
+
+for k in [1, 2, 3]:
+    print("within ±%dσ: %.3f" % (k, np.mean(np.abs(z) &lt; k)))</code></pre>
+</figure>
+<pre class="out">within ±1σ: 0.690
+within ±2σ: 0.957
+within ±3σ: 0.998</pre>
+<figure class="plot"><img src="assets/img/w5-stdnormal.png" alt="Histogram of 10 000 standard normal samples closely following the red N(0, 1) density curve" width="567" height="432" loading="lazy"><figcaption>Standard normal samples and the N(0, 1) probability density function.</figcaption></figure>
+      <p>For a simulation result, draw the normal pdf with the same mean and standard deviation over the histogram (density=True) and see whether it fits. If the histogram is skewed, the normal curve will not fit, and statements such as “95 % within ±2σ” no longer hold: use percentiles instead.</p>
+    </section>
+
+<!-- =========================================================== 7 -->
+    <section id="two-cars-code">
+      <h2><span class="num">7</span>Worked example: the two cars in Python</h2>
+      <p>We now simulate the two cars, following the five steps of section 4. This is the code written live in the lecture.</p>
+      <h3>7.1 Check the simulation on the uniform case</h3>
+      <p>Always validate a simulation on a case you can solve by hand. With both speeds uniform on [65, 132] km/h (Example 1), the histogram must be the triangle between 130 and 264 km/h with its peak at 197 km/h.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(1)
+N = 100_000
+v_a = np.random.uniform(65, 132, N)   # U(65, 132)
+v_b = np.random.uniform(65, 132, N)
+r = v_a + v_b                         # no loop needed
+
+print("min %.1f, max %.1f, mean %.1f km/h" % (r.min(), r.max(), r.mean()))
+
+plt.hist(r, bins=60, density=True, color="skyblue", edgecolor="black")
+plt.xlabel("Relative speed (km/h)")
+plt.ylabel("Density")
+plt.grid(True)
+plt.show()</code></pre>
+</figure>
+<pre class="out">min 130.6, max 263.8, mean 197.0 km/h</pre>
+<figure class="plot"><img src="assets/img/w5-cars-uniform.png" alt="Triangular histogram of relative speeds between 130 and 264 km/h with its peak near 197 km/h" width="584" height="432" loading="lazy"><figcaption>Both speeds uniform: the triangle predicted in section 3.</figcaption></figure>
+      <h3>7.2 Realistic speeds</h3>
+      <p>Car A: \(v_A = 60 + 80\,\text{Beta}(2, 5)\) km/h; car B: \(v_B \sim N(100, 12)\) km/h. We sample 10 000 pairs of drivers, calculate the relative speed, and analyse the results with the tools of section 6.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(1)
+N = 10_000
+
+# steps 2 and 3: sample the inputs
+v_a = 60 + 80 * np.random.beta(2, 5, N)
+v_b = np.random.normal(100, 12, N)
+
+# step 4: compute the output for every sample
+r = v_a + v_b
+
+# step 5: analyse the results
+mean, median, std = np.mean(r), np.median(r), np.std(r)
+skew = np.mean(((r - mean) / std)**3)
+p5, p95 = np.percentile(r, [5, 95])
+print("mean %.1f, median %.1f, std %.1f km/h, skewness %.2f" % (mean, median, std, skew))
+print("5th to 95th percentile: %.1f to %.1f km/h" % (p5, p95))
+print("P(r &gt; 220 km/h) = %.3f" % np.mean(r &gt; 220))
+
+x = np.linspace(r.min(), r.max(), 200)
+pdf = np.exp(-0.5 * ((x - mean) / std)**2) / (std * np.sqrt(2 * np.pi))
+
+plt.hist(r, bins=50, density=True, color="skyblue", edgecolor="black", label="simulation")
+plt.plot(x, pdf, color="red", linewidth=2, label="normal, same mean and std")
+plt.xlabel("Relative speed (km/h)")
+plt.ylabel("Density")
+plt.legend(loc="upper left")
+plt.show()</code></pre>
+</figure>
+<pre class="out">mean 183.0, median 182.3, std 17.5 km/h, skewness 0.19
+5th to 95th percentile: 155.1 to 213.2 km/h
+P(r &gt; 220 km/h) = 0.021</pre>
+<figure class="plot"><img src="assets/img/w5-cars-realistic.png" alt="Histogram of relative speeds centred near 183 km/h, slightly skewed to the right, with a red normal curve of the same mean and standard deviation" width="584" height="432" loading="lazy"><figcaption>Realistic speeds: the simulation and a normal distribution with the same mean and standard deviation.</figcaption></figure>
+      <p>The relative speed is centred near 183 km/h with a standard deviation of about 17.5 km/h. The normal curve fits reasonably, but the histogram leans slightly to the right (skewness about 0.2), inherited from car A’s long tail: the mean is a little above the median. No formula was needed: changing either input distribution means changing one line and running again.</p>
+    </section>
+
+    <section id="part-b" class="part-head">
+      <p class="tag">PART B</p>
+      <h2>An engineering application</h2>
+      <p>One engineering problem, coded in class in about 20 minutes with a function (week 4), NumPy arrays (week 3) and the statistics of Part A.</p>
+    </section>
+
+<!-- =========================================================== 8 -->
+    <section id="beam">
+      <h2><span class="num">8</span>Will the floor beam deflect too much?</h2>
+      <p>A simply supported steel floor beam in a laboratory supports vibration-sensitive equipment, so its mid-span deflection must stay below \(L/1000\). Under a uniformly distributed load \(w\), the mid-span deflection is (week 4, exercise 5.1)</p>
+      <div class="math">$$\delta = \frac{5\,w\,L^4}{384\,E\,I}$$</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>span \(L\)</td><td>6000 mm (fixed)</td></tr>
+          <tr><td>second moment of area \(I\)</td><td>\(3.375 \times 10^8\) mm⁴ (fixed)</td></tr>
+          <tr><td>load \(w\)</td><td>Normal(\(\mu = 20,\ \sigma = 3\)) N/mm</td></tr>
+          <tr><td>Young’s modulus \(E\)</td><td>Normal(\(\mu = 200\,000,\ \sigma = 10\,000\)) N/mm²</td></tr>
+          <tr><td>deflection limit</td><td>\(L/1000 = 6\) mm</td></tr>
+        </tbody>
+      </table></div>
+      <p>With the average values, \(\delta = 5.0\) mm, comfortably below the limit. But the load on the floor and the stiffness of the steel both vary. The client accepts at most a 5 % chance that the deflection exceeds the limit.</p>
+      <div class="exercise">
+        <p><span class="label">Exercise 8.1.</span></p>
+        <ol>
+          <li>Write a function <code>max_deflection(w, L, E, I)</code> that returns \(\delta\).</li>
+          <li>Draw \(N = 100\,000\) random values of \(w\) and \(E\) as NumPy arrays.</li>
+          <li>Call the function <strong>once</strong> with the arrays to get one deflection per beam (no loop).</li>
+          <li>Calculate the mean, median and standard deviation of \(\delta\), and its 95th percentile.</li>
+          <li>Plot a histogram of \(\delta\) with the 6 mm limit as a vertical red line (<code>plt.axvline</code>).</li>
+          <li>Calculate the probability that \(\delta &gt; 6\) mm. Is the beam acceptable? What would you change?</li>
+        </ol>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+def max_deflection(w, L, E, I):
+    """Mid-span deflection (mm) of a simply supported beam under a uniform load.
+    w in N/mm, L in mm, E in N/mm^2, I in mm^4."""
+    return 5 * w * L**4 / (384 * E * I)
+
+np.random.seed(5)
+N = 100_000
+L, I = 6000, 3.375e8                       # fixed: mm, mm^4
+limit = L / 1000                           # 6 mm
+
+w = np.random.normal(20, 3, N)             # N/mm
+E = np.random.normal(200_000, 10_000, N)   # N/mm^2
+d = max_deflection(w, L, E, I)             # one deflection per beam
+
+print("best guess: %.2f mm" % max_deflection(20, L, 200_000, I))
+print("mean %.2f, median %.2f, std %.2f mm" % (np.mean(d), np.median(d), np.std(d)))
+print("95th percentile: %.2f mm" % np.percentile(d, 95))
+print("P(deflection &gt; 6 mm) = %.3f" % np.mean(d &gt; limit))
+
+plt.hist(d, bins=60, density=True, color="skyblue", edgecolor="black")
+plt.axvline(limit, color="red", linestyle="--", label="limit L/1000 = 6 mm")
+plt.xlabel("Mid-span deflection (mm)")
+plt.ylabel("Density")
+plt.legend()
+plt.show()</code></pre>
+</figure>
+<pre class="out">best guess: 5.00 mm
+mean 5.02, median 5.00, std 0.80 mm
+95th percentile: 6.35 mm
+P(deflection &gt; 6 mm) = 0.109</pre>
+<figure class="plot"><img src="assets/img/w5-beam.png" alt="Histogram of mid-span deflections centred at 5 mm with a red dashed line at the 6 mm limit; a tail of the histogram lies beyond the line" width="567" height="432" loading="lazy"><figcaption>Simulated deflections of 100 000 beams and the 6 mm limit.</figcaption></figure>
+          <p>The best-guess calculation says 5.0 mm, but about 11 % of the simulated beams deflect more than 6 mm: more than twice the 5 % the client accepts, so the beam is <strong>not acceptable</strong>. The 95th percentile (about 6.3 mm) tells the same story. The distribution is slightly right-skewed because \(E\) is in the denominator.</p>
+          <p>A stiffer section reduces the risk. Rerun the simulation for a few values of \(I\), keeping the same random samples of \(w\) and \(E\):</p>
+<figure class="code" data-runnable data-setup="beam">
+<pre><code class="language-python">for I_try in [3.375e8, 3.5e8, 3.6e8, 3.7e8]:
+    d = max_deflection(w, L, E, I_try)
+    print("I = %.3e mm^4:  P(deflection &gt; 6 mm) = %.3f" % (I_try, np.mean(d &gt; limit)))</code></pre>
+</figure>
+<pre class="out">I = 3.375e+08 mm^4:  P(deflection &gt; 6 mm) = 0.109
+I = 3.500e+08 mm^4:  P(deflection &gt; 6 mm) = 0.068
+I = 3.600e+08 mm^4:  P(deflection &gt; 6 mm) = 0.044
+I = 3.700e+08 mm^4:  P(deflection &gt; 6 mm) = 0.027</pre>
+          <p>A section with \(I \approx 3.6 \times 10^8\) mm⁴ brings the chance below 5 %. Limiting the load on the floor would be the other option.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 9 -->
+    <section id="highway">
+      <h2><span class="num">9</span>Extra worked example: travel speed on a two-lane highway</h2>
       <div class="example">
         <p><span class="label">Example 2.</span> The average travel speed on a two-lane highway depends on the traffic composition, specifically the number of cars and trucks on the road. In a simple representation, the average travel speed <var>V</var> (km/h) can be estimated from the total volume and the truck proportion:</p>
         <div class="math">$$V = V_f\left(1 - \alpha\,\frac{N_c + N_t}{C} - \beta\,p_t\right)$$</div>
@@ -83,93 +688,7 @@
         </ul>
         <p>Determine the travel speed on this highway based on the values provided.</p>
       </div>
-
-      <p>Monte Carlo simulation was developed in the 1940s by scientists working on the Manhattan Project. Stanislaw Ulam and John von Neumann first used it to study neutron diffusion. It has since become a powerful tool in many scientific and engineering disciplines.</p>
-    </section>
-
-    <section id="how-it-works">
-      <h2><span class="num">2</span>How Monte Carlo simulation works</h2>
-      <ol class="steps">
-        <li><strong>Define the problem.</strong> Identify the output of interest and the uncertain input parameters.</li>
-        <li><strong>Assign probability distributions.</strong> Describe the uncertainty of each input with an appropriate distribution.</li>
-        <li><strong>Random sampling.</strong> Generate many random input samples from these distributions.</li>
-        <li><strong>Determine the outputs.</strong> Calculate the system output for each random sample. This can be a Python function, a simple equation, or a large, complex simulation model.</li>
-        <li><strong>Analyse the results.</strong> Compute summary statistics such as the mean, standard deviation and confidence intervals of the outputs.</li>
-      </ol>
-    </section>
-
-    <section id="random-numbers">
-      <h2><span class="num">3</span>Random numbers</h2>
-      <p>Programming languages usually generate <em>pseudorandom</em> numbers: numbers that appear random but come from deterministic algorithms. They are not truly random, but they are good enough for most simulations, so from here on we simply call them random numbers.</p>
-      <p>Python can generate random numbers from many well-known distributions, including uniform, normal, beta, chi-square and binomial.</p>
-
-<figure class="code" data-runnable>
-<pre><code class="language-python">import numpy as np
-
-x = np.random.rand()       # one random sample from U[0, 1]
-y = np.random.rand(10)     # ten random samples from U[0, 1]
-z = np.random.rand(2, 3)   # a 2x3 matrix of samples from U[0, 1]
-
-print(x, y, z, sep="\n\n")</code></pre>
-</figure>
-
-      <div class="note">
-        <p><span class="label">Differs from the PDF.</span> The handout writes <code>np.random.rand((2, 3))</code>. <code>rand</code> takes each dimension as a separate argument, so the tuple version raises a <code>TypeError</code>. Use <code>np.random.rand(2, 3)</code>, or <code>np.random.random((2, 3))</code> if you prefer a tuple.</p>
-      </div>
-
-      <p>We can also draw from other distributions.</p>
-
-<figure class="code" data-runnable data-setup="numpy">
-<pre><code class="language-python"># 3x4 matrix from a normal distribution with mean 0 and standard deviation 10
-x_normal = np.random.normal(loc=0, scale=10, size=(3, 4))
-
-# 2x2 matrix from a beta distribution with parameters 0.5 and 0.75
-y_beta = np.random.beta(a=0.5, b=0.75, size=(2, 2))
-
-# 5x5 matrix from the standard normal distribution (mean 0, std 1)
-z_snormal = np.random.randn(5, 5)
-
-print(x_normal, y_beta, z_snormal, sep="\n\n")</code></pre>
-</figure>
-
-      <p>Random numbers from the uniform distribution on [0, 1] are usually all you need for any probabilistic analysis. For example, a sample from an arbitrary uniform distribution \(U(a, b)\) is</p>
-      <div class="math">$$U(a, b) = a + U(0, 1)\,(b - a)$$</div>
-
-      <div class="note">
-        <p><span class="label">Differs from the PDF.</span> The handout gives \((U(0,1) + a)(b - a)\). That expression spans \([a(b-a),\ (1+a)(b-a)]\), not \([a, b]\): for \(a = 0.6,\ b = 0.9\) it gives values between 0.18 and 0.48. Scale first, then shift, as above. Run the check below to see the difference.</p>
-      </div>
-
-<figure class="code" data-runnable data-setup="numpy">
-<pre><code class="language-python">a, b = 0.6, 0.9
-u = np.random.rand(100_000)
-
-correct = a + u * (b - a)
-handout = (u + a) * (b - a)
-
-print("a + U(b - a):     min %.3f  max %.3f" % (correct.min(), correct.max()))
-print("(U + a)(b - a):   min %.3f  max %.3f" % (handout.min(), handout.max()))</code></pre>
-</figure>
-
-      <p>In future lectures we will see how samples from the uniform distribution on [0, 1] can be transformed into any randomly distributed variable.</p>
-    </section>
-
-    <section id="processing">
-      <h2><span class="num">4</span>Processing the data</h2>
-      <p>We can apply a function to the random samples to simulate processing:</p>
-
-<figure class="code" data-runnable data-setup="numpy">
-<pre><code class="language-python">def process_data(x):
-    return x**2
-
-random_data = np.random.rand(5)
-processed_data = process_data(random_data)
-
-print(random_data)
-print(processed_data)</code></pre>
-</figure>
-
-      <p>For a more realistic problem, let’s write a function for the average speed on the two-lane highway from Example 2. The function takes four inputs that we sample randomly on every run, plus the two fixed values from the example as defaults. We also create a NumPy array to store every speed we calculate.</p>
-
+      <p>Let’s write a function for the average speed. The function takes four inputs that we sample randomly on every run, plus the two fixed values from the example as defaults. We also create a NumPy array to store every speed we calculate. This version uses a <code>for</code> loop, one trial at a time, which mirrors the five steps of section 4 directly.</p>
 <figure class="code" data-runnable data-setup="numpy">
 <pre><code class="language-python">def travel_speed(alpha, beta, n_cars, n_trucks, free_f=100, cap=3000):
     total_vehicles = n_cars + n_trucks
@@ -188,33 +707,11 @@ for i in range(1000):
 
 print(simulation_results.mean())</code></pre>
 </figure>
-
       <div class="note">
         <p><span class="label">Differs from the PDF.</span> The handout samples \(\alpha\) with <code>(np.random.rand() + 0.6) * 0.3</code>, which gives values in [0.18, 0.48] instead of [0.6, 0.9] (and similarly for \(\beta\)). With the corrected sampling the typical speed is about 52 km/h rather than the 78 km/h shown in the handout’s figure.</p>
-        <p>Run the cell a few times. The mean jumps around more than you might expect, because a normal distribution with \(\mu = 1200,\ \sigma = 486\) occasionally produces a negative number of cars. When \(N_c + N_t\) is close to zero the truck ratio \(p_t\) explodes, which creates the stray outliers you will see in the histogram.</p>
+        <p>Run the cell a few times. The mean jumps around more than you might expect, because a normal distribution with \(\mu = 1200,\ \sigma = 486\) occasionally produces a negative number of cars. When \(N_c + N_t\) is close to zero the truck ratio \(p_t\) explodes, which creates the stray outliers you will see in the histogram (section 6.4).</p>
       </div>
-    </section>
-
-    <section id="plotting">
-      <h2><span class="num">5</span>Plotting</h2>
-      <h3>5.1 Histogram of results</h3>
-      <p>One of the easiest ways to assess the results of a Monte Carlo simulation is a histogram:</p>
-
-<figure class="code" data-runnable data-setup="simulation">
-<pre><code class="language-python">import matplotlib.pyplot as plt
-
-plt.hist(simulation_results, bins=50, density=True, color='skyblue', edgecolor='black')
-plt.xlabel('Travel speed (km/h)')
-plt.ylabel('Density')
-plt.grid(True)
-plt.show()</code></pre>
-</figure>
-
-      <h3>5.2 Fitting a normal distribution</h3>
-      <p>Another way to assess the results is to fit a normal distribution to them and see how closely the histogram follows it. The normal distribution is not just “a distribution”: it describes the behaviour of many natural phenomena, so it is worth testing results against it.</p>
-      <p>The probability density function of the normal distribution with mean \(\mu\) and standard deviation \(\sigma\) is</p>
-      <div class="math">$$f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)$$</div>
-
+      <p>Plot the results as a histogram and compare them with a normal distribution of the same mean and standard deviation:</p>
 <figure class="code" data-runnable data-setup="simulation">
 <pre><code class="language-python">import matplotlib.pyplot as plt
 
@@ -231,51 +728,20 @@ plt.ylabel('Density')
 plt.grid(True)
 plt.show()</code></pre>
 </figure>
-
-      <h3>Try it: Example 1</h3>
-      <p>Simulate the relative speed of the two cars in Example 1. Moving in opposite directions, the relative speed is the sum of the two speeds. Write your own code in a live Python window first, then compare with the solution.</p>
-
-<figure class="code" data-runnable>
+      <div class="exercise">
+        <p><span class="label">Exercise 9.1.</span> Rewrite the highway simulation without a <code>for</code> loop: sample every input as an array of 10 000 values (for example <code>np.random.normal(1200, 486, 10_000)</code>) and call <code>travel_speed</code> once. Then find the median, the 5th and 95th percentiles and the outliers, and check how many trials have a negative number of cars.</p>
+<figure class="code sandbox" data-runnable>
 <pre><code class="language-python">import numpy as np
-import matplotlib.pyplot as plt
 
-n = 100_000
-# Sample the speed of each car here, then add them together.
-</code></pre>
+# Write your code here</code></pre>
 </figure>
-
-      <details class="solution">
-        <summary>Show a solution</summary>
-        <div class="inner">
-<figure class="code" data-runnable>
-<pre><code class="language-python">import numpy as np
-import matplotlib.pyplot as plt
-
-n = 100_000
-v1 = 65 + np.random.rand(n) * (132 - 65)
-v2 = 65 + np.random.rand(n) * (132 - 65)
-relative = v1 + v2
-
-print("mean %.1f km/h, range %.1f to %.1f km/h" % (relative.mean(), relative.min(), relative.max()))
-
-plt.hist(relative, bins=60, density=True, color='skyblue', edgecolor='black')
-plt.xlabel('Relative speed (km/h)')
-plt.ylabel('Density')
-plt.grid(True)
-plt.show()</code></pre>
-</figure>
-          <p>The sum of two independent uniform variables has a triangular distribution: here between 130 and 264 km/h, peaking at 197 km/h. You can derive this one by hand; the highway problem is where simulation earns its keep.</p>
-        </div>
-      </details>
+      </div>
     </section>
 
+<!-- =========================================================== 10 -->
     <section id="applications">
-      <h2><span class="num">6</span>Applications in engineering</h2>
-      <p>Monte Carlo simulation is used in many engineering applications, including structural reliability analysis, circuit noise modelling, project cost estimation and risk analysis in manufacturing.</p>
-    </section>
-
-    <section id="further-reading">
-      <h2><span class="num">7</span>Further reading</h2>
+      <h2><span class="num">10</span>Applications and further reading</h2>
+      <p>Monte Carlo simulation is used in many engineering applications, including structural reliability analysis, circuit noise and tolerance modelling, project cost and schedule estimation, flood risk assessment and risk analysis in manufacturing.</p>
       <p>Mathias, S.A. (2023). EIA and Uncertainty Management. In: <em>Hydraulics, Hydrology and Environmental Engineering</em>. Springer, Cham. <a href="https://doi.org/10.1007/978-3-031-41973-7_30">doi.org/10.1007/978-3-031-41973-7_30</a></p>
     </section>
 
@@ -293,6 +759,7 @@ plt.show()</code></pre>
     <nav class="pager" id="pager" aria-label="Other weeks"></nav>
   </main>
 </div>
+
 
 <footer>
   <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
@@ -319,6 +786,19 @@ for i in range(1000):
     simulation_results[i] = travel_speed(alpha, beta,
                                          cars, trucks)
 # --- end of simulation ---
+</script>
+
+<script type="text/plain" id="setup-beam" data-hint="The live window already has max_deflection, w, E, L and limit from the solution above.">import numpy as np
+
+def max_deflection(w, L, E, I):
+    return 5 * w * L**4 / (384 * E * I)
+
+np.random.seed(5)
+N = 100_000
+L, I = 6000, 3.375e8
+limit = L / 1000
+w = np.random.normal(20, 3, N)
+E = np.random.normal(200_000, 10_000, N)
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>

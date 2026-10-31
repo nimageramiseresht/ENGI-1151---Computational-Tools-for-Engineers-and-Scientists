@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 5 slides: Monte Carlo simulation | ENGI 1151</title>
+<meta name="description" content="ENGI 1151 week 5 presentation: Monte Carlo simulation, random numbers and reading simulation results, with runnable code and interactive widgets.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+<link rel="stylesheet" href="assets/slides.css">
+<style>
+  /* week 5 widgets and layouts */
+  .cols3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: start; }
+  .ucard { border: 1.5px solid var(--grid); border-radius: 6px; padding: 10px 14px; font-size: .68em; }
+  .ucard h3 { font-size: 1.15em; margin: 0 0 .2em; color: var(--accent); }
+  .ucard .eg { color: var(--muted); font-size: .92em; }
+  .ucard.hint { border-style: dashed; }
+  .formula { font-family: var(--serif); font-size: .8em; text-align: center; margin: 4px 0 8px !important; }
+  .formula i { font-style: italic; }
+  .wbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 8px; }
+  .wbar .wbtn.run { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .wstat { font: 17px/1.5 var(--mono); color: var(--ink); }
+  .wstat b { color: var(--accent); }
+  .wstat .muted { color: var(--muted); }
+  table.runs { border-collapse: collapse; font: 16px/1.3 var(--mono); width: 100%; }
+  table.runs th, table.runs td { border: none; border-bottom: 1px solid var(--grid); padding: 3px 8px; text-align: right; }
+  table.runs th { color: var(--muted); font-weight: 500; border-bottom: 2px solid var(--ink); }
+  table.runs tr.new td { background: var(--accent-soft); }
+  .lcg-in { display: flex; gap: 12px; flex-wrap: wrap; font: 18px var(--mono); margin: 0 0 6px; }
+  .lcg-in label { display: inline-flex; gap: 5px; align-items: center; }
+  .lcg-in input { font: 18px var(--mono); width: 6.2em; padding: 4px 6px; border: 1.5px solid var(--accent); border-radius: 4px; color: var(--ink); background: var(--paper); }
+  .lcg-seq { display: flex; flex-wrap: wrap; gap: 4px; font: 16px var(--mono); margin: 0 0 6px; }
+  .lcg-seq span { border: 1.5px solid var(--ink); min-width: 2.2em; padding: 3px 5px; text-align: center; }
+  .lcg-seq span.rep { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .lcg-seq span.first { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .reveal table.t.fn td:first-child code { font-size: .9em; }
+  .reveal table.t.compact { font-size: .58em; }
+  .reveal table.t.compact td, .reveal table.t.compact th { padding: .26em .45em; }
+  .task ol li { margin: .12em 0; }
+  .dg .bar { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  .dg .bar.bad { fill: #F6DCDA; stroke: var(--bad); }
+  .dg .dot { fill: var(--accent); }
+  .dg .dot.out { fill: var(--bad); }
+  .dg .line-bad { stroke: var(--bad); stroke-width: 2.2; fill: none; }
+  .dg .line-good { stroke: var(--good); stroke-width: 2.2; fill: none; }
+  .dg .fill-bad { fill: var(--bad); }
+  .dg .area { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .dg .area2 { fill: #E4EEF8; stroke: #1D5FA3; stroke-width: 2; }
+  .dg .blue { fill: #1D5FA3; }
+  .ctl.sm { font-size: 17px; margin: 0 0 4px; }
+  .ctl.sm input[type="range"] { width: 220px; }
+</style>
+</head>
+<body data-py-packages="numpy,matplotlib">
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ 1 -->
+<section class="title-slide" style="display:flex;flex-direction:column;justify-content:center">
+  <p class="course">ENGI 1151 · Computational Tools for Engineers and Scientists · Week 5</p>
+  <h1>Monte Carlo simulation</h1>
+  <p class="byline">Dr Nima Gerami Seresht · Department of Engineering · Durham University</p>
+  <p class="py-status" data-py-status>Python: loading…</p>
+  <p class="small">Full notes, worked code and the practice notebook: <a href="week5.html">week5.html</a></p>
+  <aside class="notes">
+Welcome to week 5. We now put together everything from weeks 1 to 4 (variables, loops, NumPy arrays, plots and functions) to answer a question engineers ask every day: what happens when the inputs are uncertain?
+The lecture has two parts. Part A is the theory: what Monte Carlo simulation is, types of uncertainty, random numbers, and how to read the results (histograms and statistics). Part B is one engineering problem that we code together in about 20 minutes.
+Code boxes are live Python with NumPy and Matplotlib. Check the status line says ready before starting.
+  </aside>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">A</p>
+  <h1>Part A<br>The theory of Monte Carlo simulation</h1>
+  <aside class="notes">Part A: what Monte Carlo simulation is, why we need it, random numbers, and how to read the results.</aside>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+  <h2><span class="num">1</span>What is Monte Carlo simulation?</h2>
+  <p class="terms"><span>Monte Carlo simulation</span><span>random sampling</span><span>trial</span></p>
+  <div class="cols wide-left">
+    <div class="stack" style="font-size:.74em">
+      <p>A computational method that uses <b>repeated random sampling</b> to estimate a result.</p>
+      <ul>
+        <li>Run the same calculation <b>thousands of times</b>, each time with inputs drawn <b>at random</b>.</li>
+        <li>Study <b>all the answers together</b>: their range, most likely value, spread.</li>
+        <li>Works for any model you can write as code.</li>
+      </ul>
+      <p class="small">Named after the Monte Carlo casino in Monaco: it relies on chance. Developed in the 1940s by Stanislaw Ulam and John von Neumann to study neutron diffusion.</p>
+      <p class="callout" style="font-size:.9em">Warm-up: estimate <b>π</b> by throwing random points at a square. The share that lands inside the quarter circle is π/4.</p>
+    </div>
+    <div class="stack">
+      <div class="wbar"><button type="button" class="wbtn run" data-pi="1">+1</button><button type="button" class="wbtn run" data-pi="100">+100</button><button type="button" class="wbtn run" data-pi="1000">+1 000</button><button type="button" class="wbtn run" data-pi="10000">+10 000</button><button type="button" class="wbtn" data-pi="0">Reset</button></div>
+      <div class="cols" style="grid-template-columns:340px minmax(0,1fr);gap:16px">
+        <svg class="dg" id="pi-svg" viewBox="0 0 300 300" role="img" aria-label="Random points in a unit square; points inside the quarter circle are coloured."></svg>
+        <div class="wstat" id="pi-out" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+Monte Carlo simulation is a technique that uses randomness to solve problems, even problems that are deterministic in principle. Instead of solving with an exact formula, we repeat a calculation many times with random inputs and approximate the answer from all the results.
+The name comes from the Monte Carlo casino because the method relies on chance. It was developed in the 1940s on the Manhattan Project by Stanislaw Ulam and John von Neumann to study neutron diffusion.
+Warm-up widget: points are thrown uniformly at random into the unit square. The quarter circle has area π/4 and the square has area 1, so the share of points inside the circle approaches π/4. Four times that share estimates π.
+Click +1 a few times, then +100, +1 000, +10 000. With few points the estimate jumps around; with many it settles near 3.14. That is the whole idea of Monte Carlo: more trials, better estimate.
+Note the estimate improves slowly: 100 times more points gives only about 10 times smaller error (error shrinks like 1/√N).
+  </aside>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+  <h2><span class="num">1</span>Why do we need it?</h2>
+  <p class="terms"><span>uncertainty</span><span>best guess</span><span>risk</span></p>
+  <div class="cols">
+    <div class="stack" style="font-size:.72em">
+      <p>Engineering inputs are <b>rarely known exactly</b>: loads, material properties, traffic, durations, costs.</p>
+      <p>One calculation with one <b>best guess</b> per input gives one answer, but not <b>how far off</b> it could be.</p>
+      <p>The questions we really need to answer:</p>
+      <ul>
+        <li>What <b>range</b> of outcomes is possible?</li>
+        <li>What is the <b>most likely</b> outcome?</li>
+        <li>What is the <b>chance of exceeding a limit</b>?</li>
+      </ul>
+      <p>Exact probability maths only works for simple models. Monte Carlo works for <b>any model</b> you can code.</p>
+    </div>
+    <svg class="dg" viewBox="0 0 540 400" role="img" aria-label="A best-guess beam calculation gives 5.0 mm, below the 6 mm limit. A Monte Carlo simulation of the same beam gives a histogram of deflections; about 11 per cent of them exceed 6 mm.">
+      <rect class="box" x="4" y="4" width="532" height="78" rx="8"/>
+      <text x="20" y="32" font-size="16" font-weight="700">Best guess: one calculation</text>
+      <text x="20" y="62" font-size="16">w = 20 N/mm, E = 200 kN/mm² → δ = 5.0 mm</text>
+      <text x="520" y="62" font-size="16" text-anchor="end" class="good" font-weight="700">✓ &lt; 6 mm</text>
+      <text x="20" y="118" font-size="16" font-weight="700">Monte Carlo: 100 000 calculations</text>
+      <text x="20" y="140" font-size="14" class="muted">w and E vary randomly, as they do in reality</text>
+      <rect class="bar" x="30.0" y="349.8" width="14.0" height="0.2"/><rect class="bar" x="44.0" y="349.7" width="14.0" height="0.3"/><rect class="bar" x="58.0" y="349.1" width="14.0" height="0.9"/><rect class="bar" x="72.0" y="348.0" width="14.0" height="2.0"/><rect class="bar" x="86.0" y="345.0" width="14.0" height="5.0"/><rect class="bar" x="100.0" y="341.4" width="14.0" height="8.6"/><rect class="bar" x="114.0" y="333.0" width="14.0" height="17.0"/><rect class="bar" x="128.0" y="321.1" width="14.0" height="28.9"/><rect class="bar" x="142.0" y="303.9" width="14.0" height="46.1"/><rect class="bar" x="156.0" y="282.7" width="14.0" height="67.3"/><rect class="bar" x="170.0" y="256.2" width="14.0" height="93.8"/><rect class="bar" x="184.0" y="223.9" width="14.0" height="126.1"/><rect class="bar" x="198.0" y="198.6" width="14.0" height="151.4"/><rect class="bar" x="212.0" y="180.3" width="14.0" height="169.7"/><rect class="bar" x="226.0" y="170.1" width="14.0" height="179.9"/><rect class="bar" x="240.0" y="170.0" width="14.0" height="180.0"/><rect class="bar" x="254.0" y="183.1" width="14.0" height="166.9"/><rect class="bar" x="268.0" y="201.8" width="14.0" height="148.2"/><rect class="bar" x="282.0" y="230.4" width="14.0" height="119.6"/><rect class="bar" x="296.0" y="259.5" width="14.0" height="90.5"/><rect class="bar bad" x="310.0" y="282.8" width="14.0" height="67.2"/><rect class="bar bad" x="324.0" y="301.5" width="14.0" height="48.5"/><rect class="bar bad" x="338.0" y="318.7" width="14.0" height="31.3"/><rect class="bar bad" x="352.0" y="331.0" width="14.0" height="19.0"/><rect class="bar bad" x="366.0" y="337.8" width="14.0" height="12.2"/><rect class="bar bad" x="380.0" y="343.7" width="14.0" height="6.3"/><rect class="bar bad" x="394.0" y="346.2" width="14.0" height="3.8"/><rect class="bar bad" x="408.0" y="348.0" width="14.0" height="2.0"/><rect class="bar bad" x="422.0" y="349.2" width="14.0" height="0.8"/><rect class="bar bad" x="436.0" y="349.7" width="14.0" height="0.3"/><rect class="bar bad" x="450.0" y="349.7" width="14.0" height="0.3"/><rect class="bar bad" x="464.0" y="349.9" width="14.0" height="0.1"/><rect class="bar bad" x="478.0" y="350.0" width="14.0" height="0.0"/><rect class="bar bad" x="492.0" y="350.0" width="14.0" height="0.0"/><rect class="bar bad" x="506.0" y="350.0" width="14.0" height="0.0"/><path class="line" d="M30 350 H 520"/><path class="line" d="M30.0 350 v6"/><text x="30.0" y="374" font-size="14" text-anchor="middle">2</text><path class="line" d="M100.0 350 v6"/><text x="100.0" y="374" font-size="14" text-anchor="middle">3</text><path class="line" d="M170.0 350 v6"/><text x="170.0" y="374" font-size="14" text-anchor="middle">4</text><path class="line" d="M240.0 350 v6"/><text x="240.0" y="374" font-size="14" text-anchor="middle">5</text><path class="line" d="M310.0 350 v6"/><text x="310.0" y="374" font-size="14" text-anchor="middle">6</text><path class="line" d="M380.0 350 v6"/><text x="380.0" y="374" font-size="14" text-anchor="middle">7</text><path class="line" d="M450.0 350 v6"/><text x="450.0" y="374" font-size="14" text-anchor="middle">8</text><path class="line" d="M520.0 350 v6"/><text x="520.0" y="374" font-size="14" text-anchor="middle">9</text><text x="275" y="396" font-size="14" text-anchor="middle" class="muted">mid-span deflection δ (mm)</text><path class="line-bad" d="M310.0 154 V 350" stroke-dasharray="7 5"/><text x="316.0" y="170" font-size="14" class="bad">limit 6 mm</text>
+      <text x="520" y="200" font-size="16" text-anchor="end" class="bad" font-weight="700">≈ 11 %</text><text x="520" y="220" font-size="14" text-anchor="end" class="bad">exceed 6 mm</text>
+    </svg>
+  </div>
+  <aside class="notes">
+Almost every input in an engineering calculation is uncertain: the load on a floor, the stiffness of steel, the number of vehicles on a road, how long a task takes, how much it costs.
+The usual approach is to plug in one best-guess value per input. That gives one answer, but tells us nothing about how wrong it could be.
+Example on the right (we will code this in Part B): a floor beam. With the average load and average stiffness, the deflection is 5.0 mm, comfortably below a 6 mm limit. But load and stiffness vary. Simulating 100 000 beams with random load and stiffness shows that about 11 per cent of them deflect more than 6 mm. The best guess hid a 1-in-9 chance of failing the limit.
+The questions we care about are about the whole distribution: range, most likely value, chance of exceeding a limit.
+For simple cases probability theory gives exact answers; for realistic models it quickly becomes impossible. Monte Carlo works for any model you can write as code.
+  </aside>
+</section>
+
+<!-- ============================================================ 5 -->
+<section>
+  <h2><span class="num">2</span>Types of uncertainty</h2>
+  <p class="terms"><span>deterministic</span><span>stochastic</span><span>resolutional (fuzzy)</span></p>
+  <div class="cols3">
+    <div class="ucard">
+      <h3>Deterministic</h3>
+      <svg class="dg" viewBox="0 0 240 130" role="img" aria-label="A single spike at one value.">
+        <path class="line" d="M10 110 H 230"/>
+        <path class="line-acc" d="M120 110 V 14" stroke-width="4"/>
+        <circle cx="120" cy="14" r="5" class="fill-acc"/>
+        <text x="120" y="128" font-size="13" text-anchor="middle">one exact value</text>
+      </svg>
+      <p>The value is <b>known exactly</b>. The same inputs always give the same output.</p>
+      <p class="eg">e.g. the span of a beam set by the design, L = 6 m; g = 9.81 m/s²</p>
+    </div>
+    <div class="ucard">
+      <h3>Stochastic (random)</h3>
+      <svg class="dg" viewBox="0 0 240 130" role="img" aria-label="A bell-shaped probability distribution.">
+        <path class="line" d="M10 110 H 230"/>
+        <g transform="translate(10,10)"><path class="area" d="M0.0 99.5 L6.9 99.0 L13.7 98.2 L20.6 96.9 L27.5 94.8 L34.4 91.8 L41.3 87.5 L48.1 81.8 L55.0 74.4 L61.9 65.5 L68.8 55.2 L75.6 44.2 L82.5 33.2 L89.4 23.2 L96.2 15.1 L103.1 9.8 L110.0 8.0 L116.9 9.8 L123.8 15.1 L130.6 23.2 L137.5 33.2 L144.4 44.2 L151.2 55.2 L158.1 65.5 L165.0 74.4 L171.9 81.8 L178.8 87.5 L185.6 91.8 L192.5 94.8 L199.4 96.9 L206.2 98.2 L213.1 99.0 L220.0 99.5 Z"/></g>
+        <text x="120" y="128" font-size="13" text-anchor="middle">a probability distribution</text>
+      </svg>
+      <p>The value <b>varies</b> from one occurrence to the next. We describe it with a <b>probability distribution</b>.</p>
+      <p class="eg">e.g. daily traffic volume, wind speed, the strength of concrete cubes</p>
+    </div>
+    <div class="ucard hint">
+      <h3>Resolutional (fuzzy)</h3>
+      <svg class="dg" viewBox="0 0 240 130" role="img" aria-label="A triangular fuzzy number: membership rises from 0 at 90 to 1 at 100 and falls back to 0 at 110.">
+        <path class="line" d="M30 110 H 230 M30 110 V 10"/>
+        <path class="area2" d="M60 110 L130 18 L200 110 Z"/>
+        <text x="24" y="22" font-size="12" text-anchor="end">1</text><text x="24" y="112" font-size="12" text-anchor="end">0</text>
+        <text x="14" y="70" font-size="12" class="blue">μ</text>
+        <text x="60" y="126" font-size="12" text-anchor="middle">90</text><text x="130" y="126" font-size="12" text-anchor="middle">100</text><text x="200" y="126" font-size="12" text-anchor="middle">110</text>
+      </svg>
+      <p>The value is <b>vague</b>, given in words: “about 100 km/h”. A <b>fuzzy number</b> gives each value a membership between 0 and 1.</p>
+      <p class="eg">e.g. expert judgement: “the delay will be about two weeks”. Just a hint: not covered further in this module.</p>
+    </div>
+  </div>
+  <aside class="notes">
+We meet three kinds of uncertainty in engineering models.
+Deterministic: no uncertainty. The value is known exactly, and the same inputs always give the same output. A design dimension such as the span of a beam, or a physical constant such as g. Everything we have computed so far in this module has been deterministic.
+Stochastic, or random: the value changes from one occurrence to the next in a way we cannot predict exactly, but we can describe how likely each value is with a probability distribution. Traffic volume, wind speed, concrete strength measured on test cubes. This is the uncertainty Monte Carlo simulation handles, and today's topic.
+Resolutional, or fuzzy (just a hint): the value is not random but imprecise, because it is described in words or by limited resolution: "about 100 km/h". Fuzzy set theory represents it with a fuzzy number; the triangular fuzzy number shown gives 100 full membership (1) and values further away less membership, down to 0 at 90 and 110. Note the vertical axis is membership, not probability. Fuzzy methods are beyond this module; I mention them so you know the word.
+  </aside>
+</section>
+
+<!-- ============================================================ 6 -->
+<section>
+  <h2><span class="num">2</span>Randomness is everywhere</h2>
+  <p class="terms"><span>variability</span><span>stochastic analysis</span></p>
+  <p class="callout" style="font-size:.7em;margin-bottom:12px">Almost every real system behaves <b>randomly</b> to some degree. Treating its inputs as random variables (<b>stochastic analysis</b>) describes it best, and Monte Carlo simulation is the most general way to do it.</p>
+  <table class="t">
+    <thead><tr><th>Field</th><th>Random inputs</th><th>Question a simulation answers</th></tr></thead>
+    <tbody>
+      <tr><td>Structural</td><td>wind, snow and floor loads; steel and concrete strength</td><td>chance of failure or of excessive deflection</td></tr>
+      <tr><td>Transport</td><td>traffic volume, vehicle speeds, share of trucks</td><td>travel time, queue length at a junction</td></tr>
+      <tr><td>Manufacturing</td><td>dimensions within tolerance, machine breakdowns</td><td>will the parts fit? scrap rate</td></tr>
+      <tr><td>Electrical</td><td>resistor and capacitor tolerances, noise</td><td>range of the output voltage</td></tr>
+      <tr><td>Water and environment</td><td>rainfall, river flow</td><td>flood level exceeded once in 100 years</td></tr>
+      <tr><td>Project management</td><td>activity durations, material prices</td><td>chance of finishing on time and on budget</td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">
+Hardly anything in engineering is truly deterministic. Loads change from day to day, two steel beams from the same mill have slightly different stiffness, traffic depends on the weather, rainfall is random, and project tasks rarely take exactly the planned time.
+Stochastic analysis treats these inputs as random variables with probability distributions. Monte Carlo simulation is the most general tool for stochastic analysis, because it works with any model, however complicated.
+Go through a few rows and ask the class for examples from their own discipline. Structural reliability, circuit tolerance analysis, project cost estimation and flood risk all routinely use Monte Carlo simulation.
+  </aside>
+</section>
+
+<!-- ============================================================ 7 -->
+<section>
+  <h2><span class="num">3</span>Two cars, step 1: crisp numbers</h2>
+  <p class="terms"><span>crisp number</span><span>relative speed</span></p>
+  <svg class="dg" viewBox="0 0 1180 300" role="img" aria-label="Car A drives right at 90 km/h and car B drives left at 110 km/h. Their relative speed is 90 plus 110, which is 200 km/h.">
+    <rect x="0" y="40" width="1180" height="150" fill="#E9ECF1"/>
+    <path d="M0 115 H 1180" stroke="#fff" stroke-width="4" stroke-dasharray="40 30"/>
+    <g transform="translate(250,58)">
+      <rect class="box-acc" x="0" y="0" width="150" height="46" rx="12"/><circle cx="34" cy="48" r="11" class="fill-ink"/><circle cx="116" cy="48" r="11" class="fill-ink"/>
+      <text x="75" y="30" font-size="20" text-anchor="middle" class="acc" font-weight="700">car A</text>
+      <path class="line-acc" d="M165 23 H 245"/><path class="fill-acc" d="M258 23 l-14 -8 v16 z"/>
+    </g>
+    <g transform="translate(780,128)">
+      <rect x="0" y="0" width="150" height="46" rx="12" style="fill:#E4EEF8;stroke:#1D5FA3;stroke-width:1.5"/><circle cx="34" cy="48" r="11" class="fill-ink"/><circle cx="116" cy="48" r="11" class="fill-ink"/>
+      <text x="75" y="30" font-size="20" text-anchor="middle" class="blue" font-weight="700">car B</text>
+      <path d="M-15 23 H -95" stroke="#1D5FA3" stroke-width="2.2"/><path d="M-108 23 l14 -8 v16 z" class="blue"/>
+    </g>
+    <text x="325" y="30" font-size="22" text-anchor="middle" class="acc" font-weight="700">v_A = 90 km/h</text>
+    <text x="855" y="230" font-size="22" text-anchor="middle" class="blue" font-weight="700">v_B = 110 km/h</text>
+    <text x="590" y="280" font-size="28" text-anchor="middle">relative speed  r = v_A + v_B = 90 + 110 = <tspan font-weight="700">200 km/h</tspan></text>
+  </svg>
+  <div class="cols" style="font-size:.78em;margin-top:8px">
+    <p>Two cars travel in <b>opposite directions</b>. Their relative speed is the <b>sum</b> of their speeds.</p>
+    <p>With <b>crisp</b> (exact) numbers this is deterministic: one input, one answer. But does a driver ever hold <b>exactly</b> 90 km/h?</p>
+  </div>
+  <aside class="notes">
+We will follow one simple example through the whole of Part A, and make it more realistic step by step.
+Two cars drive towards each other. Their relative speed, the speed at which the gap between them closes, is the sum of the two speeds.
+Step 1: crisp numbers, meaning single exact values. Car A at 90 km/h, car B at 110 km/h: the relative speed is 200 km/h. Deterministic, one answer, done.
+But no driver holds exactly 90 km/h, and we do not know in advance how fast a particular driver will go. The speeds are random. What happens to the answer then?
+  </aside>
+</section>
+
+<!-- ============================================================ 8 -->
+<section>
+  <h2><span class="num">3</span>Two cars, step 2: both speeds uniform</h2>
+  <p class="terms"><span>uniform distribution</span><span>interval arithmetic</span></p>
+  <svg class="dg" viewBox="0 0 1180 320" role="img" aria-label="Two uniform distributions between 65 and 132 km/h are added. Interval arithmetic gives the range 130 to 264 km/h. The actual distribution of the sum is a triangle, peaking at 197 km/h.">
+    <g transform="translate(20,40)">
+      <path class="line" d="M0 160 H 260"/>
+      <rect class="area" x="40" y="60" width="180" height="100"/>
+      <text x="40" y="184" font-size="15" text-anchor="middle">65</text><text x="220" y="184" font-size="15" text-anchor="middle">132</text>
+      <text x="130" y="44" font-size="18" text-anchor="middle" class="acc" font-weight="700">v_A ~ U(65, 132)</text>
+      <text x="130" y="212" font-size="14" text-anchor="middle" class="muted">every speed equally likely</text>
+    </g>
+    <text x="320" y="160" font-size="40" text-anchor="middle">+</text>
+    <g transform="translate(360,40)">
+      <path class="line" d="M0 160 H 260"/>
+      <rect class="area2" x="40" y="60" width="180" height="100"/>
+      <text x="40" y="184" font-size="15" text-anchor="middle">65</text><text x="220" y="184" font-size="15" text-anchor="middle">132</text>
+      <text x="130" y="44" font-size="18" text-anchor="middle" class="blue" font-weight="700">v_B ~ U(65, 132)</text>
+    </g>
+    <text x="660" y="160" font-size="40" text-anchor="middle">=</text>
+    <g transform="translate(700,40)">
+      <path class="line" d="M0 160 H 460"/>
+      <path class="area" style="fill:#EEE;stroke:var(--ink)" d="M40 160 L230 20 L420 160 Z"/>
+      <path class="line-muted" d="M230 20 V 160"/>
+      <text x="40" y="184" font-size="15" text-anchor="middle">130</text><text x="230" y="184" font-size="15" text-anchor="middle">197</text><text x="420" y="184" font-size="15" text-anchor="middle">264</text>
+      <text x="230" y="12" font-size="18" text-anchor="middle" font-weight="700">r: triangular, peak at 197</text>
+      <path class="line-acc" d="M40 222 H 420"/><path class="fill-acc" d="M40 222 l12 -7 v14 z M420 222 l-12 -7 v14 z"/>
+      <text x="230" y="248" font-size="15" text-anchor="middle" class="acc">interval arithmetic:</text><text x="230" y="268" font-size="15" text-anchor="middle" class="acc">[65, 132] + [65, 132] = [130, 264]</text>
+    </g>
+  </svg>
+  <div class="cols" style="font-size:.78em;margin-top:6px">
+    <p><b>Interval arithmetic</b> adds the limits: the range is 130 to 264 km/h. But it says nothing about which values are <b>likely</b>.</p>
+    <p>Probability theory gives the full answer: a <b>triangle</b>. Values near 197 km/h are common, the extremes are rare. Still solvable <b>by hand</b>.</p>
+  </div>
+  <aside class="notes">
+Step 2: we only know that each car drives somewhere between 65 and 132 km/h, any speed in between being equally likely. That is the uniform distribution U(65, 132): a flat rectangle.
+Interval arithmetic simply adds the limits: the slowest pair gives 130, the fastest pair 264 km/h. Useful, but it treats 130 and 197 as equally plausible, which they are not.
+Why a triangle? To get 130 both cars must be at their slowest: only one combination. To get 197 there are many combinations (65 + 132, 100 + 97, 132 + 65, …). So middle values are much more likely than extremes.
+The sum of two independent uniform variables is exactly triangular. This can be derived by hand with a convolution integral, so a closed-form answer still exists. Next step it does not.
+  </aside>
+</section>
+
+<!-- ============================================================ 9 -->
+<section>
+  <h2><span class="num">3</span>Two cars, step 3: realistic distributions</h2>
+  <p class="terms"><span>beta distribution</span><span>normal distribution</span><span>closed form</span></p>
+  <svg class="dg" viewBox="0 0 1180 260" role="img" aria-label="Car A has a skewed beta-based distribution between 60 and 140 km/h; car B has a normal distribution with mean 100 and standard deviation 12. The distribution of their sum is unknown.">
+    <g transform="translate(30,40)">
+      <g transform="translate(20,40)"><path class="area" d="M0.0 120.0 L6.0 92.2 L12.0 69.9 L18.0 52.4 L24.0 39.2 L30.0 29.8 L36.0 23.6 L42.0 20.2 L48.0 19.1 L54.0 20.1 L60.0 22.6 L66.0 26.4 L72.0 31.3 L78.0 36.9 L84.0 43.1 L90.0 49.5 L96.0 56.2 L102.0 62.8 L108.0 69.3 L114.0 75.6 L120.0 81.5 L126.0 87.1 L132.0 92.2 L138.0 96.9 L144.0 101.1 L150.0 104.8 L156.0 108.0 L162.0 110.7 L168.0 113.0 L174.0 114.9 L180.0 116.4 L186.0 117.6 L192.0 118.4 L198.0 119.0 L204.0 119.5 L210.0 119.7 L216.0 119.9 L222.0 120.0 L228.0 120.0 L234.0 120.0 L240.0 120.0 Z"/><path class="line" d="M0 120 H 240"/></g>
+      <text x="20" y="184" font-size="14" text-anchor="middle">60</text><text x="140" y="184" font-size="14" text-anchor="middle">100</text><text x="260" y="184" font-size="14" text-anchor="middle">140</text>
+      <text x="140" y="16" font-size="18" text-anchor="middle" class="acc" font-weight="700">v_A = 60 + 80 · Beta(2, 5)</text>
+      <text x="140" y="38" font-size="14" text-anchor="middle" class="muted">cautious driver: mostly 70–90 km/h</text>
+    </g>
+    <text x="350" y="150" font-size="40" text-anchor="middle">+</text>
+    <g transform="translate(390,40)">
+      <g transform="translate(20,40)"><path class="area2" d="M0.0 119.6 L6.0 119.3 L12.0 118.8 L18.0 118.0 L24.0 116.9 L30.0 115.2 L36.0 112.8 L42.0 109.6 L48.0 105.2 L54.0 99.7 L60.0 92.8 L66.0 84.6 L72.0 75.1 L78.0 64.7 L84.0 53.8 L90.0 42.9 L96.0 32.6 L102.0 23.7 L108.0 16.7 L114.0 12.3 L120.0 10.8 L126.0 12.3 L132.0 16.7 L138.0 23.7 L144.0 32.6 L150.0 42.9 L156.0 53.8 L162.0 64.7 L168.0 75.1 L174.0 84.6 L180.0 92.8 L186.0 99.7 L192.0 105.2 L198.0 109.6 L204.0 112.8 L210.0 115.2 L216.0 116.9 L222.0 118.0 L228.0 118.8 L234.0 119.3 L240.0 119.6 Z"/><path class="line" d="M0 120 H 240"/></g>
+      <text x="20" y="184" font-size="14" text-anchor="middle">60</text><text x="140" y="184" font-size="14" text-anchor="middle">100</text><text x="260" y="184" font-size="14" text-anchor="middle">140</text>
+      <text x="140" y="16" font-size="18" text-anchor="middle" class="blue" font-weight="700">v_B ~ Normal(100, 12)</text>
+      <text x="140" y="38" font-size="14" text-anchor="middle" class="muted">mean 100 km/h, std 12 km/h</text>
+    </g>
+    <text x="710" y="150" font-size="40" text-anchor="middle">=</text>
+    <g transform="translate(760,60)">
+      <rect class="box" x="0" y="10" width="390" height="150" rx="10" stroke-dasharray="6 5"/>
+      <text x="195" y="96" font-size="72" text-anchor="middle" class="muted">?</text>
+      <text x="195" y="140" font-size="15" text-anchor="middle" class="muted">no neat formula</text>
+    </g>
+  </svg>
+  <div class="cols" style="font-size:.74em">
+    <div>
+      <p>The exact answer needs a convolution integral:</p>
+      <p class="formula" style="font-size:1.05em"><i>f<sub>R</sub></i>(<i>r</i>) = ∫ <i>f<sub>A</sub></i>(<i>v</i>) · <i>f<sub>B</sub></i>(<i>r</i> − <i>v</i>) d<i>v</i></p>
+      <p class="small">For a beta plus a normal there is no closed-form result. With more inputs or a non-linear model it gets hopeless.</p>
+    </div>
+    <p class="callout" style="align-self:center">Too complex for pencil and paper → <b>compute</b> it instead: let the computer repeat the experiment thousands of times. That is <b>Monte Carlo simulation</b>.</p>
+  </div>
+  <aside class="notes">
+Step 3: realistic speeds. Car A is a cautious driver: speed between 60 and 140 km/h but mostly around 70 to 90. We model that with a beta distribution, which lives between 0 and 1, scaled to 60 + 80 × Beta(2, 5). It is skewed: a long tail towards high speeds.
+Car B follows a normal distribution with mean 100 km/h and standard deviation 12 km/h: the familiar bell curve.
+What is the distribution of the sum? In theory it is the convolution integral shown. In practice, for a beta plus a normal there is no closed-form answer; you would need numerical integration. And this is only two inputs added together; a real model has many inputs combined non-linearly.
+So we stop trying to derive the answer analytically and compute it: simulate thousands of pairs of drivers and look at the results. That is Monte Carlo simulation. We will code exactly this example at the end of Part A.
+  </aside>
+</section>
+
+<!-- ============================================================ 10 -->
+<section>
+  <h2><span class="num">4</span>The Monte Carlo process</h2>
+  <p class="terms"><span>input distributions</span><span>model</span><span>output distribution</span></p>
+  <svg class="dg" viewBox="0 0 1180 420" role="img" aria-label="Monte Carlo process: random samples are drawn from the input distributions, the model computes one output for each set of inputs, this is repeated N times, and the collection of outputs forms a new distribution, shown as a histogram.">
+    <text x="130" y="24" font-size="17" text-anchor="middle" font-weight="700">1 · Inputs</text>
+    <rect class="box" x="10" y="40" width="240" height="250" rx="10"/>
+    <g transform="translate(30,60) scale(0.83,0.6)"><path class="area" d="M0.0 120.0 L6.0 92.2 L12.0 69.9 L18.0 52.4 L24.0 39.2 L30.0 29.8 L36.0 23.6 L42.0 20.2 L48.0 19.1 L54.0 20.1 L60.0 22.6 L66.0 26.4 L72.0 31.3 L78.0 36.9 L84.0 43.1 L90.0 49.5 L96.0 56.2 L102.0 62.8 L108.0 69.3 L114.0 75.6 L120.0 81.5 L126.0 87.1 L132.0 92.2 L138.0 96.9 L144.0 101.1 L150.0 104.8 L156.0 108.0 L162.0 110.7 L168.0 113.0 L174.0 114.9 L180.0 116.4 L186.0 117.6 L192.0 118.4 L198.0 119.0 L204.0 119.5 L210.0 119.7 L216.0 119.9 L222.0 120.0 L228.0 120.0 L234.0 120.0 L240.0 120.0 Z"/></g>
+    <text x="30" y="148" font-size="14" class="acc">v_A</text>
+    <g transform="translate(30,170) scale(0.83,0.6)"><path class="area2" d="M0.0 119.6 L6.0 119.3 L12.0 118.8 L18.0 118.0 L24.0 116.9 L30.0 115.2 L36.0 112.8 L42.0 109.6 L48.0 105.2 L54.0 99.7 L60.0 92.8 L66.0 84.6 L72.0 75.1 L78.0 64.7 L84.0 53.8 L90.0 42.9 L96.0 32.6 L102.0 23.7 L108.0 16.7 L114.0 12.3 L120.0 10.8 L126.0 12.3 L132.0 16.7 L138.0 23.7 L144.0 32.6 L150.0 42.9 L156.0 53.8 L162.0 64.7 L168.0 75.1 L174.0 84.6 L180.0 92.8 L186.0 99.7 L192.0 105.2 L198.0 109.6 L204.0 112.8 L210.0 115.2 L216.0 116.9 L222.0 118.0 L228.0 118.8 L234.0 119.3 L240.0 119.6 Z"/></g>
+    <text x="30" y="258" font-size="14" class="blue">v_B</text>
+    <text x="130" y="282" font-size="13" text-anchor="middle" class="muted">probability distributions</text>
+    <path class="line" d="M252 165 H 296"/><path class="fill-ink" d="M306 165 l-11 -7 v14 z"/>
+    <text x="400" y="24" font-size="17" text-anchor="middle" font-weight="700">2 · Random sample</text>
+    <rect class="box-code" x="308" y="110" width="184" height="110" rx="10"/>
+    <text x="400" y="152" font-size="18" text-anchor="middle" class="acc">v_A = 78.4</text>
+    <text x="400" y="190" font-size="18" text-anchor="middle" class="blue">v_B = 106.1</text>
+    <path class="line" d="M494 165 H 536"/><path class="fill-ink" d="M546 165 l-11 -7 v14 z"/>
+    <text x="640" y="24" font-size="17" text-anchor="middle" font-weight="700">3 · Model (process)</text>
+    <rect class="box-acc" x="548" y="110" width="184" height="110" rx="10"/>
+    <text x="640" y="160" font-size="20" text-anchor="middle" font-weight="700">r = v_A + v_B</text>
+    <text x="640" y="192" font-size="14" text-anchor="middle" class="muted">any equation or code</text>
+    <path class="line" d="M734 165 H 776"/><path class="fill-ink" d="M786 165 l-11 -7 v14 z"/>
+    <rect class="box" x="788" y="130" width="130" height="70" rx="10"/>
+    <text x="853" y="160" font-size="14" text-anchor="middle" class="muted">output i</text>
+    <text x="853" y="186" font-size="18" text-anchor="middle" font-weight="700">184.5</text>
+    <path class="line-acc" d="M853 128 V 70 H 400 V 106" stroke-dasharray="7 5"/><path class="fill-acc" d="M400 110 l-7 -12 h14 z"/>
+    <text x="626" y="60" font-size="16" text-anchor="middle" class="acc" font-weight="700">repeat N times: i = 1, 2, …, N</text>
+    <path class="line" d="M920 165 H 950"/><path class="fill-ink" d="M960 165 l-11 -7 v14 z"/>
+    <text x="1066" y="24" font-size="17" text-anchor="middle" font-weight="700">4 · Collection</text>
+    <rect class="box" x="962" y="40" width="208" height="276" rx="10"/>
+    <rect class="bar" x="978.0" y="243.8" width="6.8" height="0.2"/><rect class="bar" x="984.8" y="243.8" width="6.8" height="0.2"/><rect class="bar" x="991.5" y="242.9" width="6.8" height="1.1"/><rect class="bar" x="998.3" y="240.1" width="6.8" height="3.9"/><rect class="bar" x="1005.1" y="236.2" width="6.8" height="7.8"/><rect class="bar" x="1011.8" y="223.8" width="6.8" height="20.2"/><rect class="bar" x="1018.6" y="205.4" width="6.8" height="38.6"/><rect class="bar" x="1025.4" y="176.7" width="6.8" height="67.3"/><rect class="bar" x="1032.2" y="149.7" width="6.8" height="94.3"/><rect class="bar" x="1038.9" y="113.8" width="6.8" height="130.2"/><rect class="bar" x="1045.7" y="80.5" width="6.8" height="163.5"/><rect class="bar" x="1052.5" y="74.0" width="6.8" height="170.0"/><rect class="bar" x="1059.2" y="74.0" width="6.8" height="170.0"/><rect class="bar" x="1066.0" y="88.7" width="6.8" height="155.3"/><rect class="bar" x="1072.8" y="113.2" width="6.8" height="130.8"/><rect class="bar" x="1079.5" y="132.2" width="6.8" height="111.8"/><rect class="bar" x="1086.3" y="161.3" width="6.8" height="82.7"/><rect class="bar" x="1093.1" y="179.5" width="6.8" height="64.5"/><rect class="bar" x="1099.8" y="204.1" width="6.8" height="39.9"/><rect class="bar" x="1106.6" y="217.2" width="6.8" height="26.8"/><rect class="bar" x="1113.4" y="227.5" width="6.8" height="16.5"/><rect class="bar" x="1120.2" y="235.9" width="6.8" height="8.1"/><rect class="bar" x="1126.9" y="238.7" width="6.8" height="5.3"/><rect class="bar" x="1133.7" y="241.7" width="6.8" height="2.3"/><rect class="bar" x="1140.5" y="243.5" width="6.8" height="0.5"/><rect class="bar" x="1147.2" y="243.4" width="6.8" height="0.6"/><path class="line" d="M978 244 H 1154"/><text x="978" y="262" font-size="12" text-anchor="middle">120</text><text x="1066" y="262" font-size="12" text-anchor="middle">185</text><text x="1154" y="262" font-size="12" text-anchor="middle">250</text>
+    <text x="1066" y="284" font-size="13" text-anchor="middle" class="muted">N outputs form</text><text x="1066" y="302" font-size="13" text-anchor="middle" class="muted">a new distribution</text>
+    <g font-size="17">
+      <text x="10" y="340"><tspan font-weight="700" class="acc">Inputs</tspan> are <tspan font-weight="700">randomly sampled</tspan> from their distributions.</text>
+      <text x="10" y="370"><tspan font-weight="700" class="acc">The process</tspan> computes an output for <tspan font-weight="700">every</tspan> set of sampled inputs.</text>
+      <text x="10" y="400"><tspan font-weight="700" class="acc">The outputs</tspan>, collected together, form a <tspan font-weight="700">new distribution</tspan> that we can plot and summarise.</text>
+    </g>
+  </svg>
+  <aside class="notes">
+Every Monte Carlo simulation has the same structure.
+1. Inputs: each uncertain input is described by a probability distribution.
+2. Random sample: draw one value of each input at random from its distribution. Here v_A = 78.4 and v_B = 106.1.
+3. Model, or process: compute the output for this one set of inputs. Here it is just r = v_A + v_B = 184.5, but it can be any equation, a Python function, or a huge simulation model. The model itself is deterministic: the randomness comes only from the inputs.
+Repeat steps 2 and 3 N times, typically thousands or millions, storing every output.
+4. Collection: the N outputs together form a new distribution, the distribution of the output. We plot it as a histogram and summarise it with statistics.
+  </aside>
+</section>
+
+<!-- ============================================================ 11 -->
+<section>
+  <h2><span class="num">4</span>Monte Carlo simulation in five steps</h2>
+  <p class="terms"><span>define</span><span>assign distributions</span><span>sample</span><span>compute</span><span>analyse</span></p>
+  <table class="t">
+    <thead><tr><th>Step</th><th>What you do</th><th>Two cars</th></tr></thead>
+    <tbody>
+      <tr><td><b>1</b> Define the problem</td><td>the output of interest and the uncertain inputs</td><td>output r; inputs v<sub>A</sub>, v<sub>B</sub></td></tr>
+      <tr><td><b>2</b> Assign distributions</td><td>a probability distribution for each input</td><td>v<sub>A</sub> = 60 + 80·Beta(2, 5); v<sub>B</sub> ~ N(100, 12)</td></tr>
+      <tr><td><b>3</b> Sample randomly</td><td>generate many random values of every input</td><td>N = 10 000 values of each speed</td></tr>
+      <tr><td><b>4</b> Compute the outputs</td><td>run the model once for every sample: an equation, a function or a complex model</td><td>r = v<sub>A</sub> + v<sub>B</sub>, 10 000 times</td></tr>
+      <tr><td><b>5</b> Analyse the results</td><td>histogram; mean, median, standard deviation; percentiles; chance of exceeding a limit</td><td>how fast do the cars usually close in?</td></tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:10px">Steps 3 and 4 are where Python helps: NumPy draws thousands of random numbers in one line, and a function or array operation processes all of them.</p>
+  <aside class="notes">
+The process as a recipe of five steps; use it to structure any Monte Carlo problem, including the coursework.
+1. Define the problem: what output do you want, and which inputs are uncertain?
+2. Assign a probability distribution to each uncertain input: from data, from standards, or from expert judgement.
+3. Generate many random samples of the inputs. The next section shows how computers make random numbers.
+4. Compute the output for every sample. A Python function (week 4) or array arithmetic (week 3).
+5. Analyse the results: histogram, summary statistics, and the probability of exceeding a limit. Section 6.
+  </aside>
+</section>
+
+<!-- ============================================================ 12 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">5</p>
+  <h1>Random numbers</h1>
+  <aside class="notes">Step 3 of every simulation needs random numbers. Where do they come from, and how do we get them in Python?</aside>
+</section>
+
+<!-- ============================================================ 13 -->
+<section>
+  <h2><span class="num">5.1</span>True random and pseudorandom numbers</h2>
+  <p class="terms"><span>true random</span><span>pseudorandom</span><span>PRNG</span><span>seed</span></p>
+  <div class="cols" style="font-size:.74em">
+    <div class="panel">
+      <h3 style="font-size:1.05em">True random numbers</h3>
+      <p>From a <b>physical process</b>: dice, coin tosses, radioactive decay, atmospheric or thermal noise.</p>
+      <p style="color:var(--good)">+ truly unpredictable (cryptography, lotteries)</p>
+      <p style="color:var(--bad)">− slow, need special hardware<br>− cannot be repeated to check a result</p>
+    </div>
+    <div class="panel" style="border-color:var(--accent)">
+      <h3 style="font-size:1.05em">Pseudorandom numbers</h3>
+      <p>From an <b>algorithm</b>, a pseudorandom number generator (<b>PRNG</b>), that starts from a number called the <b>seed</b>.</p>
+      <p style="color:var(--good)">+ fast and lightweight<br>+ <b>reproducible</b>: same seed → same numbers<br>+ pass statistical tests of randomness</p>
+      <p style="color:var(--bad)">− deterministic: predictable if you know the algorithm and seed<br>− periodic: eventually the sequence repeats</p>
+    </div>
+  </div>
+  <p class="callout" style="font-size:.72em;margin-top:16px">A good PRNG has a <b>long period</b>, produces <b>uniformly distributed</b> numbers, is <b>efficient</b> and is <b>reproducible</b>. Simulations use pseudorandom numbers; from here on we just call them random numbers.</p>
+  <aside class="notes">
+Random numbers are the raw material of every Monte Carlo simulation. There are two kinds.
+True random numbers come from physical processes that are unpredictable: rolling dice, radioactive decay, atmospheric or electronic noise. They are genuinely unpredictable, which matters for cryptography and lotteries. But they are slow to generate, need special hardware, and you cannot repeat the same sequence to check a result.
+Pseudorandom numbers come from a deterministic algorithm, a pseudorandom number generator or PRNG. It starts from a seed value and produces a sequence that looks random and passes statistical tests, but is completely determined by the seed. Advantages: fast, lightweight, and reproducible, which is essential for debugging and for checking someone else's simulation. Drawbacks: predictable if you know the algorithm and seed, and periodic: after enough numbers the sequence repeats.
+A good PRNG has a long period, uniform output, efficiency and reproducibility. Built-in generators: rand/srand in C, the random module in Python, rand/randi in MATLAB, and NumPy's np.random, which we use.
+  </aside>
+</section>
+
+<!-- ============================================================ 14 -->
+<section>
+  <h2><span class="num">5.2</span>Inside a PRNG: the linear congruential generator</h2>
+  <p class="terms"><span>LCG</span><span>mod (remainder)</span><span>period</span></p>
+  <div class="cols wide-left">
+    <div class="stack">
+      <p class="formula" style="font-size:.8em"><i>X</i><sub><i>n</i>+1</sub> = (<i>a</i> · <i>X<sub>n</sub></i> + <i>c</i>) mod <i>m</i> &nbsp;&nbsp;&nbsp; <i>u<sub>n</sub></i> = <i>X<sub>n</sub></i> / <i>m</i> &nbsp;in [0, 1)</p>
+      <p class="small" style="margin:0">mod <i>m</i>: the remainder after dividing by <i>m</i>, e.g. 16 mod 16 = 0, 31 mod 16 = 15. Python: <code>%</code></p>
+      <div class="lcg-in">
+        <label>a <input id="lcg-a" type="text" value="5" spellcheck="false" autocomplete="off"></label>
+        <label>c <input id="lcg-c" type="text" value="1" spellcheck="false" autocomplete="off"></label>
+        <label>m <input id="lcg-m" type="text" value="16" spellcheck="false" autocomplete="off"></label>
+        <label>seed X<sub>0</sub> <input id="lcg-x" type="text" value="3" spellcheck="false" autocomplete="off"></label>
+      </div>
+      <div class="wchips" id="lcg-chips"></div>
+      <div class="wpanel"><h4>first 20 numbers X<sub>0</sub>, X<sub>1</sub>, …</h4><div style="padding:8px 10px"><div class="lcg-seq" id="lcg-seq"></div><div class="wstat" id="lcg-out" aria-live="polite"></div></div></div>
+    </div>
+    <div class="stack" style="max-width:400px;justify-self:center;width:100%">
+      <svg class="dg" id="lcg-svg" viewBox="0 0 340 330" role="img" aria-label="Scatter plot of each number against the next one."></svg>
+      <p class="small" style="margin:0;text-align:center">each number against the next (first 1 000)</p>
+    </div>
+  </div>
+  <aside class="notes">
+The simplest PRNG is the linear congruential generator, LCG. Each number is computed from the previous one: multiply by a, add c, take the remainder after dividing by m. Dividing by m scales the numbers to between 0 and 1.
+Lecture example: a = 5, c = 1, m = 16, seed 3. Work out the first two by hand with the class: (5 × 3 + 1) mod 16 = 16 mod 16 = 0; (5 × 0 + 1) mod 16 = 1; then 6, 15, 12, ... After 16 numbers we are back at 3 and the sequence repeats: the period is 16. The scatter plot shows only 16 points: clearly not random enough for a simulation.
+Change the seed: a different sequence, but the same seed always gives the same sequence. That is reproducibility.
+Poor choice preset (a = 1, c = 1): the numbers just count up. Perfectly uniform, but obviously not random: uniformity alone is not enough.
+Large preset (a = 7^5 = 16807, c = 102435, m = 2^31 − 1, as in the lecture code): a very long period and the scatter plot fills the square evenly. Real generators (NumPy uses PCG64 by default; Python's random uses the Mersenne Twister) are more sophisticated, with periods like 2^128 or more.
+  </aside>
+</section>
+
+<!-- ============================================================ 15 -->
+<section>
+  <h2><span class="num">5.3</span>From U(0, 1) to any distribution</h2>
+  <p class="terms"><span>U(0, 1)</span><span>scale and shift</span><span>inverse transform</span></p>
+  <div class="cols">
+    <div class="stack">
+      <p style="font-size:.7em">Random numbers on <b>[0, 1)</b> are the building block for every other distribution.</p>
+      <p class="formula" style="font-size:.78em"><b>U</b>(<i>a</i>, <i>b</i>) = <i>a</i> + <b>U</b>(0, 1) · (<i>b</i> − <i>a</i>)</p>
+      <svg class="dg" viewBox="0 0 560 200" role="img" aria-label="u equal to 0.40 on the interval 0 to 1 maps to 91.8 on the interval 65 to 132.">
+        <path class="line" d="M60 50 H 500"/><path class="line" d="M60 42 V 58 M500 42 V 58"/>
+        <text x="60" y="30" font-size="15" text-anchor="middle">0</text><text x="500" y="30" font-size="15" text-anchor="middle">1</text>
+        <circle cx="236" cy="50" r="7" class="fill-acc"/><text x="236" y="30" font-size="15" text-anchor="middle" class="acc" font-weight="700">u = 0.40</text>
+        <path class="line" d="M60 150 H 500"/><path class="line" d="M60 142 V 158 M500 142 V 158"/>
+        <text x="60" y="180" font-size="15" text-anchor="middle">65</text><text x="500" y="180" font-size="15" text-anchor="middle">132</text>
+        <circle cx="236" cy="150" r="7" class="fill-acc"/><text x="236" y="180" font-size="15" text-anchor="middle" class="acc" font-weight="700">91.8</text>
+        <path class="line-muted" d="M60 58 L60 142 M500 58 L500 142 M236 58 L236 142"/>
+        <text x="252" y="98" font-size="14" class="muted">scale by b − a = 67,</text>
+        <text x="252" y="118" font-size="14" class="muted">then shift by a = 65</text>
+      </svg>
+      <p class="formula" style="font-size:.7em">65 + 0.40 × (132 − 65) = 91.8 km/h</p>
+      <p class="small">Scale first, then shift. <code>(u + a) * (b - a)</code> is a common mistake: it does not give values between a and b.</p>
+    </div>
+    <div class="stack">
+      <p style="font-size:.66em;margin:0">Any distribution: <b>inverse transform</b> <i>x</i> = <i>F</i><sup>−1</sup>(<i>u</i>), where <i>F</i> is the cumulative distribution. Exponential, λ = 1.5: <i>x</i> = −ln(1 − <i>u</i>) / λ</p>
+      <div class="ctl sm"><label>u <input type="range" id="it-u" min="0.01" max="0.99" step="0.01" value="0.46"> <b id="it-uv">0.46</b></label><button type="button" class="wbtn" id="it-draw">sample 1 000 values</button></div>
+      <svg class="dg" id="it-svg" viewBox="0 0 560 360" role="img" aria-label="Cumulative distribution of the exponential distribution. A value u on the vertical axis is mapped through the curve to a value x on the horizontal axis."></svg>
+    </div>
+  </div>
+  <aside class="notes">
+Every random variable can be generated from uniform random numbers between 0 and 1, so U(0, 1) is the only thing a PRNG really needs to produce.
+Uniform between a and b: scale u by the width b − a, then shift by a. With u = 0.40 and the car speeds: 65 + 0.40 × 67 = 91.8 km/h. Watch the order: (u + a)(b − a) shifts first and then scales the shift too; for a = 0.6, b = 0.9 it gives values between 0.18 and 0.48 instead of 0.6 to 0.9. The original handout had this error; the notes on week5.html are corrected.
+For any other distribution, the inverse transform method: take the cumulative distribution F(x), the probability of a value up to x, which climbs from 0 to 1. Pick u on the vertical axis and read across and down to find x. Example from the lecture: exponential distribution with λ = 1.5, F(x) = 1 − e^(−λx), so x = −ln(1 − u)/λ. For u = 0.46: x = 0.411.
+Click "sample 1 000 values": 1 000 uniform u values are pushed through the curve, and their histogram follows the exponential pdf λe^(−λx). Steep parts of F collect many values; flat parts few.
+Another method in the lecture notes, rejection sampling, is used for distributions like the normal whose F has no simple inverse. You do not need to code these: NumPy does it for you (next slide).
+  </aside>
+</section>
+
+<!-- ============================================================ 16 -->
+<section>
+  <h2><span class="num">5.4</span>Random numbers in NumPy</h2>
+  <p class="terms"><span>np.random.seed</span><span>rand</span><span>uniform</span><span>normal</span><span>beta</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)">
+    <table class="t fn" style="font-size:.6em">
+      <thead><tr><th>Function</th><th>Gives</th></tr></thead>
+      <tbody>
+        <tr><td><code>np.random.seed(42)</code></td><td>fixes the start: same numbers every run</td></tr>
+        <tr><td><code>np.random.rand(n)</code></td><td>n values from U(0, 1)</td></tr>
+        <tr><td><code>np.random.uniform(a, b, n)</code></td><td>U(a, b)</td></tr>
+        <tr><td><code>np.random.normal(μ, σ, n)</code></td><td>normal: mean μ, std σ</td></tr>
+        <tr><td><code>np.random.randn(n)</code></td><td>standard normal N(0, 1)</td></tr>
+        <tr><td><code>np.random.beta(α, β, n)</code></td><td>beta: between 0 and 1</td></tr>
+        <tr><td><code>np.random.exponential(1/λ, n)</code></td><td>exponential</td></tr>
+      </tbody>
+    </table>
+    <div class="py sm" data-hint="run twice: same numbers"><pre>
+import numpy as np
+
+np.random.seed(42)          # same seed → same numbers
+u = np.random.rand(5)       # U(0, 1)
+print(np.round(u, 3))
+
+a, b = 65, 132
+print(np.round(a + u * (b - a), 1))   # U(65, 132)
+print(np.round(np.random.uniform(a, b, 3), 1))
+print(np.round(np.random.normal(100, 12, 3), 1))
+print(np.round(np.random.beta(2, 5, 3), 3))
+</pre></div>
+  </div>
+  <p class="small" style="margin-top:8px">Each returns a NumPy array. The size can be a shape: <code>np.random.normal(0, 10, size=(3, 4))</code></p>
+  <aside class="notes">
+NumPy's random module has a function for every common distribution. Each returns a NumPy array of samples.
+np.random.seed(42) sets the seed: run the box twice and you get exactly the same numbers. Delete the seed line and run twice: different numbers every time. In a report, set a seed so your results can be reproduced; while exploring, leave it out.
+Note the second line of output: the same five u values scaled and shifted to U(65, 132). np.random.uniform does the same for you.
+np.random.normal takes the mean and standard deviation (not the variance). Beta values lie between 0 and 1; scale and shift them as we did for car A.
+The newer NumPy interface, rng = np.random.default_rng(42) then rng.normal(...), works the same way; you will see it in documentation. Either is fine in this module.
+  </aside>
+</section>
+
+<!-- ============================================================ 17 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">6</p>
+  <h1>Running and reading a simulation</h1>
+  <aside class="notes">Now we run the two-cars experiment many times and learn how to read the pile of results: histograms and statistics.</aside>
+</section>
+
+<!-- ============================================================ 18 -->
+<section>
+  <h2><span class="num">6.1</span>The repeated experiment</h2>
+  <p class="terms"><span>trial</span><span>number of trials N</span><span>convergence</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)">
+    <div class="stack">
+      <p style="font-size:.6em;margin:0">One trial: draw <span class="acc" style="color:var(--accent)"><b>v<sub>A</sub></b> = 60 + 80·Beta(2, 5)</span> and <span style="color:#1D5FA3"><b>v<sub>B</sub></b> ~ N(100, 12)</span>, then add them.</p>
+      <div class="wbar"><button type="button" class="wbtn run" data-mc="1">+1 trial</button><button type="button" class="wbtn run" data-mc="10">+10</button><button type="button" class="wbtn run" data-mc="100">+100</button><button type="button" class="wbtn run" data-mc="10000">+10 000</button><button type="button" class="wbtn" data-mc="0">Reset</button></div>
+      <table class="runs" id="mc-runs"></table>
+      <div class="wstat" id="mc-out" aria-live="polite"></div>
+    </div>
+    <svg class="dg" id="mc-svg" viewBox="0 0 620 400" role="img" aria-label="Histogram of the relative speeds from all trials so far."></svg>
+  </div>
+  <aside class="notes">
+Back to the two cars with the realistic distributions. One trial: draw a random speed for each car from its distribution and add them.
+Click +1 trial a few times. Each trial gives a different relative speed. One trial tells us almost nothing: it could be 165 or 210.
+Click +10, then +100: the histogram starts to take shape and the running mean wanders less.
+Click +10 000: the histogram becomes a smooth shape, the distribution of the relative speed: centred near 183 km/h, from about 120 to 250, slightly skewed to the right because of car A's long tail.
+This is convergence: the more trials, the more stable the results. The error of the mean shrinks like 1/√N, so 100 times more trials gives about 10 times more precision. That is why simulations use thousands to millions of trials, which only computers can do.
+Reset and repeat: a new random history, but with many trials the same final shape.
+  </aside>
+</section>
+
+<!-- ============================================================ 19 -->
+<section>
+  <h2><span class="num">6.2</span>Building a histogram: bins and counts</h2>
+  <p class="terms"><span>bin (band)</span><span>bin width</span><span>count</span><span>density</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">
+    <svg class="dg" id="hb-svg" viewBox="0 0 700 430" role="img" aria-label="Thirty relative speeds drawn as dots on a number line, divided into equal bins; the bar above each bin shows how many dots fall inside it."></svg>
+    <div class="stack">
+      <div class="ctl sm"><label>bins <input type="range" id="hb-k" min="2" max="12" step="1" value="6"> <b id="hb-kv">6</b></label></div>
+      <div class="wpanel"><h4>band (km/h) → count</h4><pre class="wpre" id="hb-tab" style="font-size:15px;line-height:1.3"></pre></div>
+      <p class="small" style="margin:0"><code>plt.hist(r, bins=6)</code> draws it.<br><code>counts, edges = np.histogram(r, bins=6)</code> gives the numbers.<br><code>density=True</code> scales the bars so their total <b>area</b> is 1.</p>
+    </div>
+  </div>
+  <aside class="notes">
+A histogram is how we see the distribution of simulation results.
+The range of the data, from the smallest to the largest value, is split into equal bands called bins. We count how many results fall into each bin, and draw a bar whose height is the count.
+Here: 30 relative speeds from the simulation, shown as dots on the number line. Move the slider. With 2 or 3 bins the shape is hidden; with 12 bins for only 30 values most bins hold 0, 1 or 2 values and the picture is noisy. A sensible number of bins grows with the number of results: tens of bins for thousands of values.
+The table lists each band and its count; the counts always add up to 30.
+In Python, plt.hist(r, bins=6) draws the histogram; np.histogram gives the counts and the bin edges as arrays. With density=True, each bar is divided by N × bin width, so the total area is 1 and the histogram can be compared directly with a probability density function, as we do in 6.6.
+  </aside>
+</section>
+
+<!-- ============================================================ 20 -->
+<section>
+  <h2><span class="num">6.3</span>Centre and spread: mean, median, standard deviation</h2>
+  <p class="terms"><span>mean</span><span>median</span><span>standard deviation</span></p>
+  <div class="cols">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 560 270" role="img" aria-label="A right-skewed histogram. The median lies left of the mean; one standard deviation is marked to the right of the mean.">
+        <rect class="bar" x="30.0" y="203.1" width="20.4" height="16.9"/><rect class="bar" x="50.4" y="141.3" width="20.4" height="78.7"/><rect class="bar" x="70.8" y="85.3" width="20.4" height="134.7"/><rect class="bar" x="91.2" y="60.0" width="20.4" height="160.0"/><rect class="bar" x="111.6" y="61.6" width="20.4" height="158.4"/><rect class="bar" x="132.0" y="74.2" width="20.4" height="145.8"/><rect class="bar" x="152.4" y="95.1" width="20.4" height="124.9"/><rect class="bar" x="172.8" y="119.2" width="20.4" height="100.8"/><rect class="bar" x="193.2" y="139.0" width="20.4" height="81.0"/><rect class="bar" x="213.6" y="163.0" width="20.4" height="57.0"/><rect class="bar" x="234.0" y="175.2" width="20.4" height="44.8"/><rect class="bar" x="254.4" y="188.9" width="20.4" height="31.1"/><rect class="bar" x="274.8" y="197.5" width="20.4" height="22.5"/><rect class="bar" x="295.2" y="203.3" width="20.4" height="16.7"/><rect class="bar" x="315.6" y="209.4" width="20.4" height="10.6"/><rect class="bar" x="336.0" y="212.1" width="20.4" height="7.9"/><rect class="bar" x="356.4" y="215.0" width="20.4" height="5.0"/><rect class="bar" x="376.8" y="216.0" width="20.4" height="4.0"/><rect class="bar" x="397.2" y="217.0" width="20.4" height="3.0"/><rect class="bar" x="417.6" y="218.5" width="20.4" height="1.5"/><rect class="bar" x="438.0" y="218.7" width="20.4" height="1.3"/><rect class="bar" x="458.4" y="219.4" width="20.4" height="0.6"/><rect class="bar" x="478.8" y="219.5" width="20.4" height="0.5"/><rect class="bar" x="499.2" y="219.7" width="20.4" height="0.3"/><rect class="bar" x="519.6" y="219.8" width="20.4" height="0.2"/><path class="line" d="M30 220 H 540"/><path class="line" d="M30.0 220 v6"/><text x="30.0" y="242" font-size="13" text-anchor="middle">25</text><path class="line" d="M132.0 220 v6"/><text x="132.0" y="242" font-size="13" text-anchor="middle">35</text><path class="line" d="M234.0 220 v6"/><text x="234.0" y="242" font-size="13" text-anchor="middle">45</text><path class="line" d="M336.0 220 v6"/><text x="336.0" y="242" font-size="13" text-anchor="middle">55</text><path class="line" d="M438.0 220 v6"/><text x="438.0" y="242" font-size="13" text-anchor="middle">65</text><path class="line" d="M540.0 220 v6"/><text x="540.0" y="242" font-size="13" text-anchor="middle">75</text><text x="285" y="264" font-size="13" text-anchor="middle" class="muted">travel time (min)</text><path class="line-acc" d="M152.5 30 V 220"/><text x="158.5" y="28" font-size="15" class="acc" font-weight="700">mean 37.0</text><path style="stroke:var(--good);stroke-width:2.2;fill:none" d="M139.6 52 V 220" stroke-dasharray="6 4"/><text x="133.6" y="50" font-size="15" text-anchor="end" class="good" font-weight="700">median 35.7</text><path class="line" d="M152.5 110 H 222.9"/><path class="fill-ink" d="M222.9 110 l-10 -6 v12 z"/><text x="230.9" y="115" font-size="15">σ = 6.9</text><text x="407.4" y="170" font-size="14" class="muted" text-anchor="middle">long right tail</text>
+      </svg>
+      <table class="t compact">
+        <tbody>
+          <tr><td><b>mean</b> x̄ = (1/N) Σ x<sub>i</sub></td><td>the balance point</td></tr>
+          <tr><td><b>median</b></td><td>middle of the sorted values: half below, half above</td></tr>
+          <tr><td><b>std</b> σ = √( (1/N) Σ (x<sub>i</sub> − x̄)² )</td><td>typical distance from the mean</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="stack">
+      <div class="py sm"><pre>
+import numpy as np
+
+# commute time on 15 days, in minutes
+times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
+                  34, 61, 35, 33, 37, 34, 32])
+
+print("mean:  ", round(np.mean(times), 1))
+print("median:", np.median(times))
+print("std:   ", round(np.std(times), 1))
+</pre></div>
+      <p class="callout" style="font-size:.6em">One day with an accident (61 min) pulls the <b>mean</b> up; the <b>median</b> hardly moves. For skewed results, report both.</p>
+    </div>
+  </div>
+  <aside class="notes">
+A histogram is a picture; statistics summarise it in a few numbers.
+Mean: add all results and divide by N. It is the balance point of the histogram.
+Median: sort the results and take the middle one; half the results are below, half above.
+Standard deviation: the typical distance of the results from the mean; it measures spread. NumPy's np.std divides by N (population formula); np.std(x, ddof=1) divides by N − 1 (sample formula). With thousands of simulation results the difference is negligible.
+For a symmetric distribution mean and median are equal. For a skewed one, like the travel-time histogram on the left with a long right tail, the mean is pulled towards the tail.
+Run the code: 15 commute times. Mean 35.7, median 34.0, std 7.1. One accident day (61 minutes) pulls the mean up by almost 2 minutes and inflates the standard deviation, while the median does not care. Change 61 to 34 and run again.
+  </aside>
+</section>
+
+<!-- ============================================================ 21 -->
+<section>
+  <h2><span class="num">6.4</span>Mode and skewness</h2>
+  <p class="terms"><span>mode</span><span>skewness</span><span>symmetric</span></p>
+  <div class="cols">
+    <div class="stack" style="font-size:.66em">
+      <p><b>Mode</b>: the most frequent value. Most useful for <b>discrete</b> results (counts); for continuous results it is the tallest bar of the histogram.</p>
+      <p><b>Skewness</b> (advanced): which way the long tail points. <span style="white-space:nowrap">g = mean of ((x − x̄)/σ)³</span></p>
+      <svg class="dg" viewBox="0 0 560 170" role="img" aria-label="Left-skewed: long tail to the left, mean below median. Symmetric: mean equals median. Right-skewed: long tail to the right, mean above median.">
+        <path class="area" d="M10.0 112.7 L13.8 111.8 L17.5 110.8 L21.2 109.7 L25.0 108.5 L28.8 107.1 L32.5 105.6 L36.2 103.9 L40.0 102.1 L43.8 100.0 L47.5 97.8 L51.2 95.4 L55.0 92.7 L58.8 89.9 L62.5 86.8 L66.2 83.5 L70.0 80.0 L73.8 76.2 L77.5 72.2 L81.2 68.1 L85.0 63.7 L88.8 59.3 L92.5 54.8 L96.3 50.3 L100.0 46.0 L103.8 41.8 L107.5 38.0 L111.2 34.7 L115.0 32.1 L118.8 30.5 L122.5 30.0 L126.2 31.0 L130.0 33.6 L133.8 38.3 L137.5 45.3 L141.2 54.6 L145.0 66.4 L148.8 80.4 L152.5 95.8 L156.2 110.6 L160.0 120.0 Z"/><path class="line" d="M6 120 H 164"/><path class="area" d="M200.0 119.3 L203.8 118.9 L207.5 118.3 L211.2 117.4 L215.0 116.0 L218.8 114.2 L222.5 111.8 L226.2 108.6 L230.0 104.5 L233.8 99.5 L237.5 93.4 L241.2 86.5 L245.0 78.8 L248.8 70.5 L252.5 62.0 L256.2 53.7 L260.0 46.0 L263.8 39.4 L267.5 34.3 L271.2 31.1 L275.0 30.0 L278.8 31.1 L282.5 34.3 L286.2 39.4 L290.0 46.0 L293.8 53.7 L297.5 62.0 L301.2 70.5 L305.0 78.8 L308.8 86.5 L312.5 93.4 L316.2 99.5 L320.0 104.5 L323.8 108.6 L327.5 111.8 L331.2 114.2 L335.0 116.0 L338.8 117.4 L342.5 118.3 L346.2 118.9 L350.0 119.3 Z"/><path class="line" d="M196 120 H 354"/><path class="area" d="M390.0 120.0 L393.8 110.6 L397.5 95.8 L401.2 80.4 L405.0 66.4 L408.8 54.6 L412.5 45.3 L416.2 38.3 L420.0 33.6 L423.8 31.0 L427.5 30.0 L431.2 30.5 L435.0 32.1 L438.8 34.7 L442.5 38.0 L446.2 41.8 L450.0 46.0 L453.8 50.3 L457.5 54.8 L461.2 59.3 L465.0 63.7 L468.8 68.1 L472.5 72.2 L476.2 76.2 L480.0 80.0 L483.8 83.5 L487.5 86.8 L491.2 89.9 L495.0 92.7 L498.8 95.4 L502.5 97.8 L506.2 100.0 L510.0 102.1 L513.8 103.9 L517.5 105.6 L521.2 107.1 L525.0 108.5 L528.8 109.7 L532.5 110.8 L536.2 111.8 L540.0 112.7 Z"/><path class="line" d="M386 120 H 544"/><text x="85" y="16" font-size="15" text-anchor="middle" font-weight="700">left-skewed</text><text x="85" y="142" font-size="14" text-anchor="middle" class="acc">g &lt; 0</text><text x="85" y="162" font-size="14" text-anchor="middle" class="muted">mean &lt; median</text><text x="275" y="16" font-size="15" text-anchor="middle" font-weight="700">symmetric</text><text x="275" y="142" font-size="14" text-anchor="middle" class="acc">g = 0</text><text x="275" y="162" font-size="14" text-anchor="middle" class="muted">mean = median</text><text x="465" y="16" font-size="15" text-anchor="middle" font-weight="700">right-skewed</text><text x="465" y="142" font-size="14" text-anchor="middle" class="acc">g &gt; 0</text><text x="465" y="162" font-size="14" text-anchor="middle" class="muted">mean &gt; median</text>
+      </svg>
+    </div>
+    <div class="py sm"><pre>
+import numpy as np
+
+# trucks arriving at a weighbridge, per 5 minutes
+trucks = np.array([3, 2, 4, 3, 5, 3, 2, 1, 3, 4,
+                   2, 3, 6, 3, 2, 4, 3, 2, 5, 3])
+values, counts = np.unique(trucks, return_counts=True)
+print("values:", values)
+print("counts:", counts)
+print("mode:  ", values[np.argmax(counts)])
+
+times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
+                  34, 61, 35, 33, 37, 34, 32])
+z = (times - np.mean(times)) / np.std(times)
+print("skewness:", round(np.mean(z**3), 2))
+</pre></div>
+  </div>
+  <aside class="notes">
+Two more descriptors.
+Mode: the value that occurs most often. It is natural for discrete results such as counts: the number of trucks arriving per 5 minutes is most often 3. np.unique with return_counts=True lists each value and how often it occurs; argmax finds the position of the largest count. For continuous results every value is different, so the mode is read from the tallest histogram bar instead.
+Skewness (for those who want more): it measures asymmetry. Standardise each value (subtract the mean, divide by the standard deviation), cube it and average. Cubing keeps the sign, so a long right tail gives a positive skewness, a long left tail negative, and a symmetric distribution zero.
+Rule of thumb from the pictures: right-skewed means mean > median; left-skewed means mean < median.
+Run: the commute times have skewness 2.97, strongly right-skewed, all because of the one accident day. The two cars' relative speed from 6.1 has skewness of about 0.2: slightly right-skewed, from car A's tail.
+  </aside>
+</section>
+
+<!-- ============================================================ 22 -->
+<section>
+  <h2><span class="num">6.5</span>Range, percentiles and outliers</h2>
+  <p class="terms"><span>percentile</span><span>interquartile range</span><span>outlier</span><span>box plot</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 560 210" role="img" aria-label="Box plot of the commute times: box from 32.5 to 35.5 minutes with the median at 34, whiskers from 30 to 38, upper fence at 40, and one outlier at 61 minutes.">
+        <rect class="box-acc" x="93.8" y="48" width="42.5" height="44"/><path class="line-acc" d="M115.0 48 V 92" stroke-width="3.5"/><path class="line" d="M58.3 70 H 93.8 M136.2 70 H 171.7 M58.3 58 V 82 M171.7 58 V 82"/><circle cx="497.5" cy="70" r="7" class="fill-bad"/><path class="line-bad" d="M200.0 30 V 110" stroke-dasharray="5 4" stroke-width="1.5"/><text x="206.0" y="40" font-size="13" class="bad">upper fence = Q3 + 1.5 IQR = 40</text><text x="497.5" y="104" font-size="13" text-anchor="middle" class="bad">outlier 61</text><text x="115.0" y="40" font-size="13" text-anchor="middle" class="acc" font-weight="700">median 34</text><text x="90.8" y="110" font-size="13" text-anchor="end">Q1 32.5</text><text x="139.2" y="110" font-size="13">Q3 35.5</text><text x="58.3" y="52" font-size="13" text-anchor="middle" class="muted">30</text><text x="171.7" y="52" font-size="13" text-anchor="middle" class="muted">38</text><circle cx="86.7" cy="150" r="4.5" class="dot"/><circle cx="129.2" cy="150" r="4.5" class="dot"/><circle cx="72.5" cy="150" r="4.5" class="dot"/><circle cx="115.0" cy="150" r="4.5" class="dot"/><circle cx="171.7" cy="150" r="4.5" class="dot"/><circle cx="100.8" cy="150" r="4.5" class="dot"/><circle cx="143.3" cy="150" r="4.5" class="dot"/><circle cx="58.3" cy="150" r="4.5" class="dot"/><circle cx="115.0" cy="139" r="4.5" class="dot"/><circle cx="497.5" cy="150" r="4.5" class="dot out"/><circle cx="129.2" cy="139" r="4.5" class="dot"/><circle cx="100.8" cy="139" r="4.5" class="dot"/><circle cx="157.5" cy="150" r="4.5" class="dot"/><circle cx="115.0" cy="128" r="4.5" class="dot"/><circle cx="86.7" cy="139" r="4.5" class="dot"/><path class="line" d="M30 158 H 540"/><path class="line" d="M30.0 158 v6"/><text x="30.0" y="180" font-size="13" text-anchor="middle">28</text><path class="line" d="M86.7 158 v6"/><text x="86.7" y="180" font-size="13" text-anchor="middle">32</text><path class="line" d="M143.3 158 v6"/><text x="143.3" y="180" font-size="13" text-anchor="middle">36</text><path class="line" d="M200.0 158 v6"/><text x="200.0" y="180" font-size="13" text-anchor="middle">40</text><path class="line" d="M256.7 158 v6"/><text x="256.7" y="180" font-size="13" text-anchor="middle">44</text><path class="line" d="M313.3 158 v6"/><text x="313.3" y="180" font-size="13" text-anchor="middle">48</text><path class="line" d="M370.0 158 v6"/><text x="370.0" y="180" font-size="13" text-anchor="middle">52</text><path class="line" d="M426.7 158 v6"/><text x="426.7" y="180" font-size="13" text-anchor="middle">56</text><path class="line" d="M483.3 158 v6"/><text x="483.3" y="180" font-size="13" text-anchor="middle">60</text><path class="line" d="M540.0 158 v6"/><text x="540.0" y="180" font-size="13" text-anchor="middle">64</text><text x="285" y="202" font-size="13" text-anchor="middle" class="muted">commute time (min): each dot is one day</text>
+      </svg>
+      <ul style="font-size:.6em;margin-top:0">
+        <li><b>Range</b>: smallest to largest result.</li>
+        <li><b>p-th percentile</b>: p % of results lie below it; the <b>95th</b> is a common design value.</li>
+        <li><b>Chance of exceeding a limit</b>: <code>np.mean(x &gt; limit)</code></li>
+        <li><b>Outlier</b>: beyond Q1 − 1.5 IQR or Q3 + 1.5 IQR (IQR = Q3 − Q1).</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <div class="py xs" data-hint="Q1, Q3: 25th, 75th percentiles"><pre>
+import numpy as np
+
+times = np.array([32, 35, 31, 34, 38, 33, 36, 30,
+                  34, 61, 35, 33, 37, 34, 32])
+
+q1, q3 = np.percentile(times, [25, 75])
+iqr = q3 - q1
+high = q3 + 1.5 * iqr
+print("Q1:", q1, " Q3:", q3, " IQR:", iqr)
+print("outliers:", times[times > high])
+print("95th percentile:", round(np.percentile(times, 95), 1))
+print("P(time > 40):", round(np.mean(times > 40), 3))
+</pre></div>
+      <p class="callout" style="font-size:.58em">Outlier? <b>Check it.</b> A real rare event: keep it, it is often the risk you care about. An impossible value (a negative number of cars): fix the input model.</p>
+    </div>
+  </div>
+  <aside class="notes">
+The mean and standard deviation describe the middle; engineering decisions often depend on the edges.
+Range: minimum to maximum. With many trials it grows, because rare extremes eventually appear, so on its own it is not a stable summary.
+Percentiles: the 25th percentile (Q1) has a quarter of the results below it, the 50th is the median, the 75th is Q3. The 95th percentile is often used as a design value: only 5 per cent of outcomes are worse.
+Probability of exceeding a limit: the fraction of trials above it. np.mean(x > limit) works because the comparison gives True/False values, counted as 1/0. We will use this in Part B.
+Outliers: values far from the rest. The box plot rule: anything more than 1.5 × IQR beyond the box. Here the box is 32.5 to 35.5, IQR 3, upper fence 40, so the 61-minute accident day is an outlier. plt.boxplot(times) draws this plot.
+What to do with outliers? Never delete them automatically. In a simulation, extreme results may be the rare failures you are looking for. But they can also reveal a modelling mistake: in the two-lane highway example in the notes, a normal distribution for the number of cars occasionally produces a negative number of cars, which creates absurd speeds. The fix there is a better input distribution, not deleting results.
+  </aside>
+</section>
+
+<!-- ============================================================ 23 -->
+<section>
+  <h2><span class="num">6.6</span>Comparing with the normal distribution</h2>
+  <p class="terms"><span>normal distribution</span><span>standard normal</span><span>z-score</span><span>pdf</span></p>
+  <div class="cols3" style="font-size:.62em;margin-bottom:10px;gap:14px">
+    <div class="panel"><b>Normal pdf</b><p class="formula" style="font-size:1em;margin:4px 0 0 !important"><i>f</i>(<i>x</i>) = <span style="display:inline-block;vertical-align:middle;text-align:center"><span style="display:block;border-bottom:1px solid">1</span><span style="display:block">σ√(2π)</span></span> e<sup>−(<i>x</i> − μ)²/(2σ²)</sup></p></div>
+    <div class="panel"><b>Standard normal</b> N(0, 1): μ = 0, σ = 1.<br>Any normal value → <b>z = (x − μ) / σ</b></div>
+    <div class="panel"><b>68–95–99.7 rule</b>: share of values within ±1σ, ±2σ, ±3σ of the mean</div>
+  </div>
+  <div class="py side sm" data-hint="figure on the right" style="--code-w:55%"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+z = np.random.randn(10_000)        # standard normal samples
+x = np.linspace(-4, 4, 200)
+pdf = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi)
+
+plt.hist(z, bins=40, density=True, color="skyblue",
+         edgecolor="black", label="10 000 samples")
+plt.plot(x, pdf, color="red", linewidth=2, label="N(0, 1) pdf")
+plt.xlabel("z")
+plt.ylabel("Density")
+plt.legend()
+plt.show()
+print("within ±1σ:", np.mean(np.abs(z) < 1))
+</pre></div>
+  <aside class="notes">
+The normal distribution describes many natural phenomena (measurement errors, material properties, sums of many small effects), so we often compare simulation results against it.
+Its probability density function has two parameters: the mean μ, which sets the centre, and the standard deviation σ, which sets the width.
+The standard normal has μ = 0 and σ = 1. Any normal value converts to it with the z-score z = (x − μ)/σ: how many standard deviations from the mean.
+68–95–99.7 rule: about 68 per cent of values lie within one standard deviation of the mean, 95 per cent within two, 99.7 per cent within three.
+Run the code: 10 000 standard normal samples, histogram with density=True, and the pdf formula on top. They match closely, and about 0.68 of the samples are within ±1.
+For a simulation result, compute its mean and std, draw the normal pdf with those values over the histogram, and see if it fits. If the histogram is skewed, the normal curve will not fit, and statements like "95 per cent within ±2σ" no longer hold: use percentiles instead.
+  </aside>
+</section>
+
+<!-- ============================================================ 24 -->
+<section>
+  <h2>In class: simulate the two cars</h2>
+  <p class="terms"><span>np.random</span><span>array arithmetic</span><span>plt.hist</span><span>statistics</span></p>
+  <div class="cols task" style="font-size:.62em;gap:22px;margin-bottom:10px">
+    <div>
+      <p>Car A: <b>v<sub>A</sub> = 60 + 80 · Beta(2, 5)</b> km/h. Car B: <b>v<sub>B</sub> ~ Normal(100, 12)</b> km/h. They drive in opposite directions.</p>
+      <ol style="margin:0 0 0 1.1em">
+        <li>Draw <b>N = 10 000</b> speeds for each car (set a seed).</li>
+        <li>Relative speed r = v<sub>A</sub> + v<sub>B</sub>: one line, no loop.</li>
+        <li>Histogram of r, <code>density=True</code>, labelled axes.</li>
+      </ol>
+    </div>
+    <ol start="4" style="margin:0 0 0 1.1em">
+      <li>Mean, median, standard deviation and skewness of r.</li>
+      <li>5th and 95th percentiles; chance that r &gt; 220 km/h.</li>
+      <li>Overlay a normal pdf with the same mean and std. Is r normal?</li>
+      <li>Extra: both cars U(65, 132). Do you get the triangle, 130 to 264, peak 197?</li>
+    </ol>
+  </div>
+  <div class="py side write" data-hint="write the simulation here"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(1)
+N = 10_000
+
+# 1. sample the speeds
+
+</pre></div>
+  <aside class="notes">
+Live coding: we write this simulation together, following the five steps. Students code along in this box or in Jupyter.
+Ingredients: np.random.beta(2, 5, N) scaled and shifted to 60 + 80 × beta; np.random.normal(100, 12, N); r = v_A + v_B adds the arrays element by element (week 3), no loop needed.
+Histogram: plt.hist(r, bins=50, density=True, edgecolor="black"), xlabel "Relative speed (km/h)", ylabel "Density", plt.show().
+Statistics: np.mean, np.median, np.std; skewness via z-scores; np.percentile(r, [5, 95]); np.mean(r > 220).
+Normal overlay: x = np.linspace(r.min(), r.max(), 200), pdf with the mean and std of r, plt.plot on the same axes.
+Expected results with about 10 000 samples: mean ≈ 183 km/h, median ≈ 182, std ≈ 17.5, skewness ≈ 0.2, 5th to 95th percentile ≈ 155 to 213 km/h, P(r > 220) ≈ 0.02. The normal fits reasonably but the histogram leans slightly right.
+Extra: with both uniform, the histogram is the triangle from slide 8, which checks the simulation against the exact answer. Always validate a simulation on a case you can solve by hand.
+A full worked solution is in the notes on week5.html, Part A.
+  </aside>
+</section>
+
+<!-- ============================================================ 25 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">B</p>
+  <h1>Part B<br>An engineering application</h1>
+  <aside class="notes">Part B: one real engineering problem, coded in class in about 20 minutes, using a function, NumPy arrays and the statistics from Part A.</aside>
+</section>
+
+<!-- ============================================================ 26 -->
+<section>
+  <h2><span class="num">7</span>In class (20 min): will the floor beam deflect too much?</h2>
+  <p class="terms"><span>def function</span><span>NumPy arrays</span><span>percentile</span><span>chance of exceedance</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)">
+    <div class="stack">
+      <svg class="dg" viewBox="0 0 560 190" role="img" aria-label="A simply supported beam of span L carries a uniformly distributed load w and deflects by delta at mid-span.">
+        <g class="acc">
+          <path class="line-acc" d="M60 30 H 500"/>
+          <path class="line-acc" d="M60 30 V 62 M104 30 V 62 M148 30 V 62 M192 30 V 62 M236 30 V 62 M280 30 V 62 M324 30 V 62 M368 30 V 62 M412 30 V 62 M456 30 V 62 M500 30 V 62"/>
+          <path class="fill-acc" d="M60 70 l-6 -10 h12 z M104 70 l-6 -10 h12 z M148 70 l-6 -10 h12 z M192 70 l-6 -10 h12 z M236 70 l-6 -10 h12 z M280 70 l-6 -10 h12 z M324 70 l-6 -10 h12 z M368 70 l-6 -10 h12 z M412 70 l-6 -10 h12 z M456 70 l-6 -10 h12 z M500 70 l-6 -10 h12 z"/>
+          <text x="514" y="44" font-size="17" font-weight="700">w</text>
+        </g>
+        <rect x="56" y="74" width="448" height="16" class="box"/>
+        <path class="line-muted" d="M60 90 Q 280 128 500 90" style="stroke-dasharray:none;stroke:var(--bad);stroke-width:2"/>
+        <path d="M60 90 l-14 22 h28 z M500 90 l-14 22 h28 z" class="box"/>
+        <path class="line" d="M280 92 V 108"/><text x="292" y="124" font-size="16" class="bad" font-weight="700">δ</text>
+        <path class="line" d="M60 150 H 500"/><path class="fill-ink" d="M60 150 l12 -7 v14 z M500 150 l-12 -7 v14 z"/>
+        <text x="280" y="174" font-size="16" text-anchor="middle">L = 6000 mm</text>
+      </svg>
+      <p class="formula" style="font-size:.78em">δ = 5 <i>w L</i><sup>4</sup> / (384 <i>E I</i>) &nbsp;<span class="small">(week 4, exercise 5.1)</span></p>
+      <table class="t compact" style="font-size:.64em">
+        <tbody>
+          <tr><td>span L, second moment of area I</td><td>6000 mm, 3.375 × 10⁸ mm⁴ (fixed)</td></tr>
+          <tr class="hi"><td>load w</td><td>Normal(20, 3) N/mm</td></tr>
+          <tr class="hi"><td>Young's modulus E</td><td>Normal(200 000, 10 000) N/mm²</td></tr>
+          <tr><td>deflection limit (lab equipment)</td><td>L / 1000 = 6 mm</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="task" style="font-size:.72em">
+      <p>A floor beam supports sensitive laboratory equipment. With the average values, δ = 5.0 mm: fine. But the load and the steel stiffness vary.</p>
+      <ol style="margin:0 0 0 1.1em">
+        <li>Write a function <code>max_deflection(w, L, E, I)</code>.</li>
+        <li>Draw <b>N = 100 000</b> random values of w and E as NumPy arrays.</li>
+        <li>Call the function <b>once</b> with the arrays: one deflection per beam, no loop.</li>
+        <li>Mean, median and standard deviation of δ; 95th percentile.</li>
+        <li>Histogram of δ with the 6 mm limit as a vertical red line.</li>
+        <li>Probability that δ &gt; 6 mm.</li>
+      </ol>
+      <p class="callout" style="margin-top:10px">The client accepts at most a <b>5 %</b> chance of exceeding the limit. Is the beam acceptable? What would you change?</p>
+    </div>
+  </div>
+  <aside class="notes">
+This is the engineering problem for Part B; I will code it in Jupyter with you. Aim for 20 minutes.
+Context: a simply supported steel floor beam in a laboratory, span 6 m. Sensitive equipment means a tight deflection limit, L/1000 = 6 mm (a typical floor limit is L/360, but vibration-sensitive equipment needs much less).
+Mid-span deflection under a uniform load: δ = 5wL⁴/(384EI), the function students wrote in week 4.
+With the average load (20 N/mm) and E = 200 000 N/mm², δ = 5.0 mm, below the limit. But the imposed load varies (std 3 N/mm) and the stiffness of steel varies slightly (std 10 000 N/mm²).
+Steps: write the function; w = np.random.normal(20, 3, N); E = np.random.normal(200_000, 10_000, N); d = max_deflection(w, 6000, E, 3.375e8), which works element-wise on arrays because the function only uses arithmetic (week 4, functions with arrays); then the statistics from section 6; plt.hist and plt.axvline(6, color="red", linestyle="--"); np.mean(d > 6).
+Expected results: mean ≈ 5.0 mm, median ≈ 5.0, std ≈ 0.79 mm, 95th percentile ≈ 6.3 mm, P(δ > 6 mm) ≈ 0.11. Slightly right-skewed because E is in the denominator.
+Discussion: about 11 per cent of beams would exceed the limit, more than the client's 5 per cent, so the beam is not acceptable even though the best-guess calculation said fine. Fixes: a stiffer section (larger I), checked by rerunning the simulation: e.g. I = 3.6 × 10⁸ mm⁴ brings the chance down to about 4 per cent. Or limit the load on the floor.
+The worked solution is hidden in Part B of week5.html.
+  </aside>
+</section>
+
+<!-- ============================================================ 27 -->
+<section>
+  <h2>Summary</h2>
+  <p class="terms"><span>Monte Carlo simulation</span><span>random numbers</span><span>histogram</span><span>statistics</span></p>
+  <div class="cols" style="font-size:.74em">
+    <ul>
+      <li><b>Monte Carlo simulation</b>: repeat a deterministic model many times with randomly sampled inputs; the outputs form a distribution.</li>
+      <li>Uncertainty can be <b>deterministic</b>, <b>stochastic</b> or <b>resolutional</b> (fuzzy); Monte Carlo handles stochastic inputs.</li>
+      <li>When the maths has no closed form (two cars, step 3), <b>compute</b> instead.</li>
+      <li>Five steps: define → assign distributions → sample → compute → analyse.</li>
+      <li>Computers use <b>pseudorandom</b> numbers: fast and reproducible with a <b>seed</b>. U(0, 1) builds every other distribution.</li>
+    </ul>
+    <ul>
+      <li>More trials → more stable results (error ∝ 1/√N).</li>
+      <li><b>Histogram</b>: bins and counts; <code>density=True</code> for area 1.</li>
+      <li><b>Mean, median, std</b>; <b>mode</b> for counts; <b>skewness</b> for asymmetry.</li>
+      <li><b>Percentiles</b> and the <b>chance of exceeding a limit</b> drive engineering decisions; check <b>outliers</b>, do not delete them.</li>
+      <li>Compare with the <b>normal distribution</b> using the same mean and std.</li>
+    </ul>
+  </div>
+  <aside class="notes">
+Recap of the key ideas. A Monte Carlo simulation is a deterministic model run many times with random inputs; the collection of outputs is the answer.
+Use it whenever inputs are random and the exact probability maths is too hard, which is most real problems.
+The analysis tools (histogram, mean, median, standard deviation, percentiles, exceedance probability) apply to any data, not only simulations: you will use them in labs and projects.
+  </aside>
+</section>
+
+<!-- ============================================================ 28 -->
+<section>
+  <h2>Practise</h2>
+  <p class="terms"><span>notebook</span><span>notes</span></p>
+  <div class="cols" style="font-size:.78em">
+    <div class="stack">
+      <p><b>Notes:</b> <a href="week5.html">week5.html</a>, Part A with the full two-cars code, Part B with the beam solution.</p>
+      <p><b>Notebook:</b> <code>week5_monte_carlo.ipynb</code> on the notes page: every example, plus exercises.</p>
+      <p class="small">Further reading: Mathias, S.A. (2023). EIA and Uncertainty Management. In: <i>Hydraulics, Hydrology and Environmental Engineering</i>. Springer.</p>
+    </div>
+    <div class="panel">
+      <h3>Try at home</h3>
+      <ul style="font-size:.9em">
+        <li>Estimate π with NumPy: random x, y in [0, 1); share with x² + y² &lt; 1, times 4.</li>
+        <li>Two-lane highway speed (notes, extra example): find the mean speed, then spot and explain the outliers.</li>
+        <li>Beam: find the smallest I that keeps P(δ &gt; 6 mm) below 5 %.</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+Before next week: work through the notebook. The notes page has the full code for the two-cars simulation (Part A) and a hidden solution for the beam (Part B); try the beam yourself before opening it.
+Suggested extra exercises on the right. The π estimate in NumPy takes about five lines. The highway example in the notes produces surprising outliers: find out why (negative numbers of cars from the normal distribution).
+  </aside>
+</section>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/notes/notes.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="assets/slides.js"></script>
+<script src="assets/slides-week5.js"></script>
+</body>
+</html>
