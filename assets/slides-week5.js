@@ -213,116 +213,84 @@
     draw();
   })();
 
-  /* ---------- 6.1: the repeated experiment (two cars) ---------- */
-  (() => {
-    const svg = $('mc-svg');
-    if (!svg) return;
-    const table = $('mc-runs'), out = $('mc-out');
-    const LO = 110, HI = 260, W = 5, NB = (HI - LO) / W;
-    const PX0 = 56, PX1 = 604, BASE = 340, TOP = 34;
-    const X = v => PX0 + (v - LO) / (HI - LO) * (PX1 - PX0);
-    let rnd, rows, r, counts, sum, sum2, added, mn, mx;
-    function reset() {
-      rnd = prng(newSeed()); rows = []; r = []; counts = new Array(NB).fill(0); sum = 0; sum2 = 0; added = 0; mn = Infinity; mx = -Infinity;
-      show();
-    }
-    function trial() {
-      const a = 60 + 80 * rnd.beta25(), b = rnd.normal(100, 12), s = a + b;
-      r.push(s); sum += s; sum2 += s * s; mn = Math.min(mn, s); mx = Math.max(mx, s);
-      const k = Math.floor((s - LO) / W);
-      if (k >= 0 && k < NB) counts[k]++;
-      rows.push([r.length, a, b, s]); if (rows.length > 6) rows.shift();
-    }
-    function show() {
-      const n = r.length;
-      table.innerHTML = '<tr><th>trial</th><th>v_A</th><th>v_B</th><th>r = v_A + v_B</th></tr>' +
-        (rows.length ? rows.map((x, i) => `<tr class="${i >= rows.length - Math.min(added, 6) ? 'new' : ''}"><td>${thin(x[0])}</td><td>${fmt(x[1])}</td><td>${fmt(x[2])}</td><td><b>${fmt(x[3])}</b></td></tr>`).join('')
-          : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">no trials yet</td></tr>');
-      if (n) {
-        const mean = sum / n, sd = n > 1 ? Math.sqrt(Math.max(sum2 / n - mean * mean, 0)) : 0;
-        out.innerHTML = `N = <b>${thin(n)}</b> trials<br>mean = <b>${fmt(mean)}</b> km/h<br>std = ${n > 1 ? fmt(sd) : '–'} km/h<br>min … max = ${fmt(mn)} … ${fmt(mx)} km/h`;
-      } else out.innerHTML = '<span class="muted">N = 0</span>';
-      // histogram
-      const kids = [];
-      const cmax = Math.max(1, ...counts), step = niceStep(Math.max(cmax, 4)), ymax = Math.ceil(cmax / step) * step;
-      const Y = c => BASE - c / ymax * (BASE - TOP);
-      for (let t = 0; t <= ymax; t += step) {
-        kids.push(el('path', { d: `M${PX0} ${fmt(Y(t))} H ${PX1}`, style: 'stroke:var(--grid);stroke-width:1' }));
-        kids.push(el('text', { x: PX0 - 8, y: fmt(Y(t) + 5), 'font-size': 13, 'text-anchor': 'end' }, thin(t)));
-      }
-      const last = n ? Math.floor((r[n - 1] - LO) / W) : -1;
-      counts.forEach((c, k) => {
-        if (!c) return;
-        kids.push(el('rect', { class: 'bar', x: fmt(X(LO + k * W)), y: fmt(Y(c)), width: fmt(X(LO + W) - X(LO)), height: fmt(BASE - Y(c)),
-          style: added === 1 && k === last ? 'fill:var(--accent)' : '' }));
-      });
-      kids.push(el('path', { class: 'line', d: `M${PX0} ${BASE} H ${PX1} M${PX0} ${BASE} V ${TOP - 6}` }));
-      for (let v = LO + 10; v <= HI; v += 20) kids.push(el('path', { class: 'line', d: `M${fmt(X(v))} ${BASE} v6` }), el('text', { x: fmt(X(v)), y: BASE + 22, 'font-size': 13, 'text-anchor': 'middle' }, String(v)));
-      kids.push(el('text', { x: (PX0 + PX1) / 2, y: BASE + 46, 'font-size': 14, 'text-anchor': 'middle', class: 'muted' }, 'relative speed r (km/h)'));
-      kids.push(el('text', { x: 14, y: TOP - 14, 'font-size': 13, class: 'muted' }, 'count'));
-      if (n) {
-        const mean = sum / n;
-        kids.push(el('path', { class: 'line-bad', d: `M${fmt(X(mean))} ${TOP} V ${BASE}`, 'stroke-dasharray': '6 4' }));
-        kids.push(el('text', { x: fmt(X(mean) + 6), y: TOP + 12, 'font-size': 14, class: 'bad' }, `mean ${fmt(mean)}`));
-      }
-      svg.replaceChildren(...kids);
-    }
-    document.querySelectorAll('[data-mc]').forEach(b => b.addEventListener('click', () => {
-      const k = Number(b.dataset.mc);
-      if (k === 0) { reset(); return; }
-      for (let i = 0; i < k; i++) trial();
-      added = k; show();
-    }));
-    reset();
-  })();
-
-  /* ---------- 6.2: building a histogram ---------- */
+  /* ---------- 6.1: repeat the experiment, then build a histogram ---------- */
   (() => {
     const svg = $('hb-svg');
     if (!svg) return;
     const sl = $('hb-k'); stopKeys(sl);
-    // 30 relative speeds from the two-cars simulation (km/h)
-    const R = [181.5, 164.4, 176.0, 188.6, 194.8, 182.9, 164.6, 175.3, 164.6, 193.4, 152.3, 169.9, 187.7, 174.6, 214.2,
+    const stat = $('hb-stat'), tab = $('hb-tab');
+    // the first 30 trials (relative speeds of the two cars, km/h)
+    const FIRST = [181.5, 164.4, 176.0, 188.6, 194.8, 182.9, 164.6, 175.3, 164.6, 193.4, 152.3, 169.9, 187.7, 174.6, 214.2,
       187.7, 196.8, 189.2, 184.5, 163.2, 169.0, 190.9, 166.9, 154.7, 166.2, 170.2, 185.0, 167.9, 186.6, 204.3];
-    const MIN = Math.min(...R), MAX = Math.max(...R);
-    const LO = 148, HI = 218, PX0 = 50, PX1 = 680;
-    const X = v => PX0 + (v - LO) / (HI - LO) * (PX1 - PX0);
-    const BASE = 250, TOP = 30, AXIS = 362;
-    // dot positions: stack dots that would overlap
-    const sorted = R.map((v, i) => [v, i]).sort((p, q) => p[0] - q[0]);
-    const lvl = [];
-    sorted.forEach(([v], j) => {
-      let L = 0;
-      for (let i = 0; i < j; i++) if (Math.abs(X(sorted[i][0]) - X(v)) < 9 && lvl[i] === L) L++;
-      lvl.push(L);
-    });
+    const PX0 = 50, PX1 = 680, BASE = 250, TOP = 30, AXIS = 362, MAXDOTS = 150;
+    let R, rnd, mn, mx, sum, added, last;
+    function reset() {
+      R = FIRST.slice(); rnd = prng(newSeed());
+      mn = Math.min(...R); mx = Math.max(...R); sum = R.reduce((p, q) => p + q, 0); added = 0; last = null;
+      draw();
+    }
+    function trial() {
+      const a = 60 + 80 * rnd.beta25(), b = rnd.normal(100, 12), r = a + b;
+      R.push(r); sum += r; mn = Math.min(mn, r); mx = Math.max(mx, r); last = [a, b, r];
+    }
     function draw() {
-      const k = Number(sl.value);
+      const k = Number(sl.value), n = R.length;
       $('hb-kv').textContent = k;
-      const w = (MAX - MIN) / k, edges = Array.from({ length: k + 1 }, (_, i) => MIN + i * w);
+      const span = mx - mn, LO = Math.floor((mn - 3) / 10) * 10, HI = Math.ceil((mx + 3) / 10) * 10;
+      const X = v => PX0 + (v - LO) / (HI - LO) * (PX1 - PX0);
+      const w = span / k, edges = Array.from({ length: k + 1 }, (_, i) => mn + i * w);
       const counts = new Array(k).fill(0);
-      R.forEach(v => { counts[Math.min(Math.floor((v - MIN) / w), k - 1)]++; });   // last bin includes MAX, like NumPy
+      for (const v of R) counts[Math.min(Math.floor((v - mn) / w), k - 1)]++;   // last bin includes the maximum, like NumPy
       const cmax = Math.max(...counts);
       const Y = c => BASE - c / Math.max(cmax, 1) * (BASE - TOP - 20);
+      const lastBin = last ? Math.min(Math.floor((last[2] - mn) / w), k - 1) : -1;
       const kids = [];
       counts.forEach((c, i) => {
         const x0 = X(edges[i]), x1 = X(edges[i + 1]);
-        if (c) kids.push(el('rect', { class: 'bar', x: fmt(x0), y: fmt(Y(c)), width: fmt(x1 - x0), height: fmt(BASE - Y(c)) }));
-        kids.push(el('text', { x: fmt((x0 + x1) / 2), y: fmt(Y(c) - 6), 'font-size': k > 10 ? 13 : 15, 'text-anchor': 'middle', 'font-weight': 700, class: 'acc' }, String(c)));
+        if (c) kids.push(el('rect', { class: 'bar', x: fmt(x0), y: fmt(Y(c)), width: fmt(x1 - x0), height: fmt(BASE - Y(c)), style: added === 1 && i === lastBin ? 'fill:var(--accent)' : '' }));
+        if (k <= 12) kids.push(el('text', { x: fmt((x0 + x1) / 2), y: fmt(Y(c) - 6), 'font-size': k > 8 || c > 999 ? 12 : 15, 'text-anchor': 'middle', 'font-weight': 700, class: 'acc' }, thin(c)));
       });
       kids.push(el('path', { class: 'line', d: `M${PX0} ${BASE} H ${PX1}` }));
       kids.push(el('text', { x: PX0, y: 18, 'font-size': 13, class: 'muted' }, 'count'));
-      edges.forEach((e, i) => {
-        kids.push(el('path', { class: 'line-muted', d: `M${fmt(X(e))} ${TOP} V ${AXIS}` }));
-        if (k <= 8 || i === 0 || i === k) kids.push(el('text', { x: fmt(X(e)), y: AXIS + 20, 'font-size': 13, 'text-anchor': 'middle' }, e.toFixed(1)));
-      });
+      edges.forEach(e => kids.push(el('path', { class: 'line-muted', d: `M${fmt(X(e))} ${TOP} V ${AXIS}` })));
       kids.push(el('path', { class: 'line', d: `M${PX0} ${AXIS} H ${PX1}` }));
-      sorted.forEach(([v], j) => kids.push(el('circle', { cx: fmt(X(v)), cy: fmt(AXIS - 10 - lvl[j] * 11), r: 4.5, class: 'dot' })));
-      kids.push(el('text', { x: (PX0 + PX1) / 2, y: AXIS + 46, 'font-size': 14, 'text-anchor': 'middle', class: 'muted' }, `30 relative speeds (km/h) · bin width ${w.toFixed(1)} km/h`));
+      const step = HI - LO > 100 ? 20 : 10;
+      for (let v = LO; v <= HI; v += step) kids.push(el('path', { class: 'line', d: `M${fmt(X(v))} ${AXIS} v6` }), el('text', { x: fmt(X(v)), y: AXIS + 22, 'font-size': 13, 'text-anchor': 'middle' }, String(v)));
+      if (n <= MAXDOTS) {
+        const sorted = R.map((v, i) => [v, i]).sort((p, q) => p[0] - q[0]);
+        const lvl = [];
+        sorted.forEach(([v, idx], j) => {
+          let L = 0;
+          for (let i = 0; i < j; i++) if (Math.abs(X(sorted[i][0]) - X(v)) < 9 && lvl[i] === L) L++;
+          lvl.push(L);
+          const isLast = added > 0 && idx === n - 1;
+          kids.push(el('circle', { cx: fmt(X(v)), cy: fmt(AXIS - 10 - Math.min(L, 8) * 11), r: isLast ? 6 : 4.5, class: 'dot', style: isLast ? 'fill:var(--bad)' : '' }));
+        });
+      } else {
+        kids.push(el('text', { x: (PX0 + PX1) / 2, y: AXIS - 30, 'font-size': 14, 'text-anchor': 'middle', class: 'muted' }, `${thin(n)} results: too many to draw as dots`));
+      }
+      kids.push(el('text', { x: (PX0 + PX1) / 2, y: AXIS + 48, 'font-size': 14, 'text-anchor': 'middle', class: 'muted' }, `relative speed r (km/h) · bin width ${w.toFixed(1)} km/h`));
       svg.replaceChildren(...kids);
-      $('hb-tab').textContent = counts.map((c, i) => `[${edges[i].toFixed(1)}, ${edges[i + 1].toFixed(1)}${i === k - 1 ? ']' : ')'}  ${String(c).padStart(2)}`).join('\n') + `\n${'total'.padStart(14)}  ${counts.reduce((p, q) => p + q, 0)}`;
+      stat.innerHTML = `N = <b>${thin(n)}</b> trials · mean <b>${fmt(sum / n)}</b> km/h<br>` +
+        (last ? `latest: ${fmt(last[0])} + ${fmt(last[1])} = <b style="color:var(--bad)">${fmt(last[2])}</b> km/h` : '<span class="muted">the first 30 trials of the simulation</span>');
+      tab.classList.toggle('hb-tab2', k > 10);
+      tab.textContent = counts.map((c, i) => `[${edges[i].toFixed(1)}, ${edges[i + 1].toFixed(1)}${i === k - 1 ? ']' : ')'} ${thin(c).padStart(k > 10 ? 5 : 6)}`).join('\n') + `\n${'total'.padStart(14)} ${thin(n).padStart(6)}`;
     }
     sl.addEventListener('input', draw);
-    draw();
+    document.querySelectorAll('[data-hb]').forEach(b => b.addEventListener('click', () => {
+      const k = Number(b.dataset.hb);
+      if (k === 0) { reset(); return; }
+      for (let i = 0; i < k; i++) trial();
+      added = k; draw();
+    }));
+    reset();
   })();
+
+  /* ---------- formulas: KaTeX, on the slides only (not in the speaker notes or code) ---------- */
+  if (window.renderMathInElement) {
+    renderMathInElement(document.querySelector('.reveal .slides'), {
+      delimiters: [{ left: '\\(', right: '\\)', display: false }],
+      ignoredClasses: ['notes', 'py'], throwOnError: false
+    });
+  }
 })();
