@@ -59,6 +59,8 @@
   .hb-tab2 { column-count: 2; column-gap: 18px; }
   .rowgrid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 2fr); gap: 20px; align-items: center; }
   .wind-t td:first-child { white-space: nowrap; }
+  .reveal pre.code { width: 100%; box-sizing: border-box; box-shadow: none; margin: 0; font: 15px/1.4 var(--mono); background: var(--code-bg); padding: 6px 10px; border-radius: 4px; }
+  .reveal pre.code code { max-height: none; padding: 0; background: transparent; font: inherit; }
 </style>
 </head>
 <body data-py-packages="numpy,matplotlib">
@@ -717,45 +719,46 @@ For a simulation result, compute its mean and std, draw the normal pdf with thos
 <!-- ============================================================ 24 -->
 
 <section>
-  <h2><span class="num">7</span>In class (20 min): how much power will the wind farm deliver?</h2>
-  <p class="terms"><span>def function</span><span>2-D arrays, axis=1</span><span>percentile</span><span>chance of falling short</span></p>
+  <h2><span class="num">7</span>In class (20 min): a day at the wind farm</h2>
+  <p class="terms"><span>def function</span><span>beta distribution</span><span>2-D arrays, axis=1</span><span>percentile</span></p>
   <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
     <div class="stack">
-      <svg class="dg" viewBox="0 0 560 170" role="img" aria-label="Ten wind turbines in a row face the wind blowing from 90 degrees; the wind direction varies by about 22 degrees either side.">
-        <path class="line" d="M30 150 V 74"/><circle cx="30" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M30 70 l0 -30 M30 70 l26 15 M30 70 l-26 15" stroke-width="3"/><path class="line" d="M74 150 V 74"/><circle cx="74" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M74 70 l0 -30 M74 70 l26 15 M74 70 l-26 15" stroke-width="3"/><path class="line" d="M118 150 V 74"/><circle cx="118" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M118 70 l0 -30 M118 70 l26 15 M118 70 l-26 15" stroke-width="3"/><path class="line" d="M162 150 V 74"/><circle cx="162" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M162 70 l0 -30 M162 70 l26 15 M162 70 l-26 15" stroke-width="3"/><path class="line" d="M206 150 V 74"/><circle cx="206" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M206 70 l0 -30 M206 70 l26 15 M206 70 l-26 15" stroke-width="3"/><path class="line" d="M250 150 V 74"/><circle cx="250" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M250 70 l0 -30 M250 70 l26 15 M250 70 l-26 15" stroke-width="3"/><path class="line" d="M294 150 V 74"/><circle cx="294" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M294 70 l0 -30 M294 70 l26 15 M294 70 l-26 15" stroke-width="3"/><path class="line" d="M338 150 V 74"/><circle cx="338" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M338 70 l0 -30 M338 70 l26 15 M338 70 l-26 15" stroke-width="3"/><path class="line" d="M382 150 V 74"/><circle cx="382" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M382 70 l0 -30 M382 70 l26 15 M382 70 l-26 15" stroke-width="3"/><path class="line" d="M426 150 V 74"/><circle cx="426" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M426 70 l0 -30 M426 70 l26 15 M426 70 l-26 15" stroke-width="3"/><path class="line" d="M10 150 H 450"/><text x="230" y="168" font-size="13" text-anchor="middle" class="muted">10 turbines, each facing 90°</text><path class="line-acc" d="M545 80 L 470 80" stroke-width="3"/><path class="line-muted" d="M545 54 L 470 80"/><path class="line-muted" d="M545 106 L 470 80"/><path class="fill-acc" d="M462 80 l14 -7 v14 z"/><text x="508" y="26" font-size="14" text-anchor="middle">wind</text><text x="508" y="128" font-size="13" text-anchor="middle" class="muted">θ ~ N(90°, 22°)</text>
+      <svg class="dg" viewBox="0 0 560 170" role="img" aria-label="Ten wind turbines in a row face the wind blowing from 90 degrees; the same wind reaches every turbine; its direction varies by about 15 degrees either side.">
+        <path class="line" d="M30 150 V 74"/><circle cx="30" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M30 70 l0 -30 M30 70 l26 15 M30 70 l-26 15" stroke-width="3"/><path class="line" d="M74 150 V 74"/><circle cx="74" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M74 70 l0 -30 M74 70 l26 15 M74 70 l-26 15" stroke-width="3"/><path class="line" d="M118 150 V 74"/><circle cx="118" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M118 70 l0 -30 M118 70 l26 15 M118 70 l-26 15" stroke-width="3"/><path class="line" d="M162 150 V 74"/><circle cx="162" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M162 70 l0 -30 M162 70 l26 15 M162 70 l-26 15" stroke-width="3"/><path class="line" d="M206 150 V 74"/><circle cx="206" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M206 70 l0 -30 M206 70 l26 15 M206 70 l-26 15" stroke-width="3"/><path class="line" d="M250 150 V 74"/><circle cx="250" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M250 70 l0 -30 M250 70 l26 15 M250 70 l-26 15" stroke-width="3"/><path class="line" d="M294 150 V 74"/><circle cx="294" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M294 70 l0 -30 M294 70 l26 15 M294 70 l-26 15" stroke-width="3"/><path class="line" d="M338 150 V 74"/><circle cx="338" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M338 70 l0 -30 M338 70 l26 15 M338 70 l-26 15" stroke-width="3"/><path class="line" d="M382 150 V 74"/><circle cx="382" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M382 70 l0 -30 M382 70 l26 15 M382 70 l-26 15" stroke-width="3"/><path class="line" d="M426 150 V 74"/><circle cx="426" cy="70" r="4" class="fill-acc"/><path class="line-acc" d="M426 70 l0 -30 M426 70 l26 15 M426 70 l-26 15" stroke-width="3"/><path class="line" d="M10 150 H 450"/><text x="230" y="168" font-size="13" text-anchor="middle" class="muted">10 turbines, all facing 90°</text><path class="line-acc" d="M545 80 L 470 80" stroke-width="3"/><path class="line-muted" d="M545 54 L 470 80"/><path class="line-muted" d="M545 106 L 470 80"/><path class="fill-acc" d="M462 80 l14 -7 v14 z"/><text x="508" y="26" font-size="14" text-anchor="middle">wind</text><text x="556" y="128" font-size="13" text-anchor="end" class="muted">θ ~ N(90°, 15°)</text>
       </svg>
-      <p class="formula" style="font-size:.8em;margin:0 !important">\(P = \tfrac{1}{2}\,\rho\,A\,\eta\,\big(v\cos(\theta - 90^\circ)\big)^{3}\)</p>
+      <p class="formula" style="font-size:.78em;margin:0 !important">\(P_i = \tfrac{1}{2}\,\rho\,A\,\eta_i\,\big(v\cos(\theta - 90^\circ)\big)^{3}\)</p>
+      <p class="formula" style="font-size:.78em;margin:0 !important">\(E_{\text{day}} = 24\ \text{h} \times \textstyle\sum_{i=1}^{10} P_i\)</p>
       <table class="t compact wind-t" style="font-size:.6em">
         <tbody>
-          <tr><td>air density ρ; rotor diameter D</td><td>1.225 kg/m³; 80 m, \(A = \pi D^2/4\) (fixed)</td></tr>
-          <tr class="hi"><td>wind speed v</td><td>Normal(32, 8) km/h</td></tr>
-          <tr class="hi"><td>wind direction θ</td><td>Normal(90°, 22°); the turbines face 90°</td></tr>
-          <tr class="hi"><td>efficiency η</td><td>Beta(2, 5): right-skewed, mostly 0.15–0.45</td></tr>
+          <tr><td>air density ρ; rotor diameter D</td><td>1.225 kg/m³; 80 m, \(A = \pi D^2/4\)</td></tr>
+          <tr class="hi"><td>wind speed v</td><td>Normal(8, 1.5) m/s, the same for all turbines</td></tr>
+          <tr class="hi"><td>wind direction θ</td><td>Normal(90°, 15°), the same for all turbines</td></tr>
+          <tr class="hi"><td>efficiency η<sub>i</sub></td><td>0.62 + 0.33 · Beta(a<sub>i</sub>, b<sub>i</sub>): 62–95 %, left-skewed</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="task" style="font-size:.66em">
-      <p style="margin-top:0">A wind farm has <b>10 turbines</b>. In every hour, each turbine sees its own random wind speed and direction and works at its own random efficiency.</p>
+    <div class="stack task" style="font-size:.66em">
+      <p class="callout" style="margin:0;font-size:1.05em">A wind farm has 10 turbines. <b>How much energy will it generate in one day, with 95 % confidence?</b></p>
+      <p style="margin:0">Each turbine has its own efficiency; the beta parameters (a, b) of the 10 turbines:</p>
+      <pre class="code"><code>ab = np.array([[5, 2], [6, 2], [4, 1.5], [5, 1.5],
+               [7, 2], [6, 3], [5, 2.5], [8, 3],
+               [4, 2], [6, 2]])</code></pre>
       <ol style="margin:0 0 0 1.1em">
-        <li>Write <code>turbine_power(v, theta, eta)</code> that returns the power in MW (km/h → m/s, degrees → radians).</li>
-        <li>Simulate <b>N = 10 000</b> hours: v, θ and η as arrays of shape <b>(N, 10)</b>.</li>
-        <li>Call the function <b>once</b>: the power of every turbine in every hour.</li>
-        <li>Farm power: add up the 10 turbines, <code>.sum(axis=1)</code>.</li>
-        <li>Mean, median, std; 5th and 95th percentiles; histogram.</li>
-        <li>Chance that the farm delivers <b>less than 5 MW</b>.</li>
+        <li>Write <code>turbine_power(v, theta, eta)</code> that returns the power in MW.</li>
+        <li>Simulate <b>N = 10 000</b> days: one v and one θ per day; one η per turbine per day, shape <b>(N, 10)</b>.</li>
+        <li>Daily energy: 24 × the sum of the 10 turbines (<code>axis=1</code>), in MWh.</li>
+        <li>Histogram; mean and median.</li>
+        <li><b>P95</b>: the energy exceeded on 95 % of days, <code>np.percentile(E, 5)</code>.</li>
       </ol>
-      <p class="callout" style="margin-top:10px">With average inputs, the farm gives 6.2 MW. It has a contract to supply <b>5 MW</b>. How often will it fall short?</p>
     </div>
   </div>
   <aside class="notes">
 This is the engineering problem for Part B; I will code it in Jupyter with you. Aim for 20 minutes.
-Context: a wind farm of 10 turbines, rotor diameter 80 m. The power a turbine extracts is P = ½ ρ A η v³, where A is the swept area of the rotor and η the efficiency (power coefficient). Only the wind component facing the rotor counts, so the speed is multiplied by cos(θ − 90°): the turbines face 90°, and wind from another direction is less effective.
-Uncertain inputs: wind speed v ~ Normal(32, 8) km/h; wind direction θ ~ Normal(90°, 22°); efficiency η ~ Beta(2, 5), right-skewed, mean 0.29. (Real turbines cannot exceed η = 0.593, the Betz limit; Beta(2, 5) goes above that only about 4 per cent of the time, which is fine for this exercise.)
-Steps: def turbine_power(v, theta, eta, rho=1.225, D=80): convert v / 3.6 to m/s, A = np.pi * D**2 / 4, v_eff = v * np.cos(np.radians(theta - 90)), return 0.5 * rho * A * eta * v_eff**3 / 1e6 (MW).
-Sampling: np.random.normal(32, 8, (N, 10)), np.random.normal(90, 22, (N, 10)), np.random.beta(2, 5, (N, 10)): one row per hour, one column per turbine (week 3 2-D arrays). One function call gives a (N, 10) array of powers; farm = power.sum(axis=1) gives N farm powers.
-Analysis: np.mean, np.median, np.std, np.percentile(farm, [5, 95]), plt.hist(farm, bins=50), np.mean(farm < 5).
-Expected results: mean ≈ 6.0 MW, median ≈ 5.8 MW, std ≈ 2.0 MW, 5th to 95th percentile ≈ 3.3 to 9.6 MW, skewness ≈ 0.8 (right-skewed: power grows with v cubed), P(farm < 5 MW) ≈ 0.33.
-Discussion: the best-guess calculation with average inputs gives 6.2 MW, comfortably above 5 MW, yet the farm falls short in about one hour in three. Also note that average inputs do not give the average output (6.2 vs 6.0 MW) because the model is non-linear. Extension: cap each turbine at a rated power of 2 MW with np.minimum, or check for impossible values such as a negative wind speed (outliers, 6.4).
+Problem: a wind farm of 10 turbines. How much energy will it generate in one day, with 95 per cent confidence? In wind energy this is called P95: the daily energy that is exceeded on 95 per cent of days, which is the 5th percentile of the simulated daily energies.
+Model, kept simple: the power of turbine i is P_i = ½ ρ A η_i (v cos(θ − 90°))³, with A = πD²/4 the swept area of the 80 m rotor. The turbines face 90°, so only the wind component facing the rotor counts. We treat v as the average wind speed of the day, so the energy in one day is E = 24 h × the sum of the 10 powers, in MWh.
+Uncertain inputs: the wind is the same for the whole farm: v ~ Normal(8, 1.5) m/s (about 29 km/h) and θ ~ Normal(90°, 15°), one value of each per day. The efficiencies differ from turbine to turbine: η_i = 0.62 + 0.33 × Beta(a_i, b_i), between 62 and 95 per cent. With a > b the beta distribution is left-skewed: most days a turbine runs near its upper efficiency, occasionally lower (maintenance, icing, wear). (η here is a simplified overall efficiency; real turbines capture at most 59 per cent of the wind's power, the Betz limit.)
+NumPy steps: v = np.random.normal(8, 1.5, (N, 1)) and theta = np.random.normal(90, 15, (N, 1)): one column, so they broadcast across the 10 turbines. eta = 0.62 + 0.33 * np.random.beta(ab[:, 0], ab[:, 1], (N, 10)): NumPy pairs column i of the result with a_i and b_i (broadcasting). One call to turbine_power gives an (N, 10) array; energy = 24 * power.sum(axis=1).
+Expected results: best guess with average inputs ≈ 325 MWh; simulated mean ≈ 328 MWh, median ≈ 294 MWh; P95 ≈ 92 MWh. So with 95 per cent confidence the farm generates at least about 92 MWh in a day, far less than the best guess. The histogram is strongly right-skewed because power grows with the cube of the wind speed.
 The worked solution is hidden in Part B of week5.html.
   </aside>
 </section>
@@ -801,7 +804,7 @@ The analysis tools (histogram, mean, median, standard deviation, percentiles, ex
       <ul style="font-size:.9em">
         <li>Estimate π with NumPy: random x, y in [0, 1); share with x² + y² &lt; 1, times 4.</li>
         <li>Two-lane highway speed (notes, extra example): find the mean speed, then spot and explain the outliers.</li>
-        <li>Wind farm: cap each turbine at its rated power of 2 MW with <code>np.minimum</code>. How does the chance of falling short change?</li>
+        <li>Wind farm: how does P95 change if the wind direction varies more (σ = 25°)? If all turbines had the best efficiencies?</li>
         <li>Floor beam (notes, extra exercise): the chance of exceeding the deflection limit.</li>
       </ul>
     </div>
