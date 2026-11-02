@@ -377,11 +377,11 @@ Repeat steps 2 and 3 N times, typically thousands or millions, storing every out
   <table class="t" style="font-size:.78em">
     <thead><tr><th>Step</th><th>What you do</th></tr></thead>
     <tbody>
-      <tr><td><b>1</b> Define the problem</td><td>identify the output of interest and the uncertain inputs</td></tr>
-      <tr><td><b>2</b> Assign distributions</td><td>describe each uncertain input with a probability distribution</td></tr>
-      <tr><td><b>3</b> Sample randomly</td><td>generate many random values of every input</td></tr>
-      <tr><td><b>4</b> Compute the outputs</td><td>run the model once for every sample: an equation, a function or a complex model</td></tr>
-      <tr><td><b>5</b> Analyse the results</td><td>create histograms; calculate the mean, median, standard deviation, percentiles and the chance of exceeding a limit</td></tr>
+      <tr><td><b>1</b> Define the problem</td><td>Identify the output of interest and the uncertain inputs</td></tr>
+      <tr><td><b>2</b> Assign distributions</td><td>Describe each uncertain input with a probability distribution</td></tr>
+      <tr><td><b>3</b> Sample randomly</td><td>Generate many random values of every input</td></tr>
+      <tr><td><b>4</b> Compute the outputs</td><td>Run the model once for every sample: an equation, a function or a complex model</td></tr>
+      <tr><td><b>5</b> Analyse the results</td><td>Create histograms; calculate the mean, median, standard deviation, percentiles and the chance of exceeding a limit</td></tr>
     </tbody>
   </table>
   <p class="callout" style="font-size:.7em;margin-top:16px">Python helps in steps 3 to 5: NumPy draws thousands of random numbers in one line (step 3), a function or array operation processes all of them (step 4), and NumPy and Matplotlib turn the results into histograms and statistics (step 5).</p>
@@ -445,10 +445,11 @@ A good PRNG has a long period, uniform output, efficiency and reproducibility. B
       </div>
       <div class="wchips" id="lcg-chips"></div>
       <div class="wpanel"><h4>first 20 numbers X<sub>0</sub>, X<sub>1</sub>, …</h4><div style="padding:8px 10px"><div class="lcg-seq" id="lcg-seq"></div><div class="wstat" id="lcg-out" aria-live="polite"></div></div></div>
+      <p class="small" style="margin:0;text-align:center">each number against the next </p>
     </div>
     <div class="stack" style="max-width:400px;justify-self:center;width:100%">
       <svg class="dg" id="lcg-svg" viewBox="0 0 340 330" role="img" aria-label="Scatter plot of each number against the next one."></svg>
-      <p class="small" style="margin:0;text-align:center">each number against the next (first 1 000)</p>
+      <p class="small" style="margin:0;text-align:center">each number against the next </p>
     </div>
   </div>
   <aside class="notes">
