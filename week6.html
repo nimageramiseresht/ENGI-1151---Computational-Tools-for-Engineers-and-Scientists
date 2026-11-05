@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Week 6: Advanced Monte Carlo simulation, distribution fitting | ENGI 1151</title>
+<meta name="description" content="Lecture notes with live, in-browser Python: fitting distributions to simulation results, maximum likelihood estimation, the Kolmogorov–Smirnov goodness-of-fit test, percentiles from the CDF and sensitivity analysis.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  /* week 6 page */
+  .part-head { border-top: 3px solid var(--accent); padding-top: 1rem; }
+  .part-head .tag { font-family: var(--mono); color: var(--accent); margin: 0; font-size: .95rem; letter-spacing: .04em; }
+  .part-head h2 { margin: .2rem 0 .75rem; font-size: 2.1rem; }
+  .tbl-wrap { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+  table.tbl { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+  table.tbl th, table.tbl td { border-bottom: 1px solid var(--grid); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  table.tbl th { border-bottom: 2px solid var(--ink); font-family: var(--mono); font-weight: 500; color: var(--muted); white-space: nowrap; }
+  table.tbl td code { white-space: nowrap; }
+  figure.plot { margin: -1.5rem 0 1.75rem; border: 1px solid var(--grid); border-top: 0; background: var(--paper); padding: 0.75rem 1rem 0.6rem; }
+  figure.plot img { display: block; width: 100%; max-width: 640px; height: auto; margin: 0 auto; background: #fff; border-radius: 2px; }
+  figure.plot figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+  figure.plot::before { content: "Output"; display: block; font: 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  pre.out + figure.plot::before { content: none; }
+  figure.pic { margin: 1.5rem 0; }
+  figure.pic img { display: block; width: 100%; max-width: 660px; height: auto; margin: 0 auto; background: #fff; border: 1px solid var(--grid); }
+  figure.pic figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.5; }
+</style>
+</head>
+<body data-week="6" data-notebook="week6_distribution_fitting.ipynb">
+
+<div id="topbar"><noscript><a href="index.html">ENGI 1151 · all weeks</a></noscript></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Computational Tools for Engineers and Scientists, week 6</p>
+      <h1>Advanced Monte Carlo simulation: distribution fitting</h1>
+      <p class="lede">Turn thousands of simulated results into a smooth distribution with a few parameters, and test whether it really fits.</p>
+      <p class="byline">Dr Nima Gerami Seresht <br>Department of Engineering <br>Durham University</p>
+    </div>
+    <figure class="sim-panel" style="margin:0">
+      <canvas id="hero-sim" aria-label="Animated histogram of the simulated daily energy of a wind farm, with a gamma distribution fitted to the results as they arrive" role="img"></canvas>
+      <div class="sim-readout" aria-live="off">
+        <span>days <output id="sim-n">0</output></span>
+        <span>gamma fit <output id="sim-fit">–</output></span>
+        <button type="button" id="sim-replay">Run again</button>
+      </div>
+      <figcaption class="sim-caption">Each sample is one simulated day at the wind farm of week 5. The red curve is a gamma distribution fitted by maximum likelihood to all the days so far; it settles as the data pile up.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li class="plain"><a href="#part-a">Part A · Theory</a></li>
+      <li><a data-n="1" href="#results">Reading the results</a></li>
+      <li><a data-n="2" href="#fitting">Fitting and MLE</a></li>
+      <li><a data-n="3" href="#distributions">Common distributions</a></li>
+      <li><a data-n="4" href="#goodness">Goodness of fit, KS</a></li>
+      <li><a data-n="5" href="#python">Fitting in Python</a></li>
+      <li><a data-n="6" href="#percentiles">Percentiles from the CDF</a></li>
+      <li class="plain"><a href="#part-b">Part B · Application</a></li>
+      <li><a data-n="7" href="#wind-farm">Wind farm, continued</a></li>
+      <li><a data-n="8" href="#sensitivity">Extra: sensitivity</a></li>
+      <li><a data-n="9" href="#further-reading">Further reading</a></li>
+      <li class="plain"><a href="#notebook">Practice notebook</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="part-a" class="part-head">
+      <p class="tag">PART A</p>
+      <h2>Fitting distributions to data</h2>
+      <p>Last week we described the results of a Monte Carlo simulation with histograms and statistics. This week we go one step further: we find a known, smooth probability distribution that describes the results, and we test how well it fits. The interactive versions of the figures (the likelihood, the distribution gallery, the Kolmogorov–Smirnov test and the CDF reader) are in the <a href="week6-slides.html">lecture slides</a>.</p>
+    </section>
+
+<!-- =========================================================== 1 -->
+    <section id="results">
+      <h2><span class="num">1</span>Reading the results of a simulation</h2>
+      <p>Monte Carlo simulation is useful for problems that involve uncertainty or randomness, that have no analytical solution (or a very complex one), or that need a risk assessment or probabilistic analysis. After running a large number of simulations, typically 1 000 to 100 000, we interpret the results in terms of:</p>
+      <ul>
+        <li><strong>Expected value</strong>, the mean \(\bar{x}\) or the median \(\tilde{x}\): the best guess for the output. When the outputs are (almost) normally distributed the mean is a good representative; when there are outliers or the distribution is heavily skewed, the median is better.</li>
+        <li><strong>Standard deviation</strong>, the spread of the outputs and a measure of the uncertainty: \(\sigma = \sqrt{\frac{1}{N}\sum (x_i - \bar{x})^2}\).</li>
+        <li><strong>Histograms</strong>: the visual distribution of the outcomes.</li>
+        <li><strong>A fitted probability distribution</strong>: a known distribution that describes the results, which helps further analysis.</li>
+        <li><strong>The probability of exceeding a threshold</strong>: the likelihood of failure or of exceeding a limit, which needs the cumulative distribution function of the outputs.</li>
+      </ul>
+      <p>Histograms, in their ordinary or cumulative form, are discrete: bars over bins, not continuous functions. That makes some questions awkward. For example, a histogram cannot give the probability of a value outside the range of the observed data: it simply has no bars there.</p>
+      <p><strong>Distribution fitting</strong> finds a known probability distribution (normal, gamma, beta, …) and the parameters that make it match the data best. A fitted distribution describes thousands of results with two or three numbers, answers probability questions anywhere, including beyond the data, and can be reused as an input to another simulation. Two common engineering uses: fitting distributions to real data to define the <em>inputs</em> of a Monte Carlo simulation, and fitting distributions to the <em>outputs</em> to analyse them.</p>
+    </section>
+
+<!-- =========================================================== 2 -->
+    <section id="fitting">
+      <h2><span class="num">2</span>Distribution fitting and maximum likelihood</h2>
+      <p>Fitting has two parts: choose a <strong>family</strong> of distributions (the shape: normal, gamma, lognormal, …), then estimate its <strong>parameters</strong> from the data. We then check the goodness of fit (section 4) and use the best candidate. The standard method for the parameters is <strong>maximum likelihood estimation (MLE)</strong>.</p>
+
+      <h3>2.1 The likelihood function</h3>
+      <p>Suppose we observe a dataset \(x_1, x_2, \dots, x_n\) and assume the observations are drawn independently from a distribution with an unknown parameter vector \(\theta = (\theta_1, \theta_2, \dots, \theta_k)\) and probability density function \(f(x \mid \theta)\). The <strong>likelihood function</strong> is the joint probability density of observing all the data points for given parameters:</p>
+      <div class="math">$$L(\theta \mid x_1, \dots, x_n) = \prod_{i=1}^{n} f(x_i \mid \theta)$$</div>
+      <p>Graphically: draw the density curve, read its height at every data point, and multiply the heights. Parameters that put the curve over the data give large heights and a large likelihood. The goal of maximum likelihood estimation is to find the parameter vector that maximises it:</p>
+      <div class="math">$$\hat{\theta} = \arg\max_{\theta}\ L(\theta \mid x_1, \dots, x_n)$$</div>
+
+      <h3>2.2 The log-likelihood</h3>
+      <p>The product of many small densities becomes extremely small (for eight data points it is already about \(10^{-7}\); for thousands it underflows to zero on a computer), so we take the natural logarithm and work with the <strong>log-likelihood</strong>:</p>
+      <div class="math">$$\ell(\theta) = \ln L(\theta) = \sum_{i=1}^{n} \ln f(x_i \mid \theta)$$</div>
+      <p>The logarithm is a monotonically increasing function, so maximising \(\ell(\theta)\) is equivalent to maximising \(L(\theta)\): \(\hat{\theta} = \arg\max_{\theta}\ \ell(\theta)\). To find the maximum, take the partial derivative with respect to each parameter and set it to zero:</p>
+      <div class="math">$$\frac{\partial \ell(\theta)}{\partial \theta_j} = 0, \qquad j = 1, \dots, k$$</div>
+      <p>Solving this system gives the maximum likelihood estimators.</p>
+      <div class="example">
+        <p><span class="label">Example: the normal distribution.</span> With parameters \(\mu\) and \(\sigma\), the probability density function is</p>
+        <div class="math">$$f(x \mid \mu, \sigma) = \frac{1}{\sqrt{2\pi}\,\sigma}\exp\!\left(-\frac{(x - \mu)^2}{2\sigma^2}\right)$$</div>
+        <p>and the log-likelihood for \(n\) observations is</p>
+        <div class="math">$$\ell(\mu, \sigma) = -n\ln\!\big(\sigma\sqrt{2\pi}\big) - \frac{1}{2\sigma^2}\sum_{i=1}^{n}(x_i - \mu)^2$$</div>
+        <p>Differentiating with respect to \(\mu\):</p>
+        <div class="math">$$\frac{\partial \ell}{\partial \mu} = \frac{1}{\sigma^2}\sum_{i=1}^{n}(x_i - \mu) = 0 \quad\Rightarrow\quad \hat{\mu} = \bar{x}$$</div>
+        <p>Differentiating with respect to \(\sigma\) and solving gives</p>
+        <div class="math">$$\hat{\sigma}^2 = \frac{1}{n}\sum_{i=1}^{n}(x_i - \bar{x})^2$$</div>
+        <p>The MLEs of the normal distribution are the sample mean and the standard deviation dividing by \(n\), which is what <code>np.mean</code> and <code>np.std</code> calculate.</p>
+      </div>
+      <p>Check it numerically: the log-likelihood at the MLE is higher than at any other parameters.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+x = np.array([4.1, 5.0, 5.6, 6.2, 6.4, 7.1, 7.8, 9.0])
+
+def log_likelihood(mu, sigma):
+    pdf = np.exp(-(x - mu)**2 / (2 * sigma**2)) / (np.sqrt(2 * np.pi) * sigma)
+    return np.sum(np.log(pdf))
+
+mu_hat, sigma_hat = np.mean(x), np.std(x)
+print("MLE: mu = %.3f, sigma = %.3f, log-likelihood = %.3f" % (mu_hat, sigma_hat, log_likelihood(mu_hat, sigma_hat)))
+for mu, sigma in [(6.0, 1.46), (6.4, 2.0), (5.0, 1.0)]:
+    print("mu = %.2f, sigma = %.2f: log-likelihood = %.3f" % (mu, sigma, log_likelihood(mu, sigma)))</code></pre>
+</figure>
+<pre class="out">MLE: mu = 6.400, sigma = 1.464, log-likelihood = -14.399
+mu = 6.00, sigma = 1.46: log-likelihood = -14.700
+mu = 6.40, sigma = 2.00: log-likelihood = -15.039
+mu = 5.00, sigma = 1.00: log-likelihood = -23.762</pre>
+
+      <h3>2.3 Computational fitting</h3>
+      <p>For the normal distribution the equations can be solved by hand. For most other families (gamma, beta, Weibull, …) the equations \(\partial \ell / \partial \theta_j = 0\) have <strong>no closed-form solution</strong>, so the computer solves the maximisation numerically. Think of \(\ell(\theta)\) as a landscape over the parameter space. A numerical optimiser starts from a guess, evaluates \(\ell\), moves the parameters in the direction that increases it, and repeats until \(\ell\) stops increasing: the top of the hill is \(\hat{\theta}\).</p>
+      <figure class="pic">
+        <img src="assets/img/w6-likelihood-surface.png" alt="Contour plot of the log-likelihood of a gamma distribution over its shape and scale parameters. A red path of optimiser steps climbs from a starting guess at shape 1 and scale 9 to the maximum at shape 2.68 and scale 3.51." width="602" height="452" loading="lazy">
+        <figcaption>The log-likelihood of a gamma distribution for 200 repair times (section 5), over its two parameters. The red path shows the steps of the Nelder–Mead optimiser from a starting guess to the maximum.</figcaption>
+      </figure>
+      <p>SciPy’s <code>dist.fit(data)</code> does exactly this: maximum likelihood with a numerical optimiser. Fixing a parameter you already know, for example <code>floc=0</code> for data that start at zero, makes the search easier and more reliable.</p>
+      <p>A quicker alternative is the <strong>method of moments</strong>: choose the parameters so that the mean and variance of the distribution equal those of the data. For the gamma distribution, mean \(= a \cdot \text{scale}\) and variance \(= a \cdot \text{scale}^2\), so \(\text{scale} = s^2/\bar{x}\) and \(a = \bar{x}^2/s^2\). It is simple, and a useful starting guess, but usually less accurate than MLE.</p>
+    </section>
+
+<!-- =========================================================== 3 -->
+    <section id="distributions">
+      <h2><span class="num">3</span>Common distributions in <code>scipy.stats</code></h2>
+      <p>The module <code>scipy.stats</code> contains about a hundred distributions. Every one has a location <code>loc</code> and a <code>scale</code>; some also have <strong>shape parameters</strong>. The ones you will use most:</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>SciPy name</th><th>Parameters</th><th>Support</th><th>Shape</th></tr></thead>
+        <tbody>
+          <tr><td><code>norm</code></td><td>loc = μ, scale = σ</td><td>−∞ to +∞</td><td>symmetric</td></tr>
+          <tr><td><code>t</code></td><td>df, loc, scale</td><td>−∞ to +∞</td><td>symmetric, heavier tails than the normal</td></tr>
+          <tr><td><code>uniform</code></td><td>loc, scale</td><td>loc to loc + scale</td><td>flat</td></tr>
+          <tr><td><code>triang</code></td><td>c, loc, scale</td><td>loc to loc + scale</td><td>peak at loc + c·scale</td></tr>
+          <tr><td><code>expon</code></td><td>loc, scale = 1/λ</td><td>loc to +∞</td><td>right-skewed, highest at the start</td></tr>
+          <tr><td><code>lognorm</code></td><td>s, loc, scale</td><td>loc to +∞</td><td>right-skewed; more skew for larger s</td></tr>
+          <tr><td><code>gamma</code></td><td>a, loc, scale</td><td>loc to +∞</td><td>right-skewed; nearly symmetric for large a</td></tr>
+          <tr><td><code>weibull_min</code></td><td>c, loc, scale</td><td>loc to +∞</td><td>right-skewed for small c, nearly symmetric near c = 3.6</td></tr>
+          <tr><td><code>beta</code></td><td>a, b, loc, scale</td><td>loc to loc + scale (0 to 1 by default)</td><td>left-skewed if a &gt; b, right-skewed if a &lt; b</td></tr>
+        </tbody>
+      </table></div>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+
+examples = [("norm", stats.norm(loc=0, scale=1.5), -6, 6),
+            ("t (df=5)", stats.t(df=5), -6, 6),
+            ("uniform", stats.uniform(loc=-3, scale=6), -6, 6),
+            ("triang", stats.triang(c=0.3, loc=1, scale=7), 0, 12),
+            ("expon", stats.expon(scale=1.5), 0, 12),
+            ("lognorm", stats.lognorm(s=0.5, scale=3), 0, 12),
+            ("gamma", stats.gamma(a=2, scale=1.2), 0, 12),
+            ("weibull_min", stats.weibull_min(c=2, scale=4), 0, 12),
+            ("beta (a=5, b=2)", stats.beta(a=5, b=2), 0, 1)]
+
+fig, axes = plt.subplots(3, 3, figsize=(9, 6.5))
+for ax, (name, dist, lo, hi) in zip(axes.flat, examples):
+    x = np.linspace(lo, hi, 400)
+    ax.fill_between(x, dist.pdf(x), color="#E8D9EA")
+    ax.plot(x, dist.pdf(x), color="#68246D", lw=2)
+    ax.set_title("%s   skewness %.2f" % (name, dist.stats(moments="s")), fontsize=10)
+    ax.set_yticks([])
+plt.tight_layout()
+plt.show()</code></pre>
+</figure>
+<figure class="plot"><img src="assets/img/w6-gallery.png" alt="Nine small plots of probability density functions: normal, t, uniform, triangular, exponential, lognormal, gamma, Weibull and beta, each with its skewness" width="901" height="640" loading="lazy"><figcaption>Common distributions in scipy.stats, with example parameters.</figcaption></figure>
+      <p>Which candidates to try depends on the data. Look at the histogram: can the values be negative? Is there an upper limit? Which way does the long tail point? Are they counts?</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Your data are …</th><th>Try first</th><th>Typical engineering examples</th></tr></thead>
+        <tbody>
+          <tr><td>symmetric, unbounded</td><td><code>norm</code></td><td>measurement errors, manufacturing tolerances, sums of many small effects</td></tr>
+          <tr><td>symmetric, more extreme values than normal</td><td><code>t</code></td><td>errors with occasional large outliers</td></tr>
+          <tr><td>bounded, only the limits known</td><td><code>uniform</code></td><td>a value somewhere between a minimum and a maximum</td></tr>
+          <tr><td>bounded, with a most likely value</td><td><code>triang</code>, <code>beta</code></td><td>expert estimates of durations and costs (min, most likely, max)</td></tr>
+          <tr><td>bounded, left-skewed</td><td><code>beta</code> (a &gt; b)</td><td>efficiencies, percentages close to an upper limit</td></tr>
+          <tr><td>positive, right-skewed</td><td><code>gamma</code>, <code>lognorm</code>, <code>weibull_min</code></td><td>repair times, rainfall, wind speeds, loads, energy production</td></tr>
+          <tr><td>positive, most values near zero</td><td><code>expon</code></td><td>times between random events (arrivals, failures)</td></tr>
+          <tr><td>whole numbers (counts)</td><td><code>poisson</code>, <code>binom</code></td><td>vehicles per minute, defective parts in a batch</td></tr>
+        </tbody>
+      </table></div>
+      <p>The guide gives candidates, not answers: fit two to four of them and let the goodness-of-fit test decide. Physics matters too: a normal distribution for a quantity that cannot be negative puts probability on impossible values.</p>
+    </section>
+
+<!-- =========================================================== 4 -->
+    <section id="goodness">
+      <h2><span class="num">4</span>Goodness of fit and the Kolmogorov–Smirnov test</h2>
+      <p>Maximum likelihood always returns parameters: it finds the best member of the family you asked for. If the family is wrong, the best member can still be a poor description of the data. So once different distributions are fitted, we test how well each one fits and choose the one that represents the data most accurately. This is the <strong>goodness of fit</strong>. Check it visually (the fitted pdf over a density histogram, the fitted CDF over the empirical CDF) and with a statistical test such as Kolmogorov–Smirnov, chi-square or Anderson–Darling.</p>
+
+      <h3>4.1 The empirical CDF</h3>
+      <p>The cumulative distribution function (CDF) \(F(x)\) of a distribution is the probability of a value less than or equal to \(x\); it rises from 0 to 1. The <strong>empirical CDF</strong> (ECDF) of a sample does the same for the data:</p>
+      <div class="math">$$F_n(x) = \frac{\text{number of } x_i \le x}{n}$$</div>
+      <p>Sort the data: the ECDF is a staircase that is 0 below the smallest value and jumps up by \(1/n\) at every data point, reaching 1 at the largest. It needs no bins and uses every data point exactly, which is why goodness-of-fit tests compare CDFs rather than histograms.</p>
+
+      <h3>4.2 The Kolmogorov–Smirnov (K–S) test</h3>
+      <p>The Kolmogorov–Smirnov test is a non-parametric statistical test commonly used for this purpose. There are two versions: the one-sample test, which compares a sample with a reference probability distribution, and the two-sample test, which compares two sets of empirical data. With \(F(x)\) the CDF of the fitted distribution and \(F_n(x)\) the ECDF of the sample, the test statistic is</p>
+      <div class="math">$$D_n = \sup_x \big|F_n(x) - F(x)\big|$$</div>
+      <p>the maximum vertical distance between the empirical and the theoretical CDFs (“sup”, the supremum, is the largest value over all \(x\)).</p>
+      <ol class="steps">
+        <li><strong>Compute \(D_n\).</strong></li>
+        <li><strong>Find the critical value</strong> \(D_\alpha\) for the significance level \(\alpha\) and the sample size \(n\). For \(n\) above about 40, \(D_\alpha = c_\alpha/\sqrt{n}\) with \(c_\alpha\) from the table below.</li>
+        <li><strong>Compare.</strong> If \(D_n &gt; D_\alpha\), reject the distribution: the data do not follow it. If \(D_n \le D_\alpha\), the distribution cannot be rejected: the data are consistent with it.</li>
+      </ol>
+      <div class="tbl-wrap"><table class="tbl" style="max-width:30rem">
+        <thead><tr><th>\(\alpha\)</th><th>0.10</th><th>0.05</th><th>0.02</th><th>0.01</th><th>0.001</th></tr></thead>
+        <tbody><tr><td>\(c_\alpha\)</td><td>1.22</td><td>1.36</td><td>1.52</td><td>1.63</td><td>1.95</td></tr></tbody>
+      </table></div>
+      <p>The <strong>p-value</strong> gives the same decision without the table: it is the probability of a gap at least as large as \(D_n\) if the data really came from the fitted distribution. If \(p &lt; \alpha\) (usually 0.05), reject. The K–S test is a good method for comparing distributions because it does not assume the form of the distribution and it works with small samples as well. Note that the critical value shrinks like \(1/\sqrt{n}\): with many data points the test detects even small mismatches, and with few data almost any reasonable distribution passes.</p>
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout says that if \(D_n \le D_\alpha\) “the data follows the distribution”. A test can only fail to find evidence against a distribution, so the precise wording is that the distribution <em>cannot be rejected</em>. Also, when the parameters are estimated from the same data, as here, the standard K–S critical values and p-values are somewhat generous; the test remains a good way to rank candidates.</p>
+      </div>
+
+      <h3>4.3 What <code>stats.kstest</code> returns</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>statistic</code></td><td>\(D_n\), the largest vertical gap between the ECDF and the fitted CDF</td></tr>
+          <tr><td><code>pvalue</code></td><td>the probability of a gap at least this large if the fitted distribution were correct</td></tr>
+          <tr><td><code>statistic_location</code></td><td>the value of \(x\) where the largest gap occurs: where the fit is worst</td></tr>
+          <tr><td><code>statistic_sign</code></td><td>(newer SciPy versions) +1 if the ECDF is above the fitted CDF at that point, −1 if below</td></tr>
+        </tbody>
+      </table></div>
+      <p>To choose between candidates, prefer the smallest \(D\) (equivalently the largest p-value), and confirm with the plots.</p>
+    </section>
+
+<!-- =========================================================== 5 -->
+    <section id="python">
+      <h2><span class="num">5</span>Fitting and testing in Python</h2>
+      <p>We use the <code>stats</code> module of the SciPy package. As an example dataset we take 200 records of pump repair times, in hours (simulated here with NumPy, so that everyone has the same numbers).</p>
+
+      <h3>5.1 Fitting</h3>
+      <p><code>stats.&lt;family&gt;.fit(data)</code> runs maximum likelihood and returns the parameters as a tuple: the shape parameters first, then <code>loc</code>, then <code>scale</code>. <code>floc=0</code> fixes the location at zero, which suits data that start at zero. <code>stats.gamma(*params)</code> “freezes” the fitted distribution, so its methods (<code>.pdf</code>, <code>.cdf</code>, <code>.ppf</code>, <code>.sf</code>, <code>.mean()</code>, <code>.rvs()</code>) no longer need the parameters.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import scipy.stats as stats
+
+np.random.seed(7)
+data = np.random.gamma(2.5, 4, 200)          # 200 repair times (h)
+
+normal_params = stats.norm.fit(data)
+expo_params = stats.expon.fit(data, floc=0)
+lognorm_params = stats.lognorm.fit(data, floc=0)
+gamma_params = stats.gamma.fit(data, floc=0)
+
+print("normal (loc, scale):        ", np.round(normal_params, 3))
+print("exponential (loc, scale):   ", np.round(expo_params, 3))
+print("lognormal (s, loc, scale):  ", np.round(lognorm_params, 3))
+print("gamma (a, loc, scale):      ", np.round(gamma_params, 3))
+
+g = stats.gamma(*gamma_params)               # frozen distribution
+print("gamma mean %.2f h, P(time &gt; 40 h) = %.5f" % (g.mean(), g.sf(40)))</code></pre>
+</figure>
+<pre class="out">normal (loc, scale):         [9.421 5.802]
+exponential (loc, scale):    [0.    9.421]
+lognormal (s, loc, scale):   [0.663 0.    7.729]
+gamma (a, loc, scale):       [2.681 0.    3.513]
+gamma mean 9.42 h, P(time &gt; 40 h) = 0.00052</pre>
+      <p>The normal fit is simply the sample mean and standard deviation, as derived in section 2. The fitted gamma answers a question the histogram cannot: the longest repair in the data is 35 hours, yet the chance of a repair longer than 40 hours is small but not zero.</p>
+
+      <h3>5.2 Look first: fitted pdfs over the histogram</h3>
+<figure class="code" data-runnable data-setup="repair">
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+candidates = {"norm": {}, "expon": {"floc": 0},
+              "lognorm": {"floc": 0}, "gamma": {"floc": 0}}
+
+x = np.linspace(0, data.max(), 300)
+plt.hist(data, bins=25, density=True, color="skyblue", edgecolor="black", alpha=0.7)
+for name, options in candidates.items():
+    dist = getattr(stats, name)              # e.g. stats.gamma
+    params = dist.fit(data, **options)
+    plt.plot(x, dist.pdf(x, *params), lw=2, label=name)
+plt.xlabel("Repair time (h)")
+plt.ylabel("Density")
+plt.legend()
+plt.show()</code></pre>
+</figure>
+<figure class="plot"><img src="assets/img/w6-repair-pdfs.png" alt="Histogram of the repair times with four fitted density curves: the exponential peaks at zero, the normal is too symmetric, and the lognormal and gamma follow the data" width="577" height="438" loading="lazy"><figcaption>Four candidate distributions fitted to the repair times.</figcaption></figure>
+      <p>The exponential puts its peak at zero and the normal is too symmetric (and spills below zero). The lognormal and gamma both follow the data; the eye cannot easily separate them.</p>
+
+      <h3>5.3 Compare the CDFs and run the K–S test</h3>
+<figure class="code" data-runnable data-setup="repair">
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+xs = np.sort(data)
+ecdf = np.arange(1, len(xs) + 1) / len(xs)   # empirical CDF at each sorted point
+plt.step(xs, ecdf, where="post", color="black", lw=1.5, label="data (ECDF)")
+
+x = np.linspace(0, data.max(), 300)
+print("dist        D       p   worst at x")
+for name, options in {"norm": {}, "expon": {"floc": 0},
+                      "lognorm": {"floc": 0}, "gamma": {"floc": 0}}.items():
+    dist = getattr(stats, name)
+    params = dist.fit(data, **options)
+    result = stats.kstest(data, dist(*params).cdf)
+    print("%-8s %6.3f %7.4f %8.2f" % (name, result.statistic, result.pvalue, result.statistic_location))
+    plt.plot(x, dist.cdf(x, *params), lw=1.8, label=name)
+plt.xlabel("Repair time (h)")
+plt.ylabel("Cumulative probability")
+plt.legend()
+plt.show()</code></pre>
+</figure>
+<pre class="out">dist        D       p   worst at x
+norm      0.101  0.0313     9.62
+expon     0.199  0.0000     4.27
+lognorm   0.059  0.4646     5.93
+gamma     0.029  0.9946     2.72</pre>
+<figure class="plot"><img src="assets/img/w6-repair-cdfs.png" alt="Empirical CDF of the repair times as a staircase with the four fitted CDFs; the gamma and lognormal curves follow the staircase closely" width="569" height="438" loading="lazy"><figcaption>The empirical CDF and the fitted CDFs: the K–S statistic is the largest vertical gap.</figcaption></figure>
+      <p>The exponential and the normal are rejected at the 5 % level (p below 0.05); the lognormal and gamma are not, and the gamma has by far the smallest \(D\): it is the best description of the data. (The data were in fact generated from a gamma distribution.) The normal’s worst point is near the peak of the data, where a symmetric curve cannot follow a skewed sample.</p>
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout calls <code>stats.kstest(simulation_results, 'norm', N=50, args=normal_params)</code> and prints only <code>[0]</code>, the statistic. The <code>N</code> argument is only used when the second argument generates samples, so it has no effect here, and the p-value (<code>[1]</code>) is needed for the decision. Passing the frozen fitted distribution’s <code>.cdf</code>, as above, works for every family and cannot mix up parameters. The handout’s fitting example also reuses the week 5 highway simulation, with the sampling of \(\alpha\) and \(\beta\) that week 5 corrected; these notes use a dataset whose answer is known.</p>
+      </div>
+    </section>
+
+<!-- =========================================================== 6 -->
+    <section id="percentiles">
+      <h2><span class="num">6</span>Percentiles and probabilities from the CDF</h2>
+      <p>The CDF of a fitted distribution answers two kinds of question:</p>
+      <ul>
+        <li><strong>Probability → value</strong> (a percentile): start at probability \(p\) on the vertical axis, go across to the curve and down to the horizontal axis. In SciPy this inverse CDF is the <em>percent point function</em>, <code>dist.ppf(p)</code>.</li>
+        <li><strong>Value → probability</strong>: start at \(x\) on the horizontal axis, go up to the curve and across to the vertical axis: \(F(x) = P(X \le x)\), <code>dist.cdf(x)</code>. The probability of exceeding \(x\) is \(1 - F(x)\), the survival function <code>dist.sf(x)</code>.</li>
+      </ul>
+<figure class="code" data-runnable data-setup="repair">
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+g = stats.gamma(*stats.gamma.fit(data, floc=0))
+
+print("median:          %.2f h" % g.ppf(0.5))
+print("95th percentile: %.2f h   (from the data: %.2f h)" % (g.ppf(0.95), np.percentile(data, 95)))
+print("P(time &lt;= 5 h) = %.3f" % g.cdf(5))
+print("P(time &gt; 24 h) = %.4f" % g.sf(24))
+
+x = np.linspace(0, 40, 300)
+plt.plot(x, g.cdf(x), color="#68246D", lw=2.5)
+p95 = g.ppf(0.95)
+plt.plot([0, p95, p95], [0.95, 0.95, 0], "r--")          # probability -&gt; value
+plt.plot([5, 5, 0], [0, g.cdf(5), g.cdf(5)], "b--")       # value -&gt; probability
+plt.text(p95 + 0.5, 0.05, "ppf(0.95) = %.1f h" % p95, color="red")
+plt.text(5.5, g.cdf(5) - 0.07, "cdf(5) = %.3f" % g.cdf(5), color="blue")
+plt.xlabel("Repair time x (h)")
+plt.ylabel("F(x)")
+plt.grid(True)
+plt.show()</code></pre>
+</figure>
+<pre class="out">median:          8.28 h
+95th percentile: 20.43 h   (from the data: 20.42 h)
+P(time &lt;= 5 h) = 0.234
+P(time &gt; 24 h) = 0.0228</pre>
+<figure class="plot"><img src="assets/img/w6-cdf-reading.png" alt="CDF of the fitted gamma distribution with a red dashed line from probability 0.95 across and down to 20.4 hours, and a blue dashed line from 5 hours up and across to probability 0.234" width="569" height="438" loading="lazy"><figcaption>Reading the CDF both ways: ppf from a probability, cdf from a value.</figcaption></figure>
+      <p>Note the conventions: <code>ppf</code> takes a probability between 0 and 1, while <code>np.percentile</code> takes a percentage between 0 and 100. For limits within the data, the raw results and the fitted distribution give similar answers; for limits in the tail or beyond the data, only the fitted distribution can answer, provided it passed the goodness-of-fit test.</p>
+    </section>
+
+    <section id="part-b" class="part-head">
+      <p class="tag">PART B</p>
+      <h2>An engineering application</h2>
+      <p>We continue the wind farm of week 5 and fit distributions to its simulated daily energy, coded in class in about 20 minutes.</p>
+    </section>
+
+<!-- =========================================================== 7 -->
+    <section id="wind-farm">
+      <h2><span class="num">7</span>Which distribution fits the wind farm?</h2>
+      <p>In week 5 we simulated the daily energy of a wind farm of 10 turbines: the wind speed \(v \sim N(8, 1.5)\) m/s and the wind direction \(\theta \sim N(0, 0.26)\) rad are the same for all turbines on a day, each turbine’s efficiency is \(0.62 + 0.33\,\text{Beta}(a_i, b_i)\), and the energy of a day is 24 h times the sum of the 10 turbine powers \(P_i = \tfrac{1}{2}\rho A \eta_i (v\cos\theta)^3\). The simulation, as a starting point:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+def turbine_power(v, theta, eta, rho=1.225, D=80):
+    A = np.pi * D**2 / 4
+    return 0.5 * rho * A * eta * (v * np.cos(theta))**3 / 1e6   # MW
+
+ab = np.array([[5, 2], [6, 2], [4, 1.5], [5, 1.5], [7, 2],
+               [6, 3], [5, 2.5], [8, 3], [4, 2], [6, 2]])
+np.random.seed(1)
+N = 10_000                                     # simulated days
+v = np.random.normal(8, 1.5, (N, 1))           # m/s
+theta = np.random.normal(0, 0.26, (N, 1))      # rad
+eta = 0.62 + 0.33 * np.random.beta(ab[:, 0], ab[:, 1], (N, 10))
+energy = 24 * turbine_power(v, theta, eta).sum(axis=1)   # MWh/day
+
+print("mean %.0f MWh, empirical P95 %.0f MWh" % (energy.mean(), np.percentile(energy, 5)))
+plt.hist(energy, bins=60, density=True, color="skyblue", edgecolor="black")
+plt.xlabel("Energy in one day (MWh)")
+plt.ylabel("Density")
+plt.show()</code></pre>
+</figure>
+<pre class="out">mean 328 MWh, empirical P95 92 MWh</pre>
+<figure class="plot"><img src="assets/img/w6-wind-hist.png" alt="Strongly right-skewed histogram of the daily energy of the wind farm, peaking around 250 MWh with a long tail" width="595" height="438" loading="lazy"><figcaption>The simulated daily energy of the wind farm over 10 000 days.</figcaption></figure>
+      <div class="exercise">
+        <p><span class="label">Exercise 7.1.</span> Which distribution best describes the daily energy of the wind farm?</p>
+        <ol>
+          <li>Fit <code>norm</code>, <code>lognorm</code>, <code>gamma</code> and <code>weibull_min</code> to <code>energy</code> (use <code>floc=0</code> for the last three).</li>
+          <li>Plot the density histogram with the four fitted pdfs.</li>
+          <li>Run the K–S test for each candidate: \(D\), the p-value and the location of the largest gap. Which pass at \(\alpha = 0.05\)? Which is best?</li>
+          <li>With the best fit, find P95 (the energy exceeded on 95 % of days) with <code>ppf(0.05)</code> and compare it with <code>np.percentile(energy, 5)</code>.</li>
+          <li>Find the probability of a day with less than 100 MWh, and of a day with more than 600 MWh.</li>
+          <li>Repeat with \(N = 1\,000\) days. Does the decision change? Why?</li>
+        </ol>
+<figure class="code sandbox" data-runnable data-setup="wind">
+<pre><code class="language-python">import scipy.stats as stats
+import matplotlib.pyplot as plt
+
+# energy (10 000 simulated days) is ready to use
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable data-setup="wind">
+<pre><code class="language-python">import scipy.stats as stats
+import matplotlib.pyplot as plt
+
+candidates = {"norm": {}, "lognorm": {"floc": 0},
+              "gamma": {"floc": 0}, "weibull_min": {"floc": 0}}
+
+x = np.linspace(0, energy.max(), 400)
+plt.hist(energy, bins=60, density=True, color="skyblue", edgecolor="black", alpha=0.7)
+fitted = {}                                   # name -&gt; fitted parameters
+print("dist            D        p   worst at x (MWh)")
+for name, options in candidates.items():
+    dist = getattr(stats, name)
+    fitted[name] = dist.fit(energy, **options)
+    result = stats.kstest(energy, dist(*fitted[name]).cdf)
+    print("%-12s %7.4f %8.2g %10.0f" % (name, result.statistic, result.pvalue, result.statistic_location))
+    plt.plot(x, dist.pdf(x, *fitted[name]), lw=2, label=name)
+plt.xlabel("Energy in one day (MWh)")
+plt.ylabel("Density")
+plt.legend()
+plt.show()
+
+a, loc, scale = fitted["gamma"]
+best = stats.gamma(a, loc, scale)
+print("gamma parameters: a = %.3f, scale = %.2f MWh" % (a, scale))
+print("P95 from the fit: %.1f MWh, from the data: %.1f MWh" % (best.ppf(0.05), np.percentile(energy, 5)))
+print("P(E &lt; 100 MWh) = %.3f   (fraction of days: %.3f)" % (best.cdf(100), np.mean(energy &lt; 100)))
+print("P(E &gt; 600 MWh) = %.3f   (fraction of days: %.3f)" % (best.sf(600), np.mean(energy &gt; 600)))</code></pre>
+</figure>
+<pre class="out">dist            D        p   worst at x (MWh)
+norm          0.0779  3.4e-53        342
+lognorm       0.0423  5.3e-16        264
+gamma         0.0085     0.46        417
+weibull_min   0.0332    5e-10        368
+gamma parameters: a = 3.152, scale = 104.19 MWh
+P95 from the fit: 93.4 MWh, from the data: 92.0 MWh
+P(E &lt; 100 MWh) = 0.059   (fraction of days: 0.060)
+P(E &gt; 600 MWh) = 0.086   (fraction of days: 0.086)</pre>
+<figure class="plot"><img src="assets/img/w6-wind-fits.png" alt="Histogram of the daily energy with four fitted density curves; the gamma curve follows the histogram most closely" width="595" height="438" loading="lazy"><figcaption>Four candidate distributions fitted to the daily energy of the wind farm.</figcaption></figure>
+          <p>Only the gamma distribution is not rejected: its \(D\) is about ten times smaller than the others and its p-value is well above 0.05. The normal is rejected (and would give negative energy on some days), the lognormal is too heavy in the right tail and the Weibull does not follow the peak. The fitted gamma reproduces P95 and the exceedance probabilities of the raw simulation closely, with just two parameters.</p>
+          <p>With fewer days the test is less strict:</p>
+<figure class="code" data-runnable data-setup="wind">
+<pre><code class="language-python">import scipy.stats as stats
+
+small = energy[:1000]                        # the first 1 000 days only
+for name, options in {"norm": {}, "lognorm": {"floc": 0},
+                      "gamma": {"floc": 0}, "weibull_min": {"floc": 0}}.items():
+    dist = getattr(stats, name)
+    params = dist.fit(small, **options)
+    result = stats.kstest(small, dist(*params).cdf)
+    print("%-12s D = %.4f  p = %.3g" % (name, result.statistic, result.pvalue))</code></pre>
+</figure>
+<pre class="out">norm         D = 0.0820  p = 2.66e-06
+lognorm      D = 0.0583  p = 0.00212
+gamma        D = 0.0213  p = 0.746
+weibull_min  D = 0.0387  p = 0.0976</pre>
+          <p>With 1 000 days the critical value \(1.36/\sqrt{1000} = 0.043\) is three times larger than with 10 000 days (0.014), so it cannot separate similar shapes so sharply: here both the gamma and the Weibull pass, while the normal and lognormal are still rejected. More simulated days give a sharper decision.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 8 -->
+    <section id="sensitivity">
+      <h2><span class="num">8</span>Extra: sensitivity analysis with Monte Carlo simulation</h2>
+      <p>A Monte Carlo simulation can also show <strong>which inputs matter most</strong>: a sensitivity analysis. It helps engineers find the critical parameters of a system and focus on the most influential factors.</p>
+      <ol class="steps">
+        <li><strong>Vary the inputs.</strong> Sample the inputs (randomly, as in Monte Carlo, or systematically, one at a time) and <em>store every sample</em> of every input.</li>
+        <li><strong>Determine the outputs</strong> for every sample with the model: a Python function, an equation or a large simulation model.</li>
+        <li><strong>Measure the association</strong> between each input and the output, for example with the Pearson correlation coefficient (between −1 and 1; 0 means no linear association), and show the results in a <strong>tornado diagram</strong>.</li>
+      </ol>
+      <p>For the wind farm we kept every sample, so we can correlate each input with the daily energy. The wind direction matters through \(\cos\theta\), which is the same for \(+\theta\) and \(-\theta\), so we correlate with the size of the angle, \(|\theta|\): correlation only detects <em>linear</em> association.</p>
+<figure class="code" data-runnable data-setup="wind">
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+inputs = {"wind speed v": v[:, 0],
+          "wind angle |θ|": np.abs(theta[:, 0]),
+          "mean efficiency": eta.mean(axis=1),
+          "turbine 1 efficiency": eta[:, 0]}
+
+corr = {name: np.corrcoef(values, energy)[0, 1] for name, values in inputs.items()}
+for name, r in corr.items():
+    print("%-22s r = %+.3f" % (name, r))
+
+order = sorted(corr, key=lambda k: abs(corr[k]))       # largest bar on top
+plt.barh(order, [corr[k] for k in order], color=["#68246D" if corr[k] &gt; 0 else "#B3261E" for k in order])
+plt.axvline(0, color="black", lw=1)
+plt.xlabel("Correlation with the daily energy")
+plt.title("Sensitivity of the daily energy to the inputs")
+plt.tight_layout()
+plt.show()</code></pre>
+</figure>
+<pre class="out">wind speed v           r = +0.936
+wind angle |θ|         r = -0.228
+mean efficiency        r = +0.051
+turbine 1 efficiency   r = +0.013</pre>
+<figure class="plot"><img src="assets/img/w6-tornado.png" alt="Tornado diagram: horizontal bars of the correlation of each input with the daily energy; wind speed has by far the largest positive bar, the wind angle a clear negative bar, the efficiencies small bars" width="630" height="470" loading="lazy"><figcaption>Sensitivity of the daily energy to the inputs.</figcaption></figure>
+      <p>The wind speed dominates (power grows with \(v^3\)); the angle has a clear negative effect (larger angles mean less wind facing the rotors); the efficiencies matter much less, and a single turbine’s efficiency hardly at all. To improve the prediction of the farm’s output, measure the wind better, not the turbines. A scatter plot of each input against the output (<code>plt.scatter(v[:, 0], energy)</code>) shows the same picture and reveals non-linear relationships that a correlation coefficient can miss.</p>
+    </section>
+
+<!-- =========================================================== 9 -->
+    <section id="further-reading">
+      <h2><span class="num">9</span>Further reading</h2>
+      <ul>
+        <li>Rubinstein, R. Y. and Kroese, D. P. (2016). <em>Simulation and the Monte Carlo Method</em>, 3rd edition. Wiley.</li>
+        <li>Metropolis, N. and Ulam, S. (1949). The Monte Carlo method. <em>Journal of the American Statistical Association</em>, 44(247), 335–341.</li>
+        <li>Goodman, L. A. (1954). Kolmogorov–Smirnov tests for psychological research. <em>Psychological Bulletin</em>, 51(2), 160–168.</li>
+        <li>SciPy documentation: <a href="https://docs.scipy.org/doc/scipy/reference/stats.html">scipy.stats</a>, the list of distributions and <code>kstest</code>.</li>
+      </ul>
+    </section>
+
+    <section id="notebook" class="wide">
+      <h2>Practice notebook</h2>
+      <p style="max-width:var(--measure)">All of this week’s code in one Jupyter notebook, with exercises at the end. Cells share variables, so run them from top to bottom with <kbd style="font-family:var(--mono);font-size:.85em">Shift + Enter</kbd>. Your edits are kept in this browser only; use <em>File → Download</em> to save a copy.</p>
+      <div class="notebook-shell">
+        <div class="notebook-bar">
+          <span>week6_distribution_fitting.ipynb</span>
+          <span class="links" id="notebook-links"></span>
+        </div>
+        <div id="notebook-slot"></div>
+      </div>
+    </section>
+    <nav class="pager" id="pager" aria-label="Other weeks"></nav>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<!-- Setup code prepended to runnable blocks so each live window works on its own -->
+<script type="text/plain" id="setup-repair" data-hint="The live window already has data (200 repair times) and scipy.stats as stats.">import numpy as np
+import scipy.stats as stats
+
+np.random.seed(7)
+data = np.random.gamma(2.5, 4, 200)
+</script>
+<script type="text/plain" id="setup-wind" data-hint="The live window already has the wind farm simulation: energy, v, theta and eta.">import numpy as np
+
+def turbine_power(v, theta, eta, rho=1.225, D=80):
+    A = np.pi * D**2 / 4
+    return 0.5 * rho * A * eta * (v * np.cos(theta))**3 / 1e6   # MW
+
+ab = np.array([[5, 2], [6, 2], [4, 1.5], [5, 1.5], [7, 2],
+               [6, 3], [5, 2.5], [8, 3], [4, 2], [6, 2]])
+np.random.seed(1)
+N = 10_000
+v = np.random.normal(8, 1.5, (N, 1))
+theta = np.random.normal(0, 0.26, (N, 1))
+eta = 0.62 + 0.33 * np.random.beta(ab[:, 0], ab[:, 1], (N, 10))
+energy = 24 * turbine_power(v, theta, eta).sum(axis=1)
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<script src="assets/site.js"></script>
+<script>
+/* ============ Hero: wind farm days arrive, a gamma distribution is fitted to them ============ */
+(() => {
+  const canvas = document.getElementById('hero-sim');
+  const ctx = canvas.getContext('2d');
+  const nOut = document.getElementById('sim-n'), fOut = document.getElementById('sim-fit');
+  const replay = document.getElementById('sim-replay');
+  const reduce = reduceMotion;
+  const TOTAL = 2000, LO = 0, HI = 1000, BINS = 40, binW = (HI - LO) / BINS;
+  const AB = [[5, 2], [6, 2], [4, 1.5], [5, 1.5], [7, 2], [6, 3], [5, 2.5], [8, 3], [4, 2], [6, 2]];
+  let bins, samples, raf, fit = null;
+  function randn() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function gamma(k) {                     // Marsaglia–Tsang, scale 1
+    if (k < 1) return gamma(k + 1) * Math.pow(Math.random(), 1 / k);
+    const d = k - 1 / 3, c = 1 / Math.sqrt(9 * d);
+    for (;;) { let x, v; do { x = randn(); v = 1 + c * x; } while (v <= 0); v = v * v * v; const u = Math.random();
+      if (u < 1 - 0.0331 * x ** 4 || Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v; }
+  }
+  const beta = (a, b) => { const x = gamma(a); return x / (x + gamma(b)); };
+  function day() {                         // one simulated day, MWh
+    const v = 8 + 1.5 * randn(), th = 0.26 * randn(), A = Math.PI * 80 * 80 / 4, w = Math.pow(v * Math.cos(th), 3);
+    let e = 0;
+    for (const [a, b] of AB) e += 0.5 * 1.225 * A * (0.62 + 0.33 * beta(a, b)) * w;
+    return 24 * e / 1e6;
+  }
+  function lgamma(x) { const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); let s = 1.000000000190015; for (const ci of c) s += ci / ++y; return -t + Math.log(2.5066282746310005 * s / x); }
+  function digamma(x) { let r = 0; while (x < 6) { r -= 1 / x; x += 1; } const f = 1 / (x * x); return r + Math.log(x) - 0.5 / x - f * (1 / 12 - f * (1 / 120 - f / 252)); }
+  function trigamma(x) { let r = 0; while (x < 6) { r += 1 / (x * x); x += 1; } const f = 1 / (x * x); return r + 1 / x + f / 2 + f / x * (1 / 6 - f / 30); }
+  function fitGamma() {                    // maximum likelihood, loc = 0
+    const n = samples.length; let m = 0, lm = 0;
+    for (const x of samples) { m += x; lm += Math.log(x); }
+    m /= n; lm /= n; const s = Math.log(m) - lm;
+    let a = (3 - s + Math.sqrt((s - 3) ** 2 + 24 * s)) / (12 * s);
+    for (let i = 0; i < 10; i++) a -= (Math.log(a) - digamma(a) - s) / (1 / a - trigamma(a));
+    return { a, scale: m / a };
+  }
+  const pdf = (x, f) => x <= 0 ? 0 : Math.exp((f.a - 1) * Math.log(x / f.scale) - x / f.scale - lgamma(f.a)) / f.scale;
+  function colours() { const cs = getComputedStyle(document.documentElement);
+    return { ink: cs.getPropertyValue('--ink').trim(), accent: cs.getPropertyValue('--accent').trim(), grid: cs.getPropertyValue('--grid').trim(), muted: cs.getPropertyValue('--muted').trim(), bad: cs.getPropertyValue('--bad').trim() }; }
+  function size() { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect();
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return r; }
+  let box = size();
+  const pad = { l: 8, r: 8, t: 8, b: 26 };
+  const xOf = v => pad.l + (v - LO) / (HI - LO) * (box.width - pad.l - pad.r);
+  function draw() {
+    const c = colours(), w = box.width, h = box.height, plotH = h - pad.t - pad.b;
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = c.grid; ctx.lineWidth = 1; ctx.fillStyle = c.muted; ctx.font = '12px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+    for (let v = 200; v <= 800; v += 200) { const x = xOf(v); ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, h - pad.b); ctx.stroke(); ctx.fillText(v + ' MWh', x, h - 8); }
+    const n = Math.max(samples.length, 1), dens = bins.map(k => k / (n * binW));
+    const peak = Math.max(0.0028, ...dens), bw = (w - pad.l - pad.r) / BINS;
+    ctx.fillStyle = c.accent; ctx.globalAlpha = 0.85;
+    dens.forEach((d, i) => { const bh = d / peak * plotH * 0.92; ctx.fillRect(pad.l + i * bw + 1, h - pad.b - bh, bw - 2, bh); });
+    ctx.globalAlpha = 1;
+    if (fit) {
+      ctx.strokeStyle = c.bad; ctx.lineWidth = 2.5; ctx.beginPath();
+      for (let i = 0; i <= 200; i++) { const x = LO + (HI - LO) * i / 200, y = h - pad.b - pdf(x, fit) / peak * plotH * 0.92; i ? ctx.lineTo(xOf(x), y) : ctx.moveTo(xOf(x), y); }
+      ctx.stroke();
+    }
+    ctx.strokeStyle = c.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pad.l, h - pad.b + 0.5); ctx.lineTo(w - pad.r, h - pad.b + 0.5); ctx.stroke();
+  }
+  function add(k) {
+    for (let i = 0; i < k && samples.length < TOTAL; i++) { const e = day(); samples.push(e); const j = Math.floor((e - LO) / binW); if (j >= 0 && j < BINS) bins[j]++; }
+    if (samples.length >= 20) { fit = fitGamma(); fOut.textContent = `a = ${fit.a.toFixed(2)}, scale = ${fit.scale.toFixed(0)}`; }
+    nOut.textContent = samples.length.toLocaleString('en-GB');
+  }
+  function step() { add(samples.length < 200 ? 4 : 24); draw(); if (samples.length < TOTAL) raf = requestAnimationFrame(step); }
+  function start() {
+    cancelAnimationFrame(raf); bins = new Array(BINS).fill(0); samples = []; fit = null; fOut.textContent = '–';
+    if (reduce) { add(TOTAL); draw(); } else raf = requestAnimationFrame(step);
+  }
+  replay.addEventListener('click', start);
+  window.addEventListener('resize', () => { box = size(); draw(); });
+  darkQuery.addEventListener('change', draw);
+  start();
+})();
+</script>
+</body>
+</html>
