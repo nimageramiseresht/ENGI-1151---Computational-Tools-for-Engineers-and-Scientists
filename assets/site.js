@@ -3,23 +3,31 @@
    in each week's own <script> block. */
 
 /* ============ Course map: add a week here and it appears everywhere ============ */
+// Each week belongs to a part of the module; the landing page shows one row per part.
+const PARTS = [
+  { id: 'python', title: 'Python programming foundation' },
+  { id: 'stochastic', title: 'Stochastic analysis (Monte Carlo simulation)' },
+];
 const WEEKS = [
-  { n: 1, file: 'week1.html', title: 'Introduction to Python',
+  { n: 1, part: 'python', file: 'week1.html', title: 'Introduction to Python',
     blurb: 'Jupyter Notebook, Python as a calculator, variables, data types, lists and dictionaries.',
     topics: 'operators · variables · types · lists · dicts' },
-  { n: 2, file: 'week2.html', title: 'Flow control in Python',
+  { n: 2, part: 'python', file: 'week2.html', title: 'Flow control in Python',
     blurb: 'Make decisions with if, repeat work with for and while loops, and handle errors with try and except.',
     topics: 'if/elif/else · for · while · break · try/except' },
-  { n: 3, file: 'week3.html', title: 'Python libraries, NumPy and Matplotlib',
+  { n: 3, part: 'python', file: 'week3.html', title: 'Python libraries, NumPy and Matplotlib',
     blurb: 'Install and import packages, compute with whole arrays at once, and turn results into clear engineering plots.',
-    topics: 'pip · import · numpy arrays · matplotlib'
-  },
-  { n: 4, file: 'week4.html', title: 'Functions in Python',
+    topics: 'pip · import · numpy arrays · matplotlib' },
+  { n: 4, part: 'python', file: 'week4.html', title: 'Functions in Python',
     blurb: 'Write an equation once as a named, documented function and reuse it with numbers, arrays and other functions.',
     topics: 'def · arguments · return · scope · lambda' },
-  { n: 5, file: 'week5.html', title: 'Monte Carlo simulation',
+  { n: 5, part: 'stochastic', file: 'week5.html', title: 'Monte Carlo simulation',
     blurb: 'Sample uncertain inputs thousands of times with NumPy and let the answer emerge from the results.',
     topics: 'numpy.random · functions · histograms' },
+  { n: 6, part: 'stochastic', file: 'week6.html', title: 'Advanced Monte Carlo: distribution fitting',
+    blurb: 'Fit known distributions to simulation results by maximum likelihood, test them with the Kolmogorov–Smirnov test and read percentiles from the CDF.',
+    topics: 'scipy.stats · MLE · KS test · percentiles' },
+  { n: 7, part: 'stochastic', soon: true },
 ];
 
 /* ============ Live Python configuration ============ */
@@ -71,11 +79,17 @@ function replUrl(base, setup) {
 
 /* Landing page cards */
 (() => {
+  const card = w => w.soon
+    ? `<div class="week-card" aria-disabled="true"><span class="wk">Week<b>${w.n}</b></span><h3>Coming soon</h3><p>Notes for this week will appear here after the lecture is published.</p><span></span></div>`
+    : `<a class="week-card" href="${w.file}"><span class="wk">Week<b>${w.n}</b></span><h3>${w.title}</h3><p>${w.blurb}</p><span class="topics">${w.topics}</span></a>`;
   const grid = document.getElementById('week-grid');
   if (grid) {
-    grid.innerHTML = WEEKS.map(w => w.soon
-      ? `<div class="week-card" aria-disabled="true"><span class="wk">Week<b>${w.n}</b></span><h3>Coming soon</h3><p>Notes for this week will appear here after the lecture is published.</p><span></span></div>`
-      : `<a class="week-card" href="${w.file}"><span class="wk">Week<b>${w.n}</b></span><h3>${w.title}</h3><p>${w.blurb}</p><span class="topics">${w.topics}</span></a>`).join('');
+    // one row per part of the module, with the part's title above it
+    grid.innerHTML = PARTS.map(part => {
+      const weeks = WEEKS.filter(w => w.part === part.id);
+      return weeks.length ? `<section class="week-part"><h3 class="part-title">${part.title}</h3>` +
+        `<div class="week-grid" style="--cols:${Math.max(weeks.length, 3)}">${weeks.map(card).join('')}</div></section>` : '';
+    }).join('');
   }
   const picker = document.getElementById('week-picker');
   if (picker) {
