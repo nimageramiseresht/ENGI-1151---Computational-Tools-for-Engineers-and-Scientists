@@ -415,7 +415,7 @@ np.random.seed(7)
 data = np.random.gamma(2.5, 4, 200)   # 200 repair times (h)
 
 normal_params = stats.norm.fit(data)
-gamma_params = stats.gamma.fit(data, floc=0)
+gamma_params = stats.gamma.fit(data)
 print("normal (loc, scale):", np.round(normal_params, 3))
 print("gamma (a, loc, scale):", np.round(gamma_params, 3))
 
@@ -451,24 +451,28 @@ Run it: the normal fit gives μ = 9.42 h, σ = 5.80 h; the gamma fit a = 2.68, s
   <h2><span class="num">4.2</span>Look first: fitted pdfs over the histogram</h2>
   <p class="terms"><span>dist.pdf</span><span>density=True</span><span>visual check</span></p>
   <div class="py side sm" data-hint="figure on the right" style="--code-w:52%"><pre>
+from scipy import stats
 import numpy as np
-import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 np.random.seed(7)
 data = np.random.gamma(2.5, 4, 200)
-
-candidates = {"norm": {}, "expon": {"floc": 0},
-              "lognorm": {"floc": 0}, "gamma": {"floc": 0}}
-x = np.linspace(0, data.max(), 300)
 plt.hist(data, bins=25, density=True, color="skyblue",
          edgecolor="black", alpha=0.7)
-for name, options in candidates.items():
-    dist = getattr(stats, name)
-    params = dist.fit(data, **options)
-    plt.plot(x, dist.pdf(x, *params), lw=2, label=name)
-plt.xlabel("Repair time (h)")
-plt.ylabel("Density")
+
+x = np.linspace(0, data.max(), 300)
+norm_params = stats.norm.fit(data)
+beta_params = stats.beta.fit(data)
+gamma_params = stats.gamma.fit(data)
+y_norm = stats.norm.pdf(x, *norm_params)
+y_beta = stats.beta.pdf(x, *beta_params)
+y_gamma = stats.gamma.pdf(x, *gamma_params)
+
+plt.plot(x, y_norm, 'r-', label='Normal Fit', linewidth=2)
+plt.plot(x, y_beta, 'g-', label='Beta Fit', linewidth=2)
+plt.plot(x, y_gamma, 'b:', label='Gamma Fit', linewidth=2)
+plt.title('Histogram with Normal and Beta Fits')
+
 plt.legend()
 plt.show()
 </pre></div>
@@ -485,21 +489,27 @@ Run it: the exponential is clearly wrong (it puts the peak at zero). The normal 
   <p class="terms"><span>stats.kstest</span><span>statistic</span><span>pvalue</span><span>statistic_location</span></p>
   <div class="cols" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px">
     <div class="py xs" data-hint="smallest D wins"><pre>
+from scipy import stats
 import numpy as np
-import scipy.stats as stats
+import matplotlib.pyplot as plt
 
 np.random.seed(7)
 data = np.random.gamma(2.5, 4, 200)
+plt.hist(data, bins=25, density=True, color="skyblue",
+         edgecolor="black", alpha=0.7)
 
-candidates = {"norm": {}, "expon": {"floc": 0},
-              "lognorm": {"floc": 0}, "gamma": {"floc": 0}}
-print("dist        D       p   worst at x")
-for name, options in candidates.items():
-    dist = getattr(stats, name)
-    params = dist.fit(data, **options)
-    result = stats.kstest(data, dist(*params).cdf)
-    print("%-8s %6.3f %7.4f %8.2f" % (name, result.statistic,
-          result.pvalue, result.statistic_location))
+x = np.linspace(0, data.max(), 300)
+norm_params = stats.norm.fit(data)
+beta_params = stats.beta.fit(data)
+
+
+ks_norm = stats.kstest(data, stats.norm(*norm_params).cdf)
+ks_beta = stats.kstest(data, stats.beta(*beta_params).cdf)
+
+print("KS for Normal:", np.round(ks_norm[0], 3), 
+      "p-value:", np.round(ks_norm[1], 3))
+print("KS for Beta:", np.round(ks_beta[0], 3), 
+      "p-value:", np.round(ks_beta[1], 3))
 </pre></div>
     <div class="stack" style="font-size:.64em">
       <p><code>stats.kstest(data, cdf)</code> compares the data with any CDF function. Passing the frozen fit, <code>dist(*params).cdf</code>, works for every family.</p>
