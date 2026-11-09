@@ -461,14 +461,11 @@ plt.hist(data, bins=25, density=True, color="skyblue",
          edgecolor="black", alpha=0.7)
 
 x = np.linspace(0, data.max(), 300)
-norm_params = stats.norm.fit(data)
 beta_params = stats.beta.fit(data)
 gamma_params = stats.gamma.fit(data)
-y_norm = stats.norm.pdf(x, *norm_params)
 y_beta = stats.beta.pdf(x, *beta_params)
 y_gamma = stats.gamma.pdf(x, *gamma_params)
 
-plt.plot(x, y_norm, 'r-', label='Normal Fit', linewidth=2)
 plt.plot(x, y_beta, 'g-', label='Beta Fit', linewidth=2)
 plt.plot(x, y_gamma, 'b:', label='Gamma Fit', linewidth=2)
 plt.title('Histogram with Normal and Beta Fits')
