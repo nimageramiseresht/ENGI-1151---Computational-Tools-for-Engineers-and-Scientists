@@ -570,7 +570,8 @@ import scipy.stats as stats
 
 np.random.seed(7)
 data = np.random.gamma(2.5, 4, 200)
-g = stats.gamma(*stats.gamma.fit(data, floc=0))
+gamma_params = stats.gamma.fit(data)
+g = stats.gamma(*gamma_params)
 
 print("median:          %.2f h" % g.ppf(0.5))
 print("95th percentile: %.2f h" % g.ppf(0.95))
