@@ -502,7 +502,7 @@ beta_params = stats.beta.fit(data)
 ks_gamma = stats.kstest(data, stats.norm(*gamma_params).cdf)
 ks_beta = stats.kstest(data, stats.beta(*beta_params).cdf)
 
-print("KS for Normal:", np.round(ks_gamma[0], 3), 
+print("KS for Gamma:", np.round(ks_gamma[0], 3), 
       "p-value:", np.round(ks_gamma[1], 3))
 print("KS for Beta:", np.round(ks_beta[0], 3), 
       "p-value:", np.round(ks_beta[1], 3))
