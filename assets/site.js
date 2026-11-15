@@ -7,6 +7,7 @@
 const PARTS = [
   { id: 'python', title: 'Python programming foundation' },
   { id: 'stochastic', title: 'Stochastic analysis (Monte Carlo simulation)' },
+  { id: 'optimisation', title: 'Optimisation' },
 ];
 const WEEKS = [
   { n: 1, part: 'python', file: 'week1.html', title: 'Introduction to Python',
@@ -27,7 +28,9 @@ const WEEKS = [
   { n: 6, part: 'stochastic', file: 'week6.html', title: 'Advanced Monte Carlo: distribution fitting',
     blurb: 'Fit known distributions to simulation results by maximum likelihood, test them with the Kolmogorov–Smirnov test and read percentiles from the CDF.',
     topics: 'scipy.stats · MLE · KS test · percentiles' },
-  { n: 7, part: 'stochastic', soon: true },
+  { n: 7, part: 'optimisation', file: 'week7.html', title: 'Introduction to optimisation',
+    blurb: 'Find the best design: closed-form optima with derivatives and gradients, gradient descent and Newton’s method by hand, and scipy.optimize.',
+    topics: 'f′(x) = 0 · gradient · Newton · scipy.optimize' },
 ];
 
 /* ============ Live Python configuration ============ */
