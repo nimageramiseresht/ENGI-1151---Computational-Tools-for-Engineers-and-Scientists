@@ -1,0 +1,994 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Week 7: Introduction to optimisation | ENGI 1151</title>
+<meta name="description" content="Lecture notes with live, in-browser Python: what optimisation is, closed-form solutions with derivatives and gradients, gradient descent and Newton's method coded by hand, and scipy.optimize.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛰️</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  /* week 7 page */
+  .part-head { border-top: 3px solid var(--accent); padding-top: 1rem; }
+  .part-head .tag { font-family: var(--mono); color: var(--accent); margin: 0; font-size: .95rem; letter-spacing: .04em; }
+  .part-head h2 { margin: .2rem 0 .75rem; font-size: 2.1rem; }
+  .tbl-wrap { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+  table.tbl { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+  table.tbl th, table.tbl td { border-bottom: 1px solid var(--grid); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  table.tbl th { border-bottom: 2px solid var(--ink); font-family: var(--mono); font-weight: 500; color: var(--muted); white-space: nowrap; }
+  table.tbl td code { white-space: nowrap; }
+  figure.plot { margin: -1.5rem 0 1.75rem; border: 1px solid var(--grid); border-top: 0; background: var(--paper); padding: 0.75rem 1rem 0.6rem; }
+  figure.plot img { display: block; width: 100%; max-width: 640px; height: auto; margin: 0 auto; background: #fff; border-radius: 2px; }
+  figure.plot figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+  figure.plot::before { content: "Output"; display: block; font: 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  pre.out + figure.plot::before { content: none; }
+  figure.pic { margin: 1.5rem 0; }
+  figure.pic img { display: block; width: 100%; max-width: 660px; height: auto; margin: 0 auto; background: #fff; border: 1px solid var(--grid); }
+  figure.pic figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.5; }
+  figure.pic svg { display: block; width: 100%; max-width: 660px; height: auto; margin: 0 auto; }
+  figure.pic svg text { font-family: var(--mono); fill: var(--ink); }
+  figure.pic svg .muted { fill: var(--muted); }
+  figure.pic svg .acc { fill: var(--accent); }
+  figure.pic svg .good { fill: var(--good, #1F7A4D); }
+  figure.pic svg .bad { fill: var(--bad, #B3261E); }
+  figure.pic svg .line { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  figure.pic svg .line-acc { stroke: var(--accent); stroke-width: 2.4; fill: none; }
+  figure.pic svg .line-muted { stroke: var(--muted); stroke-width: 1.2; fill: none; stroke-dasharray: 4 4; }
+  figure.pic svg .line-bad { stroke: var(--bad, #B3261E); stroke-width: 2.4; fill: none; }
+  figure.pic svg .fill-bad { fill: var(--bad, #B3261E); }
+  figure.pic svg .fill-good { fill: var(--good, #1F7A4D); }
+  figure.pic svg .fill-acc { fill: var(--accent); }
+  figure.pic svg .fill-ink { fill: var(--ink); }
+  figure.pic svg .grid { stroke: var(--grid); stroke-width: 1; }
+  figure.pic svg .blue { fill: #1D5FA3; }
+  figure.pic svg .area { fill: var(--accent-soft, #EFE6F0); stroke: var(--accent); stroke-width: 2; }
+</style>
+</head>
+<body data-week="7" data-notebook="week7_optimisation.ipynb">
+
+<div id="topbar"><noscript><a href="index.html">ENGI 1151 · all weeks</a></noscript></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Computational Tools for Engineers and Scientists, week 7</p>
+      <h1>Introduction to optimisation</h1>
+      <p class="lede">Find the best design, not just one that works: the top of the mountain by calculus where we can, and step by step where we cannot.</p>
+      <p class="byline">Dr Nima Gerami Seresht <br>Department of Engineering <br>Durham University</p>
+    </div>
+    <figure class="sim-panel" style="margin:0">
+      <canvas id="hero-sim" aria-label="Animated mountain range: hikers start at random places and climb uphill by gradient ascent; some reach the highest peak, others stop on a lower one" role="img"></canvas>
+      <div class="sim-readout" aria-live="off">
+        <span>climbs <output id="sim-n">0</output></span>
+        <span>highest peak reached <output id="sim-fit">–</output></span>
+        <button type="button" id="sim-replay">Run again</button>
+      </div>
+      <figcaption class="sim-caption">Each hiker starts at a random point and follows the slope uphill (gradient ascent) until the ground is flat. Where they end depends on where they start: some reach the highest peak (the global optimum), others stop on a lower one (a local optimum).</figcaption>
+    </figure>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li class="plain"><a href="#part-a">Part A · Theory</a></li>
+      <li><a data-n="1" href="#what">What is optimisation?</a></li>
+      <li><a data-n="2" href="#examples">Engineering examples</a></li>
+      <li><a data-n="3" href="#closed-1d">Closed form: one variable</a></li>
+      <li><a data-n="4" href="#closed-nd">Closed form: gradient = 0</a></li>
+      <li><a data-n="5" href="#iterative">Iterative methods</a></li>
+      <li><a data-n="6" href="#gradient-descent">Gradient descent</a></li>
+      <li><a data-n="7" href="#newton">Newton’s method</a></li>
+      <li><a data-n="8" href="#scipy">scipy.optimize</a></li>
+      <li class="plain"><a href="#part-b">Part B · Application</a></li>
+      <li><a data-n="9" href="#mountain">Climbing the mountain in 2-D</a></li>
+      <li><a data-n="10" href="#turbines">Turbine spacing</a></li>
+      <li><a data-n="11" href="#further-reading">Further reading</a></li>
+      <li class="plain"><a href="#notebook">Practice notebook</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="part-a" class="part-head">
+      <p class="tag">PART A</p>
+      <h2>Finding the best solution</h2>
+      <p>The first six weeks gave us the tools to describe and simulate engineering systems in Python, including systems with uncertainty. This week starts a new part of the module: <strong>optimisation</strong>, choosing the inputs of a system to get the best possible output. The interactive figures (the turbine spacing, the slope of a curve, gradient descent and Newton’s method step by step) are in the <a href="week7-slides.html">lecture slides</a>.</p>
+    </section>
+
+<!-- =========================================================== 1 -->
+    <section id="what">
+      <h2><span class="num">1</span>What is optimisation?</h2>
+      <p><strong>Optimisation</strong> is the process of finding the best solution to a problem according to a criterion, subject to some restrictions. Engineers rarely want just <em>a</em> design that works; they want the lightest structure that carries the load, the cheapest process that meets the specification, the layout that generates the most energy.</p>
+
+      <h3>1.1 The mountain analogy</h3>
+      <p>Imagine a mountain range. Where you stand, your position \(x\), is the thing you can choose: the <strong>decision variable</strong>. The height of the ground under your feet, \(f(x)\), is what you want to make as large as possible: the <strong>objective function</strong>. Optimising means finding the highest point.</p>
+      <figure class="pic">
+        <svg viewBox="0 0 860 370" role="img" aria-label="A mountain range drawn as a curve. The horizontal position is the decision variable and the height is the objective. The highest peak is the global optimum; a lower peak is a local optimum; a hiker walks uphill."><path style="fill:#EFE6F0;stroke:#68246D;stroke-width:2.5" d="M60.0 308.7 L62.5 308.5 L65.1 308.2 L67.6 308.0 L70.2 307.6 L72.7 307.2 L75.3 306.8 L77.8 306.3 L80.3 305.8 L82.9 305.2 L85.4 304.5 L88.0 303.7 L90.5 302.8 L93.0 301.9 L95.6 300.8 L98.1 299.6 L100.7 298.3 L103.2 296.9 L105.8 295.3 L108.3 293.6 L110.8 291.8 L113.4 289.8 L115.9 287.6 L118.5 285.3 L121.0 282.8 L123.5 280.1 L126.1 277.2 L128.6 274.2 L131.2 271.0 L133.7 267.6 L136.3 264.0 L138.8 260.3 L141.3 256.4 L143.9 252.3 L146.4 248.2 L149.0 243.8 L151.5 239.4 L154.0 234.9 L156.6 230.3 L159.1 225.7 L161.7 221.0 L164.2 216.3 L166.8 211.6 L169.3 206.9 L171.8 202.4 L174.4 197.9 L176.9 193.5 L179.5 189.3 L182.0 185.3 L184.5 181.5 L187.1 177.9 L189.6 174.6 L192.2 171.5 L194.7 168.8 L197.3 166.4 L199.8 164.3 L202.3 162.6 L204.9 161.3 L207.4 160.3 L210.0 159.7 L212.5 159.6 L215.1 159.8 L217.6 160.4 L220.1 161.4 L222.7 162.7 L225.2 164.5 L227.8 166.5 L230.3 168.9 L232.8 171.6 L235.4 174.6 L237.9 177.8 L240.5 181.3 L243.0 185.0 L245.6 188.8 L248.1 192.8 L250.6 196.9 L253.2 201.1 L255.7 205.3 L258.3 209.5 L260.8 213.8 L263.3 218.0 L265.9 222.1 L268.4 226.1 L271.0 230.0 L273.5 233.8 L276.1 237.4 L278.6 240.8 L281.1 244.0 L283.7 247.0 L286.2 249.7 L288.8 252.2 L291.3 254.4 L293.8 256.4 L296.4 258.1 L298.9 259.4 L301.5 260.5 L304.0 261.3 L306.6 261.8 L309.1 262.0 L311.6 261.9 L314.2 261.5 L316.7 260.8 L319.3 259.8 L321.8 258.5 L324.3 256.9 L326.9 255.1 L329.4 252.9 L332.0 250.5 L334.5 247.8 L337.1 244.9 L339.6 241.7 L342.1 238.3 L344.7 234.6 L347.2 230.7 L349.8 226.6 L352.3 222.2 L354.8 217.7 L357.4 213.0 L359.9 208.1 L362.5 203.0 L365.0 197.8 L367.6 192.5 L370.1 187.0 L372.6 181.4 L375.2 175.7 L377.7 169.9 L380.3 164.1 L382.8 158.2 L385.4 152.3 L387.9 146.4 L390.4 140.5 L393.0 134.6 L395.5 128.8 L398.1 123.0 L400.6 117.4 L403.1 111.8 L405.7 106.3 L408.2 101.0 L410.8 95.9 L413.3 91.0 L415.9 86.2 L418.4 81.7 L420.9 77.4 L423.5 73.4 L426.0 69.7 L428.6 66.2 L431.1 63.0 L433.6 60.2 L436.2 57.7 L438.7 55.5 L441.3 53.7 L443.8 52.2 L446.4 51.1 L448.9 50.4 L451.4 50.0 L454.0 50.0 L456.5 50.4 L459.1 51.2 L461.6 52.3 L464.1 53.8 L466.7 55.6 L469.2 57.8 L471.8 60.3 L474.3 63.2 L476.9 66.3 L479.4 69.8 L481.9 73.5 L484.5 77.6 L487.0 81.9 L489.6 86.4 L492.1 91.1 L494.6 96.1 L497.2 101.2 L499.7 106.5 L502.3 112.0 L504.8 117.6 L507.4 123.2 L509.9 129.0 L512.4 134.9 L515.0 140.7 L517.5 146.7 L520.1 152.6 L522.6 158.5 L525.2 164.4 L527.7 170.2 L530.2 176.0 L532.8 181.7 L535.3 187.3 L537.9 192.8 L540.4 198.2 L542.9 203.4 L545.5 208.5 L548.0 213.4 L550.6 218.2 L553.1 222.8 L555.7 227.1 L558.2 231.3 L560.7 235.3 L563.3 239.1 L565.8 242.6 L568.4 245.9 L570.9 249.0 L573.4 251.9 L576.0 254.5 L578.5 256.9 L581.1 259.0 L583.6 260.9 L586.2 262.6 L588.7 264.0 L591.2 265.2 L593.8 266.2 L596.3 266.9 L598.9 267.4 L601.4 267.7 L603.9 267.8 L606.5 267.7 L609.0 267.5 L611.6 267.0 L614.1 266.4 L616.7 265.7 L619.2 264.8 L621.7 263.9 L624.3 262.8 L626.8 261.7 L629.4 260.5 L631.9 259.2 L634.4 258.0 L637.0 256.8 L639.5 255.5 L642.1 254.4 L644.6 253.3 L647.2 252.2 L649.7 251.3 L652.2 250.5 L654.8 249.7 L657.3 249.2 L659.9 248.7 L662.4 248.5 L664.9 248.4 L667.5 248.4 L670.0 248.7 L672.6 249.1 L675.1 249.7 L677.7 250.4 L680.2 251.3 L682.7 252.4 L685.3 253.7 L687.8 255.0 L690.4 256.5 L692.9 258.2 L695.5 259.9 L698.0 261.7 L700.5 263.6 L703.1 265.6 L705.6 267.6 L708.2 269.7 L710.7 271.8 L713.2 273.8 L715.8 275.9 L718.3 278.0 L720.9 280.0 L723.4 282.0 L726.0 284.0 L728.5 285.8 L731.0 287.7 L733.6 289.4 L736.1 291.1 L738.7 292.7 L741.2 294.2 L743.7 295.6 L746.3 297.0 L748.8 298.2 L751.4 299.4 L753.9 300.5 L756.5 301.5 L759.0 302.4 L761.5 303.2 L764.1 304.0 L766.6 304.7 L769.2 305.3 L771.7 305.9 L774.2 306.4 L776.8 306.9 L779.3 307.3 L781.9 307.6 L784.4 308.0 L787.0 308.2 L789.5 308.5 L792.0 308.7 L794.6 308.9 L797.1 309.1 L799.7 309.2 L802.2 309.3 L804.7 309.4 L807.3 309.5 L809.8 309.6 L812.4 309.7 L814.9 309.7 L817.5 309.8 L820.0 309.8 L820 330 L60 330 Z"/><path style="stroke:#68246D;stroke-width:0.8;fill:none;opacity:.25" d="M60.0 308.1 L62.5 307.9 L65.1 307.7 L67.6 307.5 L70.2 307.2 L72.7 306.9 L75.3 306.5 L77.8 306.1 L80.3 305.7 L82.9 305.1 L85.4 304.6 L88.0 303.9 L90.5 303.2 L93.0 302.4 L95.6 301.5 L98.1 300.5 L100.7 299.4 L103.2 298.2 L105.8 296.9 L108.3 295.5 L110.8 293.9 L113.4 292.2 L115.9 290.4 L118.5 288.4 L121.0 286.3 L123.5 284.1 L126.1 281.7 L128.6 279.1 L131.2 276.4 L133.7 273.6 L136.3 270.6 L138.8 267.4 L141.3 264.2 L143.9 260.8 L146.4 257.2 L149.0 253.6 L151.5 249.9 L154.0 246.1 L156.6 242.3 L159.1 238.3 L161.7 234.4 L164.2 230.5 L166.8 226.5 L169.3 222.6 L171.8 218.8 L174.4 215.0 L176.9 211.4 L179.5 207.8 L182.0 204.5 L184.5 201.2 L187.1 198.2 L189.6 195.4 L192.2 192.9 L194.7 190.6 L197.3 188.6 L199.8 186.8 L202.3 185.4 L204.9 184.3 L207.4 183.5 L210.0 183.0 L212.5 182.8 L215.1 183.0 L217.6 183.5 L220.1 184.4 L222.7 185.5 L225.2 186.9 L227.8 188.7 L230.3 190.7 L232.8 193.0 L235.4 195.5 L237.9 198.2 L240.5 201.1 L243.0 204.2 L245.6 207.4 L248.1 210.7 L250.6 214.2 L253.2 217.7 L255.7 221.2 L258.3 224.8 L260.8 228.4 L263.3 231.9 L265.9 235.4 L268.4 238.7 L271.0 242.0 L273.5 245.2 L276.1 248.2 L278.6 251.1 L281.1 253.8 L283.7 256.3 L286.2 258.6 L288.8 260.7 L291.3 262.5 L293.8 264.2 L296.4 265.6 L298.9 266.7 L301.5 267.6 L304.0 268.3 L306.6 268.7 L309.1 268.9 L311.6 268.8 L314.2 268.5 L316.7 267.9 L319.3 267.0 L321.8 265.9 L324.3 264.6 L326.9 263.1 L329.4 261.3 L332.0 259.2 L334.5 257.0 L337.1 254.5 L339.6 251.8 L342.1 248.9 L344.7 245.9 L347.2 242.6 L349.8 239.1 L352.3 235.5 L354.8 231.7 L357.4 227.7 L359.9 223.6 L362.5 219.3 L365.0 215.0 L367.6 210.5 L370.1 205.9 L372.6 201.2 L375.2 196.4 L377.7 191.5 L380.3 186.6 L382.8 181.7 L385.4 176.8 L387.9 171.8 L390.4 166.8 L393.0 161.9 L395.5 157.0 L398.1 152.1 L400.6 147.4 L403.1 142.7 L405.7 138.1 L408.2 133.7 L410.8 129.4 L413.3 125.2 L415.9 121.2 L418.4 117.4 L420.9 113.8 L423.5 110.5 L426.0 107.3 L428.6 104.4 L431.1 101.8 L433.6 99.4 L436.2 97.3 L438.7 95.4 L441.3 93.9 L443.8 92.7 L446.4 91.8 L448.9 91.1 L451.4 90.8 L454.0 90.8 L456.5 91.2 L459.1 91.8 L461.6 92.7 L464.1 94.0 L466.7 95.5 L469.2 97.3 L471.8 99.5 L474.3 101.8 L476.9 104.5 L479.4 107.4 L481.9 110.6 L484.5 114.0 L487.0 117.6 L489.6 121.4 L492.1 125.4 L494.6 129.5 L497.2 133.8 L499.7 138.3 L502.3 142.9 L504.8 147.6 L507.4 152.3 L509.9 157.2 L512.4 162.1 L515.0 167.0 L517.5 172.0 L520.1 177.0 L522.6 181.9 L525.2 186.9 L527.7 191.8 L530.2 196.6 L532.8 201.4 L535.3 206.1 L537.9 210.7 L540.4 215.3 L542.9 219.7 L545.5 223.9 L548.0 228.1 L550.6 232.1 L553.1 235.9 L555.7 239.6 L558.2 243.1 L560.7 246.5 L563.3 249.6 L565.8 252.6 L568.4 255.4 L570.9 258.0 L573.4 260.4 L576.0 262.6 L578.5 264.6 L581.1 266.4 L583.6 268.0 L586.2 269.4 L588.7 270.6 L591.2 271.6 L593.8 272.4 L596.3 273.0 L598.9 273.4 L601.4 273.7 L603.9 273.8 L606.5 273.7 L609.0 273.5 L611.6 273.1 L614.1 272.6 L616.7 272.0 L619.2 271.3 L621.7 270.4 L624.3 269.5 L626.8 268.6 L629.4 267.6 L631.9 266.6 L634.4 265.5 L637.0 264.5 L639.5 263.5 L642.1 262.5 L644.6 261.5 L647.2 260.7 L649.7 259.9 L652.2 259.2 L654.8 258.6 L657.3 258.1 L659.9 257.7 L662.4 257.5 L664.9 257.4 L667.5 257.5 L670.0 257.7 L672.6 258.0 L675.1 258.5 L677.7 259.2 L680.2 259.9 L682.7 260.8 L685.3 261.9 L687.8 263.0 L690.4 264.3 L692.9 265.7 L695.5 267.1 L698.0 268.6 L700.5 270.2 L703.1 271.9 L705.6 273.6 L708.2 275.3 L710.7 277.1 L713.2 278.8 L715.8 280.6 L718.3 282.3 L720.9 284.0 L723.4 285.7 L726.0 287.3 L728.5 288.9 L731.0 290.4 L733.6 291.9 L736.1 293.3 L738.7 294.7 L741.2 295.9 L743.7 297.1 L746.3 298.2 L748.8 299.3 L751.4 300.3 L753.9 301.2 L756.5 302.0 L759.0 302.8 L761.5 303.5 L764.1 304.1 L766.6 304.7 L769.2 305.3 L771.7 305.7 L774.2 306.2 L776.8 306.6 L779.3 306.9 L781.9 307.2 L784.4 307.5 L787.0 307.7 L789.5 307.9 L792.0 308.1 L794.6 308.3 L797.1 308.4 L799.7 308.5 L802.2 308.6 L804.7 308.7 L807.3 308.8 L809.8 308.9 L812.4 308.9 L814.9 309.0 L817.5 309.0 L820.0 309.0"/><path style="stroke:#68246D;stroke-width:0.8;fill:none;opacity:.25" d="M60.0 311.5 L62.5 311.4 L65.1 311.2 L67.6 311.0 L70.2 310.8 L72.7 310.5 L75.3 310.2 L77.8 309.9 L80.3 309.5 L82.9 309.1 L85.4 308.6 L88.0 308.1 L90.5 307.5 L93.0 306.9 L95.6 306.1 L98.1 305.3 L100.7 304.5 L103.2 303.5 L105.8 302.4 L108.3 301.3 L110.8 300.0 L113.4 298.7 L115.9 297.2 L118.5 295.6 L121.0 293.9 L123.5 292.1 L126.1 290.1 L128.6 288.0 L131.2 285.9 L133.7 283.5 L136.3 281.1 L138.8 278.6 L141.3 275.9 L143.9 273.2 L146.4 270.3 L149.0 267.4 L151.5 264.4 L154.0 261.3 L156.6 258.2 L159.1 255.0 L161.7 251.9 L164.2 248.7 L166.8 245.5 L169.3 242.3 L171.8 239.2 L174.4 236.2 L176.9 233.2 L179.5 230.3 L182.0 227.6 L184.5 225.0 L187.1 222.6 L189.6 220.3 L192.2 218.2 L194.7 216.4 L197.3 214.7 L199.8 213.3 L202.3 212.2 L204.9 211.3 L207.4 210.6 L210.0 210.2 L212.5 210.1 L215.1 210.3 L217.6 210.7 L220.1 211.3 L222.7 212.3 L225.2 213.4 L227.8 214.8 L230.3 216.5 L232.8 218.3 L235.4 220.3 L237.9 222.5 L240.5 224.9 L243.0 227.4 L245.6 230.0 L248.1 232.7 L250.6 235.5 L253.2 238.3 L255.7 241.2 L258.3 244.1 L260.8 247.0 L263.3 249.8 L265.9 252.6 L268.4 255.4 L271.0 258.0 L273.5 260.6 L276.1 263.0 L278.6 265.3 L281.1 267.5 L283.7 269.5 L286.2 271.4 L288.8 273.1 L291.3 274.6 L293.8 275.9 L296.4 277.1 L298.9 278.0 L301.5 278.8 L304.0 279.3 L306.6 279.6 L309.1 279.8 L311.6 279.7 L314.2 279.4 L316.7 278.9 L319.3 278.3 L321.8 277.4 L324.3 276.3 L326.9 275.0 L329.4 273.6 L332.0 271.9 L334.5 270.1 L337.1 268.1 L339.6 266.0 L342.1 263.6 L344.7 261.1 L347.2 258.5 L349.8 255.7 L352.3 252.7 L354.8 249.6 L357.4 246.4 L359.9 243.1 L362.5 239.7 L365.0 236.1 L367.6 232.5 L370.1 228.7 L372.6 224.9 L375.2 221.1 L377.7 217.2 L380.3 213.2 L382.8 209.2 L385.4 205.2 L387.9 201.2 L390.4 197.1 L393.0 193.1 L395.5 189.2 L398.1 185.3 L400.6 181.4 L403.1 177.6 L405.7 173.9 L408.2 170.3 L410.8 166.8 L413.3 163.5 L415.9 160.2 L418.4 157.2 L420.9 154.3 L423.5 151.5 L426.0 149.0 L428.6 146.6 L431.1 144.5 L433.6 142.5 L436.2 140.8 L438.7 139.4 L441.3 138.1 L443.8 137.1 L446.4 136.4 L448.9 135.9 L451.4 135.6 L454.0 135.6 L456.5 135.9 L459.1 136.4 L461.6 137.2 L464.1 138.2 L466.7 139.4 L469.2 140.9 L471.8 142.6 L474.3 144.5 L476.9 146.7 L479.4 149.1 L481.9 151.6 L484.5 154.3 L487.0 157.3 L489.6 160.3 L492.1 163.6 L494.6 166.9 L497.2 170.4 L499.7 174.0 L502.3 177.8 L504.8 181.5 L507.4 185.4 L509.9 189.3 L512.4 193.3 L515.0 197.3 L517.5 201.3 L520.1 205.4 L522.6 209.4 L525.2 213.4 L527.7 217.3 L530.2 221.3 L532.8 225.1 L535.3 229.0 L537.9 232.7 L540.4 236.3 L542.9 239.9 L545.5 243.4 L548.0 246.7 L550.6 250.0 L553.1 253.1 L555.7 256.1 L558.2 258.9 L560.7 261.6 L563.3 264.2 L565.8 266.6 L568.4 268.8 L570.9 270.9 L573.4 272.9 L576.0 274.7 L578.5 276.3 L581.1 277.7 L583.6 279.0 L586.2 280.2 L588.7 281.1 L591.2 281.9 L593.8 282.6 L596.3 283.1 L598.9 283.5 L601.4 283.7 L603.9 283.7 L606.5 283.7 L609.0 283.5 L611.6 283.2 L614.1 282.8 L616.7 282.3 L619.2 281.7 L621.7 281.0 L624.3 280.3 L626.8 279.5 L629.4 278.7 L631.9 277.9 L634.4 277.0 L637.0 276.2 L639.5 275.4 L642.1 274.6 L644.6 273.8 L647.2 273.1 L649.7 272.5 L652.2 271.9 L654.8 271.4 L657.3 271.0 L659.9 270.7 L662.4 270.6 L664.9 270.5 L667.5 270.5 L670.0 270.7 L672.6 271.0 L675.1 271.4 L677.7 271.9 L680.2 272.5 L682.7 273.3 L685.3 274.1 L687.8 275.0 L690.4 276.0 L692.9 277.2 L695.5 278.3 L698.0 279.6 L700.5 280.9 L703.1 282.2 L705.6 283.6 L708.2 285.0 L710.7 286.4 L713.2 287.8 L715.8 289.2 L718.3 290.6 L720.9 292.0 L723.4 293.4 L726.0 294.7 L728.5 296.0 L731.0 297.2 L733.6 298.4 L736.1 299.5 L738.7 300.6 L741.2 301.7 L743.7 302.6 L746.3 303.5 L748.8 304.4 L751.4 305.2 L753.9 305.9 L756.5 306.6 L759.0 307.2 L761.5 307.8 L764.1 308.3 L766.6 308.8 L769.2 309.2 L771.7 309.6 L774.2 310.0 L776.8 310.3 L779.3 310.5 L781.9 310.8 L784.4 311.0 L787.0 311.2 L789.5 311.4 L792.0 311.5 L794.6 311.6 L797.1 311.8 L799.7 311.9 L802.2 311.9 L804.7 312.0 L807.3 312.1 L809.8 312.1 L812.4 312.2 L814.9 312.2 L817.5 312.2 L820.0 312.3"/><path style="stroke:#68246D;stroke-width:0.8;fill:none;opacity:.25" d="M60.0 314.9 L62.5 314.8 L65.1 314.7 L67.6 314.5 L70.2 314.4 L72.7 314.2 L75.3 313.9 L77.8 313.7 L80.3 313.4 L82.9 313.1 L85.4 312.7 L88.0 312.3 L90.5 311.9 L93.0 311.4 L95.6 310.8 L98.1 310.2 L100.7 309.5 L103.2 308.8 L105.8 308.0 L108.3 307.1 L110.8 306.1 L113.4 305.1 L115.9 304.0 L118.5 302.7 L121.0 301.4 L123.5 300.0 L126.1 298.6 L128.6 297.0 L131.2 295.3 L133.7 293.5 L136.3 291.7 L138.8 289.7 L141.3 287.7 L143.9 285.6 L146.4 283.4 L149.0 281.2 L151.5 278.9 L154.0 276.5 L156.6 274.2 L159.1 271.7 L161.7 269.3 L164.2 266.9 L166.8 264.4 L169.3 262.0 L171.8 259.6 L174.4 257.3 L176.9 255.0 L179.5 252.8 L182.0 250.8 L184.5 248.8 L187.1 246.9 L189.6 245.2 L192.2 243.6 L194.7 242.2 L197.3 240.9 L199.8 239.8 L202.3 239.0 L204.9 238.3 L207.4 237.8 L210.0 237.5 L212.5 237.4 L215.1 237.5 L217.6 237.8 L220.1 238.3 L222.7 239.0 L225.2 239.9 L227.8 241.0 L230.3 242.2 L232.8 243.6 L235.4 245.2 L237.9 246.9 L240.5 248.7 L243.0 250.6 L245.6 252.6 L248.1 254.7 L250.6 256.8 L253.2 259.0 L255.7 261.2 L258.3 263.4 L260.8 265.6 L263.3 267.7 L265.9 269.9 L268.4 272.0 L271.0 274.0 L273.5 276.0 L276.1 277.8 L278.6 279.6 L281.1 281.3 L283.7 282.8 L286.2 284.3 L288.8 285.5 L291.3 286.7 L293.8 287.7 L296.4 288.6 L298.9 289.3 L301.5 289.9 L304.0 290.3 L306.6 290.5 L309.1 290.6 L311.6 290.6 L314.2 290.4 L316.7 290.0 L319.3 289.5 L321.8 288.8 L324.3 288.0 L326.9 287.0 L329.4 285.9 L332.0 284.7 L334.5 283.3 L337.1 281.7 L339.6 280.1 L342.1 278.3 L344.7 276.4 L347.2 274.4 L349.8 272.2 L352.3 270.0 L354.8 267.6 L357.4 265.1 L359.9 262.6 L362.5 260.0 L365.0 257.3 L367.6 254.5 L370.1 251.6 L372.6 248.7 L375.2 245.8 L377.7 242.8 L380.3 239.7 L382.8 236.7 L385.4 233.6 L387.9 230.5 L390.4 227.5 L393.0 224.4 L395.5 221.4 L398.1 218.4 L400.6 215.4 L403.1 212.5 L405.7 209.7 L408.2 206.9 L410.8 204.3 L413.3 201.7 L415.9 199.2 L418.4 196.9 L420.9 194.7 L423.5 192.6 L426.0 190.6 L428.6 188.8 L431.1 187.2 L433.6 185.7 L436.2 184.4 L438.7 183.3 L441.3 182.3 L443.8 181.6 L446.4 181.0 L448.9 180.6 L451.4 180.4 L454.0 180.4 L456.5 180.6 L459.1 181.0 L461.6 181.6 L464.1 182.4 L466.7 183.3 L469.2 184.4 L471.8 185.8 L474.3 187.2 L476.9 188.9 L479.4 190.7 L481.9 192.6 L484.5 194.7 L487.0 197.0 L489.6 199.3 L492.1 201.8 L494.6 204.4 L497.2 207.0 L499.7 209.8 L502.3 212.6 L504.8 215.5 L507.4 218.5 L509.9 221.5 L512.4 224.5 L515.0 227.6 L517.5 230.7 L520.1 233.7 L522.6 236.8 L525.2 239.9 L527.7 242.9 L530.2 245.9 L532.8 248.9 L535.3 251.8 L537.9 254.6 L540.4 257.4 L542.9 260.2 L545.5 262.8 L548.0 265.4 L550.6 267.9 L553.1 270.2 L555.7 272.5 L558.2 274.7 L560.7 276.8 L563.3 278.7 L565.8 280.6 L568.4 282.3 L570.9 283.9 L573.4 285.4 L576.0 286.8 L578.5 288.0 L581.1 289.1 L583.6 290.1 L586.2 291.0 L588.7 291.7 L591.2 292.3 L593.8 292.8 L596.3 293.2 L598.9 293.5 L601.4 293.6 L603.9 293.7 L606.5 293.6 L609.0 293.5 L611.6 293.3 L614.1 292.9 L616.7 292.6 L619.2 292.1 L621.7 291.6 L624.3 291.1 L626.8 290.5 L629.4 289.8 L631.9 289.2 L634.4 288.6 L637.0 287.9 L639.5 287.3 L642.1 286.7 L644.6 286.1 L647.2 285.6 L649.7 285.1 L652.2 284.6 L654.8 284.3 L657.3 284.0 L659.9 283.7 L662.4 283.6 L664.9 283.6 L667.5 283.6 L670.0 283.7 L672.6 283.9 L675.1 284.2 L677.7 284.6 L680.2 285.1 L682.7 285.7 L685.3 286.3 L687.8 287.0 L690.4 287.8 L692.9 288.6 L695.5 289.5 L698.0 290.5 L700.5 291.5 L703.1 292.5 L705.6 293.6 L708.2 294.6 L710.7 295.7 L713.2 296.8 L715.8 297.9 L718.3 299.0 L720.9 300.0 L723.4 301.0 L726.0 302.1 L728.5 303.0 L731.0 304.0 L733.6 304.9 L736.1 305.8 L738.7 306.6 L741.2 307.4 L743.7 308.1 L746.3 308.8 L748.8 309.5 L751.4 310.1 L753.9 310.6 L756.5 311.2 L759.0 311.6 L761.5 312.1 L764.1 312.5 L766.6 312.8 L769.2 313.2 L771.7 313.5 L774.2 313.7 L776.8 314.0 L779.3 314.2 L781.9 314.4 L784.4 314.5 L787.0 314.7 L789.5 314.8 L792.0 314.9 L794.6 315.0 L797.1 315.1 L799.7 315.2 L802.2 315.2 L804.7 315.3 L807.3 315.4 L809.8 315.4 L812.4 315.4 L814.9 315.5 L817.5 315.5 L820.0 315.5"/><path style="stroke:#68246D;stroke-width:0.8;fill:none;opacity:.25" d="M60.0 318.3 L62.5 318.3 L65.1 318.2 L67.6 318.1 L70.2 317.9 L72.7 317.8 L75.3 317.7 L77.8 317.5 L80.3 317.3 L82.9 317.1 L85.4 316.8 L88.0 316.5 L90.5 316.2 L93.0 315.9 L95.6 315.5 L98.1 315.1 L100.7 314.6 L103.2 314.1 L105.8 313.5 L108.3 312.9 L110.8 312.2 L113.4 311.5 L115.9 310.7 L118.5 309.9 L121.0 309.0 L123.5 308.0 L126.1 307.0 L128.6 305.9 L131.2 304.7 L133.7 303.5 L136.3 302.2 L138.8 300.9 L141.3 299.5 L143.9 298.0 L146.4 296.5 L149.0 295.0 L151.5 293.4 L154.0 291.8 L156.6 290.1 L159.1 288.4 L161.7 286.7 L164.2 285.1 L166.8 283.4 L169.3 281.7 L171.8 280.1 L174.4 278.4 L176.9 276.9 L179.5 275.4 L182.0 273.9 L184.5 272.5 L187.1 271.2 L189.6 270.0 L192.2 269.0 L194.7 268.0 L197.3 267.1 L199.8 266.4 L202.3 265.7 L204.9 265.3 L207.4 264.9 L210.0 264.7 L212.5 264.6 L215.1 264.7 L217.6 264.9 L220.1 265.3 L222.7 265.8 L225.2 266.4 L227.8 267.1 L230.3 268.0 L232.8 269.0 L235.4 270.1 L237.9 271.2 L240.5 272.5 L243.0 273.8 L245.6 275.2 L248.1 276.6 L250.6 278.1 L253.2 279.6 L255.7 281.1 L258.3 282.6 L260.8 284.2 L263.3 285.7 L265.9 287.2 L268.4 288.6 L271.0 290.0 L273.5 291.4 L276.1 292.7 L278.6 293.9 L281.1 295.0 L283.7 296.1 L286.2 297.1 L288.8 298.0 L291.3 298.8 L293.8 299.5 L296.4 300.1 L298.9 300.6 L301.5 301.0 L304.0 301.3 L306.6 301.5 L309.1 301.5 L311.6 301.5 L314.2 301.3 L316.7 301.1 L319.3 300.7 L321.8 300.3 L324.3 299.7 L326.9 299.0 L329.4 298.3 L332.0 297.4 L334.5 296.4 L337.1 295.4 L339.6 294.2 L342.1 293.0 L344.7 291.7 L347.2 290.2 L349.8 288.8 L352.3 287.2 L354.8 285.6 L357.4 283.9 L359.9 282.1 L362.5 280.3 L365.0 278.4 L367.6 276.5 L370.1 274.5 L372.6 272.5 L375.2 270.5 L377.7 268.4 L380.3 266.3 L382.8 264.2 L385.4 262.0 L387.9 259.9 L390.4 257.8 L393.0 255.7 L395.5 253.6 L398.1 251.5 L400.6 249.4 L403.1 247.4 L405.7 245.5 L408.2 243.6 L410.8 241.7 L413.3 239.9 L415.9 238.2 L418.4 236.6 L420.9 235.1 L423.5 233.6 L426.0 232.3 L428.6 231.0 L431.1 229.9 L433.6 228.9 L436.2 228.0 L438.7 227.2 L441.3 226.5 L443.8 226.0 L446.4 225.6 L448.9 225.3 L451.4 225.2 L454.0 225.2 L456.5 225.4 L459.1 225.6 L461.6 226.0 L464.1 226.6 L466.7 227.2 L469.2 228.0 L471.8 228.9 L474.3 229.9 L476.9 231.1 L479.4 232.3 L481.9 233.7 L484.5 235.1 L487.0 236.7 L489.6 238.3 L492.1 240.0 L494.6 241.8 L497.2 243.6 L499.7 245.6 L502.3 247.5 L504.8 249.5 L507.4 251.6 L509.9 253.6 L512.4 255.7 L515.0 257.9 L517.5 260.0 L520.1 262.1 L522.6 264.3 L525.2 266.4 L527.7 268.5 L530.2 270.6 L532.8 272.6 L535.3 274.6 L537.9 276.6 L540.4 278.5 L542.9 280.4 L545.5 282.3 L548.0 284.0 L550.6 285.7 L553.1 287.4 L555.7 289.0 L558.2 290.5 L560.7 291.9 L563.3 293.3 L565.8 294.5 L568.4 295.7 L570.9 296.9 L573.4 297.9 L576.0 298.8 L578.5 299.7 L581.1 300.5 L583.6 301.1 L586.2 301.7 L588.7 302.3 L591.2 302.7 L593.8 303.0 L596.3 303.3 L598.9 303.5 L601.4 303.6 L603.9 303.6 L606.5 303.6 L609.0 303.5 L611.6 303.3 L614.1 303.1 L616.7 302.8 L619.2 302.5 L621.7 302.2 L624.3 301.8 L626.8 301.4 L629.4 301.0 L631.9 300.5 L634.4 300.1 L637.0 299.6 L639.5 299.2 L642.1 298.8 L644.6 298.4 L647.2 298.0 L649.7 297.7 L652.2 297.4 L654.8 297.1 L657.3 296.9 L659.9 296.7 L662.4 296.7 L664.9 296.6 L667.5 296.6 L670.0 296.7 L672.6 296.9 L675.1 297.1 L677.7 297.4 L680.2 297.7 L682.7 298.1 L685.3 298.5 L687.8 299.0 L690.4 299.6 L692.9 300.1 L695.5 300.8 L698.0 301.4 L700.5 302.1 L703.1 302.8 L705.6 303.5 L708.2 304.3 L710.7 305.0 L713.2 305.8 L715.8 306.5 L718.3 307.3 L720.9 308.0 L723.4 308.7 L726.0 309.4 L728.5 310.1 L731.0 310.8 L733.6 311.4 L736.1 312.0 L738.7 312.6 L741.2 313.1 L743.7 313.6 L746.3 314.1 L748.8 314.6 L751.4 315.0 L753.9 315.4 L756.5 315.7 L759.0 316.1 L761.5 316.4 L764.1 316.6 L766.6 316.9 L769.2 317.1 L771.7 317.3 L774.2 317.5 L776.8 317.7 L779.3 317.8 L781.9 317.9 L784.4 318.1 L787.0 318.2 L789.5 318.3 L792.0 318.3 L794.6 318.4 L797.1 318.5 L799.7 318.5 L802.2 318.6 L804.7 318.6 L807.3 318.6 L809.8 318.7 L812.4 318.7 L814.9 318.7 L817.5 318.7 L820.0 318.7"/><path style="stroke:#68246D;stroke-width:0.8;fill:none;opacity:.25" d="M60.0 321.7 L62.5 321.7 L65.1 321.6 L67.6 321.6 L70.2 321.5 L72.7 321.4 L75.3 321.4 L77.8 321.3 L80.3 321.2 L82.9 321.0 L85.4 320.9 L88.0 320.7 L90.5 320.6 L93.0 320.4 L95.6 320.2 L98.1 319.9 L100.7 319.7 L103.2 319.4 L105.8 319.1 L108.3 318.7 L110.8 318.4 L113.4 318.0 L115.9 317.5 L118.5 317.1 L121.0 316.6 L123.5 316.0 L126.1 315.4 L128.6 314.8 L131.2 314.2 L133.7 313.5 L136.3 312.8 L138.8 312.1 L141.3 311.3 L143.9 310.5 L146.4 309.6 L149.0 308.8 L151.5 307.9 L154.0 307.0 L156.6 306.1 L159.1 305.1 L161.7 304.2 L164.2 303.3 L166.8 302.3 L169.3 301.4 L171.8 300.5 L174.4 299.6 L176.9 298.7 L179.5 297.9 L182.0 297.1 L184.5 296.3 L187.1 295.6 L189.6 294.9 L192.2 294.3 L194.7 293.8 L197.3 293.3 L199.8 292.9 L202.3 292.5 L204.9 292.3 L207.4 292.1 L210.0 291.9 L212.5 291.9 L215.1 292.0 L217.6 292.1 L220.1 292.3 L222.7 292.5 L225.2 292.9 L227.8 293.3 L230.3 293.8 L232.8 294.3 L235.4 294.9 L237.9 295.6 L240.5 296.3 L243.0 297.0 L245.6 297.8 L248.1 298.6 L250.6 299.4 L253.2 300.2 L255.7 301.1 L258.3 301.9 L260.8 302.8 L263.3 303.6 L265.9 304.4 L268.4 305.2 L271.0 306.0 L273.5 306.8 L276.1 307.5 L278.6 308.2 L281.1 308.8 L283.7 309.4 L286.2 309.9 L288.8 310.4 L291.3 310.9 L293.8 311.3 L296.4 311.6 L298.9 311.9 L301.5 312.1 L304.0 312.3 L306.6 312.4 L309.1 312.4 L311.6 312.4 L314.2 312.3 L316.7 312.2 L319.3 312.0 L321.8 311.7 L324.3 311.4 L326.9 311.0 L329.4 310.6 L332.0 310.1 L334.5 309.6 L337.1 309.0 L339.6 308.3 L342.1 307.7 L344.7 306.9 L347.2 306.1 L349.8 305.3 L352.3 304.4 L354.8 303.5 L357.4 302.6 L359.9 301.6 L362.5 300.6 L365.0 299.6 L367.6 298.5 L370.1 297.4 L372.6 296.3 L375.2 295.1 L377.7 294.0 L380.3 292.8 L382.8 291.6 L385.4 290.5 L387.9 289.3 L390.4 288.1 L393.0 286.9 L395.5 285.8 L398.1 284.6 L400.6 283.5 L403.1 282.4 L405.7 281.3 L408.2 280.2 L410.8 279.2 L413.3 278.2 L415.9 277.2 L418.4 276.3 L420.9 275.5 L423.5 274.7 L426.0 273.9 L428.6 273.2 L431.1 272.6 L433.6 272.0 L436.2 271.5 L438.7 271.1 L441.3 270.7 L443.8 270.4 L446.4 270.2 L448.9 270.1 L451.4 270.0 L454.0 270.0 L456.5 270.1 L459.1 270.2 L461.6 270.5 L464.1 270.8 L466.7 271.1 L469.2 271.6 L471.8 272.1 L474.3 272.6 L476.9 273.3 L479.4 274.0 L481.9 274.7 L484.5 275.5 L487.0 276.4 L489.6 277.3 L492.1 278.2 L494.6 279.2 L497.2 280.2 L499.7 281.3 L502.3 282.4 L504.8 283.5 L507.4 284.6 L509.9 285.8 L512.4 287.0 L515.0 288.1 L517.5 289.3 L520.1 290.5 L522.6 291.7 L525.2 292.9 L527.7 294.0 L530.2 295.2 L532.8 296.3 L535.3 297.5 L537.9 298.6 L540.4 299.6 L542.9 300.7 L545.5 301.7 L548.0 302.7 L550.6 303.6 L553.1 304.6 L555.7 305.4 L558.2 306.3 L560.7 307.1 L563.3 307.8 L565.8 308.5 L568.4 309.2 L570.9 309.8 L573.4 310.4 L576.0 310.9 L578.5 311.4 L581.1 311.8 L583.6 312.2 L586.2 312.5 L588.7 312.8 L591.2 313.0 L593.8 313.2 L596.3 313.4 L598.9 313.5 L601.4 313.5 L603.9 313.6 L606.5 313.5 L609.0 313.5 L611.6 313.4 L614.1 313.3 L616.7 313.1 L619.2 313.0 L621.7 312.8 L624.3 312.6 L626.8 312.3 L629.4 312.1 L631.9 311.8 L634.4 311.6 L637.0 311.4 L639.5 311.1 L642.1 310.9 L644.6 310.7 L647.2 310.4 L649.7 310.3 L652.2 310.1 L654.8 309.9 L657.3 309.8 L659.9 309.7 L662.4 309.7 L664.9 309.7 L667.5 309.7 L670.0 309.7 L672.6 309.8 L675.1 309.9 L677.7 310.1 L680.2 310.3 L682.7 310.5 L685.3 310.7 L687.8 311.0 L690.4 311.3 L692.9 311.6 L695.5 312.0 L698.0 312.3 L700.5 312.7 L703.1 313.1 L705.6 313.5 L708.2 313.9 L710.7 314.4 L713.2 314.8 L715.8 315.2 L718.3 315.6 L720.9 316.0 L723.4 316.4 L726.0 316.8 L728.5 317.2 L731.0 317.5 L733.6 317.9 L736.1 318.2 L738.7 318.5 L741.2 318.8 L743.7 319.1 L746.3 319.4 L748.8 319.6 L751.4 319.9 L753.9 320.1 L756.5 320.3 L759.0 320.5 L761.5 320.6 L764.1 320.8 L766.6 320.9 L769.2 321.1 L771.7 321.2 L774.2 321.3 L776.8 321.4 L779.3 321.5 L781.9 321.5 L784.4 321.6 L787.0 321.6 L789.5 321.7 L792.0 321.7 L794.6 321.8 L797.1 321.8 L799.7 321.8 L802.2 321.9 L804.7 321.9 L807.3 321.9 L809.8 321.9 L812.4 321.9 L814.9 321.9 L817.5 322.0 L820.0 322.0"/><path class="line" d="M451.4 50.0 V 4.0"/><path style="fill:#B3261E" d="M451.4 4.0 l30 9 l-30 9 z"/><text x="487.4" y="20.0" font-size="17" font-weight="700" class="bad">global optimum: the highest peak</text><path style="fill:#1D5FA3" d="M212.0 153.6 l-8 -16 h16 z"/><text x="212.0" y="129.6" font-size="15" text-anchor="middle" class="blue">local optimum</text><circle cx="319.7" cy="229.6" r="6" class="fill-ink"/><path class="line" d="M319.7 235.6 v14 M319.7 249.6 l-6 10 M319.7 249.6 l6 10 M319.7 239.6 l9 -5" style="stroke-width:2.2"/><path class="line-acc" d="M333.7 219.6 q 30 -30 70 -36" stroke-dasharray="6 4"/><text x="337.7" y="183.6" font-size="14" class="acc">uphill = better</text><path class="line" d="M60 330 H 830 M60 330 V 30"/><path class="fill-ink" d="M840 330 l-12 -6 v12 z M60 20 l-6 12 h12 z"/><text x="835" y="356" font-size="15" text-anchor="end">decision variable x (where you stand)</text><text x="70" y="22" font-size="15">objective f(x) (height)</text><path class="line-muted" d="M451.4 50.0 V 330"/><text x="451.4" y="352" font-size="15" text-anchor="middle" class="bad" font-weight="700">x*</text></svg>
+        <figcaption>The decision variable is where you stand, the objective is the height. The highest peak is the global optimum \(x^*\); a lower peak, where every small step goes down, is a local optimum.</figcaption>
+      </figure>
+      <p>The picture already shows the main ideas of this week:</p>
+      <ul>
+        <li>The <strong>global optimum</strong> is the highest peak of all. A <strong>local optimum</strong> is a peak where every small step goes downhill, but which is not the highest. A hiker who always walks uphill stops at the first peak they reach, which may be a local one.</li>
+        <li>At the top of every peak the ground is flat: the slope is zero. This is the basis of the closed-form methods (sections 3 and 4).</li>
+        <li>A hiker in fog cannot see the peak but can feel the slope under their feet, and climb step by step. This is the basis of the iterative methods (sections 5 to 7).</li>
+      </ul>
+
+      <h3>1.2 Maximise or minimise?</h3>
+      <p>Some objectives should be as large as possible (power, profit, efficiency), others as small as possible (mass, cost, error). The two are the same problem: the highest point of \(f\) is the lowest point of \(-f\). Climbing a mountain is the same as descending into the valley of the upside-down mountain:</p>
+      <div class="math">$$\max_x f(x) = -\min_x \big(-f(x)\big), \qquad \text{at the same } x^*$$</div>
+      <p>By convention, optimisation problems and software are written as <em>minimisation</em>. SciPy only minimises, so to maximise we minimise \(-f\) (section 8.4).</p>
+
+      <h3>1.3 The general optimisation problem</h3>
+      <p>In general, an optimisation problem is written as</p>
+      <div class="math">$$\min_{\mathbf{x} \in \mathcal{X}} f(\mathbf{x}) \quad \text{subject to} \quad g_i(\mathbf{x}) \le 0, \quad h_j(\mathbf{x}) = 0$$</div>
+      <ul>
+        <li>\(f: \mathbb{R}^n \to \mathbb{R}\) is the <strong>objective function</strong> (also called the cost or fitness function): one number that measures how good a solution is.</li>
+        <li>\(\mathbf{x} = (x_1, x_2, \dots, x_n)\) are the <strong>decision variables</strong>, the quantities we can choose. Together they span the <strong>decision space</strong> \(\mathcal{X}\).</li>
+        <li>\(g_i(\mathbf{x}) \le 0\) are <strong>inequality constraints</strong> (a stress must not exceed the allowable stress) and \(h_j(\mathbf{x}) = 0\) <strong>equality constraints</strong> (the tank must hold exactly 10 m³).</li>
+      </ul>
+      <p>A <strong>feasible solution</strong> satisfies all the constraints. The <strong>optimal solution</strong> \(\mathbf{x}^*\) is the feasible solution with the best objective: \(f(\mathbf{x}^*) \le f(\mathbf{x})\) for every feasible \(\mathbf{x}\). In the mountain analogy, the constraints are the fences of a park: the best point you may reach is either a peak inside the park, or a point on the fence. This week we mostly study <strong>unconstrained</strong> problems, plus simple lower and upper bounds on the variables in SciPy; constraints are developed further next week.</p>
+    </section>
+
+<!-- =========================================================== 2 -->
+    <section id="examples">
+      <h2><span class="num">2</span>Engineering examples</h2>
+      <p>Optimisation appears in every branch of engineering. A few examples, each with its decision variables, objective and constraints:</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Problem</th><th>Decision variables</th><th>Objective</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td>Beam design</td><td>width \(b\), depth \(d\)</td><td>minimise mass</td><td>stress, deflection, stability</td></tr>
+          <tr><td>Wind farm layout</td><td>turbine spacing</td><td>maximise power − cost</td><td>site boundary</td></tr>
+          <tr><td>Storage tank</td><td>radius \(r\), height \(h\)</td><td>minimise sheet metal</td><td>volume = 10 m³</td></tr>
+          <tr><td>Pumping main</td><td>pipe diameter</td><td>minimise pipe cost + pumping cost</td><td>flow rate, velocity limits</td></tr>
+          <tr><td>Construction schedule</td><td>crew sizes, start dates</td><td>minimise duration or cost</td><td>precedence, resources</td></tr>
+          <tr><td>Model fitting (week 6)</td><td>distribution parameters</td><td>maximise the likelihood</td><td>positive scale</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>2.1 The lightest beam</h3>
+      <p>A rectangular steel beam spans 6 m and carries 20 kN/m. We choose its width \(b\) and depth \(d\) to <strong>minimise the mass</strong>, which is proportional to the area \(b\,d\). The bending stress must stay below 165 MPa, the mid-span deflection below \(L/360\), and the section must not be too slender (\(d \le 6b\)) so that it does not buckle sideways.</p>
+      <figure class="pic">
+        <img src="assets/img/w7-beam-design.png" alt="Design space of beam width against depth. Curves of equal mass, the stress, deflection and stability limits, a shaded feasible region, and the optimum marked where the deflection limit meets the line d = 6b." width="605" height="451" loading="lazy">
+        <figcaption>The design space of the beam. Each purple curve joins designs of equal mass; the shaded region satisfies all three constraints. The lightest feasible design, 49 × 292 mm at 112 kg/m, sits on the boundary where the deflection and stability limits meet.</figcaption>
+      </figure>
+      <p>Two lessons from this picture. First, a deep, narrow section is much more efficient than a square one: a square section that passes the same checks weighs about 275 kg/m, 60 % more steel. Second, the optimum is on the fence: it is limited by two constraints that are <em>active</em> (exactly satisfied). This is typical of constrained engineering problems.</p>
+
+      <h3>2.2 How far apart should two turbines be?</h3>
+      <p>Every wind turbine leaves behind a <strong>wake</strong>, a cone of slower, more turbulent air. A turbine standing in the wake of another produces less power, because power grows with the cube of the wind speed. The simplest description is the Jensen (Park) wake model: the wake spreads linearly with distance, and the wind speed deficit at a distance of \(s\) rotor diameters behind a turbine is</p>
+      <div class="math">$$\delta(s) = \frac{1 - \sqrt{1 - C_T}}{(1 + 2ks)^2}$$</div>
+      <p>with thrust coefficient \(C_T \approx 0.8\) and wake decay constant \(k \approx 0.05\) onshore. The downstream turbine sees a wind speed \((1 - \delta)\) times the free wind, and produces \((1 - \delta)^3\) times the power of the first turbine. Close together, the second turbine loses most of its power; far apart, the farm needs more land and longer cables and fits fewer turbines on the site. With a cost of 0.04 (in units of one turbine’s power) per rotor diameter of spacing, the objective is</p>
+      <div class="math">$$J(s) = \underbrace{1 + (1 - \delta(s))^3}_{\text{power of both turbines}} - \underbrace{0.04\,s}_{\text{cost of spacing}}$$</div>
+      <p>The power term increases with \(s\), the cost term decreases: the best spacing balances the two. We find it in section 10, about 7.8 rotor diameters, consistent with the 5 to 10 diameters used in real wind farms along the prevailing wind.</p>
+    </section>
+
+<!-- =========================================================== 3 -->
+    <section id="closed-1d">
+      <h2><span class="num">3</span>Closed-form solutions: one variable</h2>
+      <p>When the objective is a known formula that we can differentiate, calculus finds the optimum exactly. Such an exact, formula-based answer is called a <strong>closed-form</strong> or <strong>analytical</strong> solution.</p>
+
+      <h3>3.1 At the top, the slope is zero</h3>
+      <p>Walk along a curve: going uphill the slope is positive, going downhill it is negative, and exactly at the top of a peak (or the bottom of a valley) it is zero: the tangent is horizontal. The slope is the derivative, so every interior optimum of a smooth function satisfies</p>
+      <div class="math">$$f'(x) = 0$$</div>
+      <p>Points where the derivative is zero are called <strong>stationary points</strong>. They are the <em>candidates</em> for the optimum: maxima, minima, and occasionally flat inflection points such as \(x = 0\) for \(f(x) = x^3\).</p>
+
+      <h3>3.2 Maximum or minimum: the second-derivative test</h3>
+      <p>The second derivative is the curvature, the rate at which the slope changes. At a stationary point \(x_s\):</p>
+      <ul>
+        <li>\(f''(x_s) &lt; 0\): the curve bends downwards, a <strong>maximum</strong> (a peak);</li>
+        <li>\(f''(x_s) &gt; 0\): the curve bends upwards, a <strong>minimum</strong> (a valley);</li>
+        <li>\(f''(x_s) = 0\): the test is inconclusive.</li>
+      </ul>
+      <p>The test tells us whether a stationary point is a <em>local</em> maximum or minimum. To find the <strong>global</strong> optimum, compare the values of \(f\) at all the candidates, and at the ends of the range if the range is limited.</p>
+
+      <div class="example">
+        <p><span class="label">Example: a damped cosine.</span> Find the maximum of \(f(x) = \cos(2x)\,e^{-0.1x^2}\) on \([-5, 5]\). By the product rule,</p>
+        <div class="math">$$f'(x) = -2\sin(2x)\,e^{-0.1x^2} - 0.2x\cos(2x)\,e^{-0.1x^2} = -e^{-0.1x^2}\big(2\sin 2x + 0.2x\cos 2x\big)$$</div>
+        <p>The exponential is never zero, so the stationary points satisfy \(2\sin 2x + 0.2x\cos 2x = 0\). At \(x = 0\) both terms vanish, so \(x_s = 0\) is a stationary point. The second derivative there is \(f''(0) = -4.2 &lt; 0\), a maximum, with \(f(0) = 1\). The other peaks, near \(x = \pm 3\), are lower (about 0.39) because of the damping, so \(x^* = 0\) is the global maximum.</p>
+        <p>The other roots of \(2\sin 2x + 0.2x\cos 2x = 0\) have no neat formula: we can only find them numerically. That is a first hint of why we need iterative methods.</p>
+      </div>
+      <p>Plotting the function and its derivative together shows the idea: every peak and valley of \(f\) sits exactly above a zero crossing of \(f'\). The code finds the sign changes of \(f'\) on a fine grid and refines each one with <code>brentq</code>, a root finder from <code>scipy.optimize</code>: a numerical answer to the equation we could not solve by hand.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+
+f = lambda x: np.cos(2 * x) * np.exp(-0.1 * x**2)
+df = lambda x: -np.exp(-0.1 * x**2) * (2 * np.sin(2 * x)
+                                     + 0.2 * x * np.cos(2 * x))
+
+x = np.linspace(-5, 5, 1000)
+# stationary points: f' changes sign between two grid points,
+# then brentq refines each one
+i = np.where(df(x[:-1]) * df(x[1:]) &lt; 0)[0]
+xs = np.array([brentq(df, x[j], x[j + 1]) for j in i])
+print("stationary points: x =", np.round(xs, 3))
+print("f at these points:    ", np.round(f(xs), 3))
+best = xs[np.argmax(f(xs))]
+print("global maximum: x = %.3f, f = %.3f" % (best, f(best)))
+
+fig, ax = plt.subplots(2, 1, sharex=True, figsize=(7, 5))
+ax[0].plot(x, f(x), color="#68246D")
+ax[0].plot(xs, f(xs), "o", color="#B3261E")
+ax[0].set_ylabel("f(x)")
+ax[1].plot(x, df(x), color="#1D5FA3")
+ax[1].axhline(0, color="black", lw=0.8)
+ax[1].plot(xs, df(xs), "o", color="#B3261E")
+ax[1].set_ylabel("f'(x)")
+ax[1].set_xlabel("x")
+plt.tight_layout()
+plt.show()</code></pre>
+</figure>
+<pre class="out">stationary points: x = [-4.501 -2.996 -1.497  0.     1.497  2.996  4.501]
+f at these points:     [-0.12   0.39  -0.791  1.    -0.791  0.39  -0.12 ]
+global maximum: x = 0.000, f = 1.000</pre>
+<figure class="plot"><img src="assets/img/w7-damped.png" alt="Two stacked plots: the damped cosine f(x) with red dots at its peaks and valleys, and below it the derivative f prime with red dots where it crosses zero, directly under the peaks and valleys" width="690" height="490" loading="lazy"><figcaption>Every peak and valley of f sits above a zero of f′.</figcaption></figure>
+
+      <h3>3.3 An engineering example: the cheapest tank</h3>
+      <p>A closed cylindrical tank must hold \(V = 10\) m³. Which radius \(r\) and height \(h\) need the least sheet metal, the smallest surface area?</p>
+      <div class="math">$$A = 2\pi r^2 + 2\pi r h, \qquad V = \pi r^2 h$$</div>
+      <p>The volume is an equality constraint. Use it to remove one variable, \(h = V/(\pi r^2)\), which leaves an unconstrained problem in \(r\) alone (substitution):</p>
+      <div class="math">$$A(r) = 2\pi r^2 + \frac{2V}{r}, \qquad \frac{dA}{dr} = 4\pi r - \frac{2V}{r^2} = 0 \quad\Rightarrow\quad r^* = \left(\frac{V}{2\pi}\right)^{1/3} = 1.17 \text{ m}$$</div>
+      <p>Then \(h^* = V/(\pi r^{*2}) = 2r^* = 2.34\) m and \(A^* = 25.7\) m². The second derivative \(A''(r) = 4\pi + 4V/r^3\) is positive for every \(r &gt; 0\), so this is a minimum. The cheapest closed tank is as tall as it is wide, which is why so many cans are nearly “square”. Real tanks deviate from it because the ends cost more than the wall, or because of transport limits: change the objective and the optimum moves.</p>
+      <figure class="pic">
+        <svg viewBox="0 0 560 300" role="img" aria-label="A closed cylindrical tank of radius r and height h, and its surface area against the radius for a volume of 10 cubic metres, with the minimum at r = 1.17 m."><ellipse cx="90" cy="70" rx="60" ry="16" class="area"/><path class="area" d="M30 70 V 220 A60 16 0 0 0 150 220 V 70 A60 16 0 0 1 30 70 Z"/><ellipse cx="90" cy="70" rx="60" ry="16" style="fill:#F7F2F8;stroke:#68246D;stroke-width:2"/><path class="line" d="M90 70 H 150"/><text x="120" y="62" font-size="15" text-anchor="middle" class="acc" font-weight="700">r</text><path class="line" d="M165 70 V 220"/><path class="fill-ink" d="M165 70 l-5 9 h10 z M165 220 l-5 -9 h10 z"/><text x="174" y="150" font-size="15" class="acc" font-weight="700">h</text><text x="112" y="268" font-size="13" text-anchor="middle" class="muted">volume V = πr²h = 10 m³</text><path class="line" d="M240 250 H 545 M240 250 V 30"/><path class="line-acc" d="M245.8 142.0 L247.2 146.8 L248.7 151.4 L250.2 155.7 L251.7 159.8 L253.2 163.6 L254.6 167.2 L256.1 170.7 L257.6 173.9 L259.1 177.0 L260.6 179.9 L262.0 182.6 L263.5 185.3 L265.0 187.7 L266.5 190.1 L267.9 192.3 L269.4 194.4 L270.9 196.5 L272.4 198.4 L273.9 200.2 L275.3 201.9 L276.8 203.5 L278.3 205.1 L279.8 206.6 L281.3 208.0 L282.7 209.3 L284.2 210.6 L285.7 211.7 L287.2 212.9 L288.6 213.9 L290.1 215.0 L291.6 215.9 L293.1 216.8 L294.6 217.7 L296.0 218.5 L297.5 219.2 L299.0 219.9 L300.5 220.6 L302.0 221.2 L303.4 221.8 L304.9 222.3 L306.4 222.8 L307.9 223.2 L309.3 223.6 L310.8 224.0 L312.3 224.4 L313.8 224.7 L315.3 225.0 L316.7 225.2 L318.2 225.4 L319.7 225.6 L321.2 225.7 L322.7 225.9 L324.1 226.0 L325.6 226.0 L327.1 226.1 L328.6 226.1 L330.0 226.1 L331.5 226.0 L333.0 226.0 L334.5 225.9 L336.0 225.8 L337.4 225.6 L338.9 225.5 L340.4 225.3 L341.9 225.1 L343.4 224.9 L344.8 224.6 L346.3 224.4 L347.8 224.1 L349.3 223.8 L350.7 223.4 L352.2 223.1 L353.7 222.7 L355.2 222.3 L356.7 221.9 L358.1 221.5 L359.6 221.1 L361.1 220.6 L362.6 220.1 L364.1 219.6 L365.5 219.1 L367.0 218.6 L368.5 218.0 L370.0 217.5 L371.4 216.9 L372.9 216.3 L374.4 215.7 L375.9 215.1 L377.4 214.4 L378.8 213.8 L380.3 213.1 L381.8 212.4 L383.3 211.7 L384.8 211.0 L386.2 210.3 L387.7 209.5 L389.2 208.7 L390.7 208.0 L392.1 207.2 L393.6 206.4 L395.1 205.6 L396.6 204.7 L398.1 203.9 L399.5 203.0 L401.0 202.1 L402.5 201.3 L404.0 200.4 L405.5 199.4 L406.9 198.5 L408.4 197.6 L409.9 196.6 L411.4 195.7 L412.8 194.7 L414.3 193.7 L415.8 192.7 L417.3 191.7 L418.8 190.6 L420.2 189.6 L421.7 188.5 L423.2 187.5 L424.7 186.4 L426.2 185.3 L427.6 184.2 L429.1 183.1 L430.6 182.0 L432.1 180.8 L433.5 179.7 L435.0 178.5 L436.5 177.3 L438.0 176.2 L439.5 175.0 L440.9 173.8 L442.4 172.5 L443.9 171.3 L445.4 170.1 L446.9 168.8 L448.3 167.5 L449.8 166.3 L451.3 165.0 L452.8 163.7 L454.2 162.4 L455.7 161.1 L457.2 159.7 L458.7 158.4 L460.2 157.0 L461.6 155.7 L463.1 154.3 L464.6 152.9 L466.1 151.5 L467.6 150.1 L469.0 148.7 L470.5 147.3 L472.0 145.8 L473.5 144.4 L474.9 142.9 L476.4 141.4 L477.9 139.9 L479.4 138.5 L480.9 137.0 L482.3 135.4 L483.8 133.9 L485.3 132.4 L486.8 130.8 L488.3 129.3 L489.7 127.7 L491.2 126.1 L492.7 124.6 L494.2 123.0 L495.6 121.3 L497.1 119.7 L498.6 118.1 L500.1 116.5 L501.6 114.8 L503.0 113.2 L504.5 111.5 L506.0 109.8 L507.5 108.1 L509.0 106.4 L510.4 104.7 L511.9 103.0 L513.4 101.3 L514.9 99.5 L516.3 97.8 L517.8 96.0 L519.3 94.3 L520.8 92.5 L522.3 90.7 L523.7 88.9 L525.2 87.1 L526.7 85.3 L528.2 83.5 L529.7 81.6 L531.1 79.8 L532.6 77.9 L534.1 76.1 L535.6 74.2 L537.0 72.3 L538.5 70.4 L540.0 68.5"/><circle cx="328.6" cy="226.1" r="6" class="fill-bad"/><text x="328.6" y="182.1" font-size="14" text-anchor="middle" class="bad" font-weight="700">r* = 1.17 m</text><path class="line-bad" d="M278.6 226.1 H 378.6" stroke-dasharray="5 4"/><text x="384.6" y="243.1" font-size="13" class="bad">dA/dr = 0</text><text x="251.5" y="270" font-size="13" text-anchor="middle">0.5</text><text x="309.2" y="270" font-size="13" text-anchor="middle">1</text><text x="366.9" y="270" font-size="13" text-anchor="middle">1.5</text><text x="424.6" y="270" font-size="13" text-anchor="middle">2</text><text x="482.3" y="270" font-size="13" text-anchor="middle">2.5</text><text x="540.0" y="270" font-size="13" text-anchor="middle">3</text><text x="392" y="292" font-size="13" text-anchor="middle" class="muted">radius r (m)</text><text x="246" y="26" font-size="13" class="muted">surface area A (m²)</text></svg>
+        <figcaption>The surface area of a 10 m³ tank against its radius. Small tanks are tall and thin, large ones flat; both waste metal. At the minimum, \(dA/dr = 0\).</figcaption>
+      </figure>
+    </section>
+
+<!-- =========================================================== 4 -->
+    <section id="closed-nd">
+      <h2><span class="num">4</span>Closed-form solutions: several variables</h2>
+      <p>Most engineering problems have more than one decision variable. Consider a smooth mountain whose height \(h(x, y)\) depends on two coordinates, east \(x\) and north \(y\) (in km):</p>
+      <div class="math">$$h(x, y) = -30x^2 - 20y^2 + 10xy + 210x + 80y + 660 \quad \text{(m)}$$</div>
+
+      <h3>4.1 Partial derivatives and the gradient</h3>
+      <p>The <strong>partial derivative</strong> \(\partial h/\partial x\) is the slope when walking east with \(y\) held fixed; \(\partial h/\partial y\) is the slope walking north. Together they form the <strong>gradient</strong>, a vector:</p>
+      <div class="math">$$\nabla h(x, y) = \begin{bmatrix} \partial h/\partial x \\ \partial h/\partial y \end{bmatrix} = \begin{bmatrix} -60x + 10y + 210 \\ 10x - 40y + 80 \end{bmatrix}$$</div>
+      <p>The gradient points <strong>uphill</strong>, in the direction of steepest ascent, and its length is the steepness. For a scalar function such as \(h\), the gradient is the (transposed) <strong>Jacobian</strong>: the matrix of all first derivatives, which for one output has a single row. At a peak the ground is flat in every direction, the tangent plane is horizontal, and the gradient is the zero vector:</p>
+      <div class="math">$$\nabla h(x^*, y^*) = \mathbf{0}$$</div>
+      <figure class="pic">
+        <img src="assets/img/w7-mountain-3d.png" alt="A smooth dome-shaped mountain h(x, y) in 3-D with a flat grid, the tangent plane, touching it at the peak at x = 4 km, y = 3 km." width="533" height="489" loading="lazy">
+        <figcaption>The smooth mountain. At the peak the tangent plane (orange grid) is horizontal: both partial derivatives are zero.</figcaption>
+      </figure>
+
+      <h3>4.2 Solving ∇h = 0</h3>
+      <p>Setting both partial derivatives to zero gives two equations in two unknowns:</p>
+      <div class="math">$$-60x + 10y + 210 = 0, \qquad 10x - 40y + 80 = 0$$</div>
+      <p>For this mountain the equations are linear, so they can be solved by hand or as a matrix system: \(x^* = 4\) km, \(y^* = 3\) km and \(h^* = 1200\) m.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+# -60x + 10y = -210  and  10x - 40y = -80
+A = np.array([[-60, 10],
+              [10, -40]])
+b = np.array([-210, -80])
+x_star, y_star = np.linalg.solve(A, b)
+
+h = lambda x, y: -30*x**2 - 20*y**2 + 10*x*y + 210*x + 80*y + 660
+print("peak at x = %.2f km, y = %.2f km, height %.0f m"
+      % (x_star, y_star, h(x_star, y_star)))</code></pre>
+</figure>
+<pre class="out">peak at x = 4.00 km, y = 3.00 km, height 1200 m</pre>
+      <figure class="pic">
+        <img src="assets/img/w7-mountain-contour.png" alt="Contour map of the mountain with arrows of the gradient pointing uphill towards the peak at x = 4, y = 3, where the gradient is zero." width="597" height="451" loading="lazy">
+        <figcaption>Contour map of the mountain. The arrows are the gradient: they point uphill, perpendicular to the contours, and shrink to zero at the peak.</figcaption>
+      </figure>
+
+      <h3>4.3 Peak or valley: the Hessian</h3>
+      <p>In several variables the role of \(f''\) is played by the <strong>Hessian</strong>, the matrix of second partial derivatives:</p>
+      <div class="math">$$H = \begin{bmatrix} \partial^2 h/\partial x^2 & \partial^2 h/\partial x\,\partial y \\ \partial^2 h/\partial y\,\partial x & \partial^2 h/\partial y^2 \end{bmatrix} = \begin{bmatrix} -60 & 10 \\ 10 & -40 \end{bmatrix}$$</div>
+      <p>If all eigenvalues of \(H\) are negative (the surface curves down in every direction), the stationary point is a maximum; if all are positive, a minimum; if they have mixed signs, a <strong>saddle point</strong> (a mountain pass: up in one direction, down in another). Here the eigenvalues are −64.1 and −35.9: a maximum. In code: <code>np.linalg.eigvals(H)</code>.</p>
+      <p>This mountain is unusually kind: its gradient is linear, so \(\nabla h = \mathbf{0}\) is a linear system. For most functions the equations \(\nabla f = \mathbf{0}\) are non-linear, have many solutions, or cannot be written down at all. That is where the next sections come in.</p>
+    </section>
+
+<!-- =========================================================== 5 -->
+    <section id="iterative">
+      <h2><span class="num">5</span>Iterative methods: when there is no closed form</h2>
+      <p>Closed-form solutions are exact and fast, but they need a formula we can differentiate and equations \(f'(x) = 0\) or \(\nabla f = \mathbf{0}\) that we can solve. In engineering this often fails:</p>
+      <ul>
+        <li><strong>The equation has no algebraic solution.</strong> For \(f(x) = x\cos 3x\), setting the derivative to zero gives \(\cos 3x - 3x\sin 3x = 0\), which cannot be rearranged for \(x\).</li>
+        <li><strong>There is no formula at all.</strong> The objective is the output of a simulation: a Monte Carlo model like last week’s wind farm, a finite element analysis, or the productivity of a construction site as a function of the crew size, which can only be evaluated by running a model.</li>
+        <li><strong>There are too many variables.</strong> Designing a truss, a water network or a neural network can involve thousands or millions of variables; even if the equations could be written, solving them simultaneously is impractical.</li>
+      </ul>
+      <p><strong>Iterative methods</strong> avoid solving the equations. Back to the mountain, now covered in fog: you cannot see the peak, but you can feel the slope of the ground under your feet. Take a step uphill, feel the slope again, take another step, and stop when the ground is flat. Every iterative optimisation method has the same three ingredients:</p>
+      <ol class="steps">
+        <li><strong>An initial guess</strong> \(x_0\), the starting point.</li>
+        <li><strong>An update rule</strong> \(x_{k+1} = x_k + \text{step}_k\) that moves to a (usually) better point using local information: the value, the slope, perhaps the curvature.</li>
+        <li><strong>A stopping criterion</strong>: stop when the steps or the slope become negligibly small (<strong>convergence</strong>), or after a maximum number of iterations.</li>
+      </ol>
+      <p>Iterative methods give an approximate answer, as accurate as the stopping tolerance, and usually a <strong>local</strong> optimum: the one nearest to where they start. Trying several starting points is the simplest protection against a poor local optimum.</p>
+      <p>For the rest of Part A we use the handout’s example: minimise \(f(x) = x\cos 3x\) on \([-5, 2]\). It has several valleys; the deepest, the global minimum, is at \(x^* = -4.2151\) with \(f(x^*) = -4.2020\). Its first and second derivatives are</p>
+      <div class="math">$$f'(x) = \cos 3x - 3x\sin 3x, \qquad f''(x) = -6\sin 3x - 9x\cos 3x$$</div>
+    </section>
+
+<!-- =========================================================== 6 -->
+    <section id="gradient-descent">
+      <h2><span class="num">6</span>Gradient descent</h2>
+      <p>The gradient points uphill. To <strong>minimise</strong> a function, take a step in the opposite direction, downhill:</p>
+      <div class="math">$$\mathbf{x}_{k+1} = \mathbf{x}_k - \alpha\,\nabla f(\mathbf{x}_k) \qquad \text{(1-D: } x_{k+1} = x_k - \alpha f'(x_k)\text{)}$$</div>
+      <p>The positive constant \(\alpha\) is the <strong>learning rate</strong> or step size. The step is \(\alpha\) times the slope, so the method takes large steps where the ground is steep and small steps near the bottom, where the slope tends to zero. To <strong>maximise</strong>, step with the gradient instead (<strong>gradient ascent</strong>), \(\mathbf{x}_{k+1} = \mathbf{x}_k + \alpha\,\nabla f(\mathbf{x}_k)\), or minimise \(-f\).</p>
+      <p>The algorithm:</p>
+      <ol class="steps">
+        <li>Start from an initial guess \(x_0\).</li>
+        <li>Calculate the gradient (in 1-D, the derivative) at the current point.</li>
+        <li>Update \(x_{k+1} = x_k - \alpha f'(x_k)\).</li>
+        <li>Repeat steps 2 and 3 until the step is smaller than a tolerance, or a maximum number of iterations is reached.</li>
+      </ol>
+
+      <h3>6.1 Gradient descent by hand</h3>
+      <p>Two functions and a <code>for</code> loop. The loop prints every iteration, so you can watch \(x\) settle and the slope shrink to zero.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def f(x):
+    return x * np.cos(3 * x)
+
+def grad(x):                    # f'(x)
+    return np.cos(3 * x) - 3 * x * np.sin(3 * x)
+
+x = -3.9                        # initial guess
+alpha = 0.02                    # learning rate
+print(" k         x        f(x)       f'(x)")
+for k in range(1, 51):
+    step = alpha * grad(x)
+    x = x - step                # move against the gradient
+    print("%2d %10.5f %10.5f %10.5f" % (k, x, f(x), grad(x)))
+    if abs(step) &lt; 1e-6:        # converged: tiny step
+        break</code></pre>
+</figure>
+<pre class="out"> k         x        f(x)       f'(x)
+ 1   -4.09126   -3.91736    4.49780
+ 2   -4.18121   -4.18013    1.28489
+ 3   -4.20691   -4.20070    0.31281
+ 4   -4.21317   -4.20191    0.07385
+ 5   -4.21464   -4.20197    0.01733
+ 6   -4.21499   -4.20198    0.00406
+ 7   -4.21507   -4.20198    0.00095
+ 8   -4.21509   -4.20198    0.00022
+ 9   -4.21509   -4.20198    0.00005
+10   -4.21510   -4.20198    0.00001
+11   -4.21510   -4.20198    0.00000</pre>
+      <p>Eleven iterations from \(x_0 = -3.9\) to the global minimum \(x^* = -4.21510\). Note how the slope in the last column falls by a roughly constant factor (about 4) each step: gradient descent converges <em>linearly</em>.</p>
+
+      <h3>6.2 Choosing the learning rate</h3>
+      <p>The learning rate is the one thing we must tune, and the result depends strongly on it:</p>
+      <div class="tbl-wrap"><table class="tbl" style="max-width:36rem">
+        <thead><tr><th>α</th><th>From x₀ = −3.9</th></tr></thead>
+        <tbody>
+          <tr><td>0.004</td><td>converges, but slowly: 68 iterations</td></tr>
+          <tr><td>0.01</td><td>26 iterations (the handout’s value)</td></tr>
+          <tr><td>0.02</td><td>11 iterations</td></tr>
+          <tr><td>0.04</td><td>overshoots and oscillates around the minimum, settles after 21 iterations</td></tr>
+          <tr><td>0.06–0.10</td><td>bounces from one side of the valley to the other for ever</td></tr>
+          <tr><td>≥ 0.12</td><td>the first step jumps out of the valley: the method diverges</td></tr>
+        </tbody>
+      </table></div>
+      <p>Too small and convergence is very slow; too large and the method oscillates or diverges. A good learning rate depends on the curvature of the function: near the minimum, gradient descent is stable only if \(\alpha &lt; 2/f''(x^*)\), here \(2/38.3 = 0.052\). Practical solvers choose the step size automatically at each iteration (a <em>line search</em>), as SciPy does.</p>
+      <p>The starting point matters too. From \(x_0 = 0.5\) gradient descent rolls into the valley near \(x = 1.14\), a local minimum with \(f = -1.10\), far from the global minimum.</p>
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout’s first code example defines \(f(x) = x^2\) but labels and plots \(x\cos 3x\); here both the code and the plots use \(x\cos 3x\). The handout also says that gradient descent “does not converge after 10 iterations”, while its code runs 50: with \(\alpha = 0.01\) it needs 26 iterations, with \(\alpha = 0.02\) eleven.</p>
+      </div>
+      <div class="exercise">
+        <p><span class="label">Exercise 6.1.</span> Explore gradient descent on \(f(x) = x\cos 3x\).</p>
+        <ol>
+          <li>Run the loop with \(\alpha = 0.01, 0.04, 0.07\) and \(0.12\). Describe what happens in each case.</li>
+          <li>Start from \(x_0 = 0.5\) and from \(x_0 = -2\). Which minima do you find?</li>
+          <li>Store every \(x_k\) in a list and plot the path on top of the curve.</li>
+        </ol>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+def f(x):
+    return x * np.cos(3 * x)
+
+def grad(x):
+    return np.cos(3 * x) - 3 * x * np.sin(3 * x)
+
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+def f(x):
+    return x * np.cos(3 * x)
+
+def grad(x):
+    return np.cos(3 * x) - 3 * x * np.sin(3 * x)
+
+def gradient_descent(x, alpha, n_max=50, tol=1e-6):
+    path = [x]
+    for k in range(n_max):
+        step = alpha * grad(x)
+        x = x - step
+        path.append(x)
+        if abs(step) &lt; tol:
+            break
+    return np.array(path)
+
+xs = np.linspace(-5, 2, 500)
+plt.plot(xs, f(xs), color="black", lw=1.5)
+runs = [(-3.9, 0.02, "#68246D"), (-3.9, 0.07, "#B3261E"), (0.5, 0.02, "#1D5FA3")]
+for x0, alpha, colour in runs:
+    path = gradient_descent(x0, alpha)
+    print("x0 = %5.2f, alpha = %.2f: %2d iterations, end at x = %.4f"
+          % (x0, alpha, len(path) - 1, path[-1]))
+    plt.plot(path, f(path), "o-", ms=4, color=colour,
+             label="x0 = %g, alpha = %g" % (x0, alpha))
+plt.xlim(-5, 2)
+plt.ylim(-4.6, 4.2)
+plt.xlabel("x")
+plt.ylabel("f(x)")
+plt.legend()
+plt.show()</code></pre>
+</figure>
+<pre class="out">x0 = -3.90, alpha = 0.02: 11 iterations, end at x = -4.2151
+x0 = -3.90, alpha = 0.07: 50 iterations, end at x = -3.7525
+x0 =  0.50, alpha = 0.02: 50 iterations, end at x = 1.1419</pre>
+<figure class="plot"><img src="assets/img/w7-gd-paths.png" alt="The curve x cos 3x with three gradient descent paths: from -3.9 with alpha 0.02 the points slide into the deepest valley; with alpha 0.07 they jump back and forth across it; from 0.5 they slide into the valley near 1.14" width="570" height="438" loading="lazy"><figcaption>Gradient descent paths for two learning rates and two starting points.</figcaption></figure>
+        <p>With \(\alpha = 0.07\) the iterates jump back and forth across the valley and never settle within 50 iterations. From \(x_0 = 0.5\) the method finds the local minimum at 1.14; from \(x_0 = -2\) it finds the local minimum near \(-2.1\).</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 7 -->
+    <section id="newton">
+      <h2><span class="num">7</span>Newton’s method</h2>
+      <p>Gradient descent only uses the slope. <strong>Newton’s method</strong> also uses the curvature. Near the current point \(x_k\), approximate \(f\) by the parabola that has the same value, slope and curvature (the second-order Taylor expansion):</p>
+      <div class="math">$$f(x) \approx q(x) = f(x_k) + f'(x_k)(x - x_k) + \tfrac{1}{2}f''(x_k)(x - x_k)^2$$</div>
+      <p>The stationary point of the parabola is easy to find: \(q'(x) = f'(x_k) + f''(x_k)(x - x_k) = 0\). Jump there, build a new parabola, and repeat:</p>
+      <div class="math">$$x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)}$$</div>
+      <p>With \(n\) variables the Hessian matrix \(H\) replaces \(f''\), and its inverse multiplies the gradient:</p>
+      <div class="math">$$\mathbf{x}_{k+1} = \mathbf{x}_k - H(\mathbf{x}_k)^{-1}\,\nabla f(\mathbf{x}_k)$$</div>
+      <p>In practice we never compute the inverse: we solve the linear system \(H\,\Delta\mathbf{x} = \nabla f\) for the step, with <code>np.linalg.solve(H, g)</code>. In the mountain analogy, the hiker feels both the slope and how the ground bends, imagines the shape of the hill, and walks straight to where its top should be.</p>
+      <ul>
+        <li><strong>No learning rate</strong> to choose: the curvature sets the step.</li>
+        <li><strong>Very fast near the optimum</strong>: convergence is <em>quadratic</em>, the error is roughly squared at each step, so the number of correct digits roughly doubles.</li>
+        <li><strong>Exact in one step</strong> for a quadratic function, because the parabola is the function itself.</li>
+      </ul>
+      <p>The drawbacks: it needs the second derivatives, which for \(n\) variables means an \(n \times n\) Hessian to compute and a linear system to solve at every step. And it finds <strong>stationary points</strong>, where \(f' = 0\), so it may converge to a <strong>maximum</strong> (or a saddle point) when we want a minimum. This happens when \(f''(x_k) &lt; 0\): the parabola opens downwards and its stationary point is its top. When \(f''\) is close to zero, the step becomes huge.</p>
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout writes the update as \(x_{k+1} = x_k - \nabla f/\nabla^2 f\). That division is only meaningful in one variable; with several variables the update uses the inverse of the Hessian matrix, \(\mathbf{x}_{k+1} = \mathbf{x}_k - H^{-1}\nabla f\).</p>
+      </div>
+
+      <h3>7.1 Newton’s method by hand</h3>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def f(x):
+    return x * np.cos(3 * x)
+
+def grad(x):                    # f'(x)
+    return np.cos(3 * x) - 3 * x * np.sin(3 * x)
+
+def hessian(x):                 # f''(x)
+    return -6 * np.sin(3 * x) - 9 * x * np.cos(3 * x)
+
+x = -3.9                        # initial guess
+print(" k         x        f(x)      f'(x)   f''(x)")
+for k in range(1, 21):
+    step = grad(x) / hessian(x)
+    x = x - step                # stationary point of the parabola
+    print("%2d %10.5f %10.5f %10.1e %8.2f"
+          % (k, x, f(x), grad(x), hessian(x)))
+    if abs(step) &lt; 1e-8:
+        break</code></pre>
+</figure>
+<pre class="out"> k         x        f(x)      f'(x)   f''(x)
+ 1   -4.42662   -3.34687   -7.9e+00    34.05
+ 2   -4.19356   -4.19313    8.2e-01    37.82
+ 3   -4.21524   -4.20198   -5.4e-03    38.29
+ 4   -4.21510   -4.20198   -1.8e-07    38.29
+ 5   -4.21510   -4.20198    2.2e-14    38.29</pre>
+      <p>The same minimum in four steps (the fifth only confirms it), against eleven for gradient descent with our best learning rate. The slope column shows the quadratic convergence: \(8 \times 10^{-1}\), \(5 \times 10^{-3}\), \(2 \times 10^{-7}\), \(2 \times 10^{-14}\). The last column, \(f''(x^*) = 38.3 &gt; 0\), confirms a minimum.</p>
+      <p>Now change the initial guess to <code>x = 0.5</code>. There \(f''(0.5) = -6.3 &lt; 0\), and Newton’s method converges just as quickly, to \(x = 0.2868\), \(f = 0.187\): a local <em>maximum</em>. It found exactly what it looks for, a point where the slope is zero, just not what we wanted. Gradient descent from the same start went downhill to the minimum at 1.14. A safer version of Newton’s method checks the sign of \(f''(x_k)\) and takes a gradient step instead when it is not positive; library implementations include such safeguards.</p>
+
+      <h3>7.2 Comparing the two methods</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th></th><th>Gradient descent</th><th>Newton’s method</th></tr></thead>
+        <tbody>
+          <tr><td>Update</td><td>\(x_{k+1} = x_k - \alpha f'(x_k)\)</td><td>\(x_{k+1} = x_k - f'(x_k)/f''(x_k)\)</td></tr>
+          <tr><td>Uses</td><td>first derivative (gradient)</td><td>first and second derivatives (Hessian)</td></tr>
+          <tr><td>Tuning</td><td>learning rate α</td><td>none</td></tr>
+          <tr><td>Convergence</td><td>linear: slow near the optimum (11 steps here)</td><td>quadratic: very fast near the optimum (4 steps here)</td></tr>
+          <tr><td>Cost per step</td><td>low, even with millions of variables</td><td>high: build and solve with an n × n Hessian</td></tr>
+          <tr><td>Finds</td><td>a minimum, in the valley where it starts</td><td>a stationary point: minimum, maximum or saddle</td></tr>
+          <tr><td>Fails when</td><td>α too large (diverges) or too small (very slow)</td><td>f″ ≈ 0, f″ &lt; 0, or a poor starting point</td></tr>
+        </tbody>
+      </table></div>
+      <p>Practical solvers combine the strengths of both. <strong>Quasi-Newton</strong> methods such as BFGS build an approximation of the Hessian from the gradients of successive iterations: nearly Newton’s speed at the cost of gradient descent. BFGS is SciPy’s default method.</p>
+    </section>
+
+<!-- =========================================================== 8 -->
+    <section id="scipy">
+      <h2><span class="num">8</span>Optimisation with <code>scipy.optimize</code></h2>
+      <p>Writing the loops ourselves shows how the methods work. For real problems, use the tested implementations in <code>scipy.optimize</code>: they choose step sizes automatically, include safeguards, and report whether they succeeded.</p>
+
+      <h3>8.1 What is available</h3>
+      <p>The main function is <code>minimize(fun, x0, method=..., jac=..., hess=..., bounds=..., constraints=...)</code>. Its methods differ in the information they use and the restrictions they accept:</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>method</th><th>Type</th><th>Uses</th><th>Bounds</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td><code>"Nelder-Mead"</code></td><td>direct search (simplex)</td><td>values of f only</td><td>yes</td><td>no</td></tr>
+          <tr><td><code>"Powell"</code></td><td>direct search</td><td>values of f only</td><td>yes</td><td>no</td></tr>
+          <tr><td><code>"CG"</code></td><td>conjugate gradient</td><td>gradient</td><td>no</td><td>no</td></tr>
+          <tr><td><code>"BFGS"</code></td><td>quasi-Newton (the default)</td><td>gradient, estimated Hessian</td><td>no</td><td>no</td></tr>
+          <tr><td><code>"Newton-CG"</code></td><td>Newton</td><td>gradient and Hessian</td><td>no</td><td>no</td></tr>
+          <tr><td><code>"L-BFGS-B"</code></td><td>limited-memory quasi-Newton</td><td>gradient</td><td>yes</td><td>no</td></tr>
+          <tr><td><code>"TNC"</code></td><td>truncated Newton</td><td>gradient</td><td>yes</td><td>no</td></tr>
+          <tr><td><code>"SLSQP"</code></td><td>sequential quadratic programming</td><td>gradient</td><td>yes</td><td>yes</td></tr>
+          <tr><td><code>"trust-constr"</code></td><td>trust region</td><td>gradient, Hessian</td><td>yes</td><td>yes</td></tr>
+        </tbody>
+      </table></div>
+      <p>If you do not give the gradient (<code>jac</code>), the gradient-based methods estimate it by finite differences, which works but costs extra function evaluations. Other useful functions in the module:</p>
+      <ul>
+        <li><code>minimize_scalar</code>: one variable, optionally within an interval (<code>bounds=(a, b)</code>);</li>
+        <li><code>root</code>, <code>brentq</code>, <code>fsolve</code>: solve equations, for example \(f'(x) = 0\) or \(\nabla f = \mathbf{0}\);</li>
+        <li><code>curve_fit</code>, <code>least_squares</code>: fit a model to data;</li>
+        <li><code>linprog</code>, <code>milp</code>: linear and mixed-integer linear programming;</li>
+        <li><code>differential_evolution</code>, <code>basinhopping</code>, <code>dual_annealing</code>: global optimisation for functions with many local optima.</li>
+      </ul>
+
+      <h3>8.2 <code>minimize</code> with a gradient method and Newton’s method</h3>
+      <p><code>minimize</code> always works with an array of variables, even for a single variable, so the objective receives an array <code>x</code> and uses <code>x[0]</code>. The gradient <code>jac</code> returns an array with one entry per variable, and the Hessian <code>hess</code> an \(n \times n\) matrix.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+from scipy.optimize import minimize
+
+def f(x):                        # x is an array: x[0] is our variable
+    return x[0] * np.cos(3 * x[0])
+def jac(x):                      # gradient: an array
+    t = x[0]
+    return np.array([np.cos(3 * t) - 3 * t * np.sin(3 * t)])
+def hess(x):                     # Hessian: a matrix
+    t = x[0]
+    return np.array([[-6 * np.sin(3 * t) - 9 * t * np.cos(3 * t)]])
+
+x0 = np.array([-3.9])
+res_cg = minimize(f, x0, method="CG", jac=jac)
+res_nt = minimize(f, x0, method="Newton-CG", jac=jac, hess=hess)
+
+for name, r in [("CG", res_cg), ("Newton-CG", res_nt)]:
+    print("%-9s x = %.5f  f = %.5f  nit = %d  success = %s"
+          % (name, r.x[0], r.fun, r.nit, r.success))</code></pre>
+</figure>
+<pre class="out">CG        x = -4.21510  f = -4.20198  nit = 5  success = True
+Newton-CG x = -4.21510  f = -4.20198  nit = 4  success = True</pre>
+      <p>Both reach the minimum found by our own loops. The conjugate gradient method needs only 5 iterations, compared with 11 for our plain gradient descent, because it chooses its own step sizes and remembers previous directions.</p>
+
+      <h3>8.3 The result object</h3>
+      <p><code>minimize</code> returns an <code>OptimizeResult</code>. Print it (<code>print(res_cg)</code>) to see all its fields; the most useful are:</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>x</code></td><td>the solution, an array</td></tr>
+          <tr><td><code>fun</code></td><td>the objective at the solution</td></tr>
+          <tr><td><code>success</code></td><td><code>True</code> if the solver converged; always check it before trusting <code>x</code></td></tr>
+          <tr><td><code>message</code></td><td>why the solver stopped</td></tr>
+          <tr><td><code>nit</code>, <code>nfev</code></td><td>number of iterations, number of function evaluations</td></tr>
+          <tr><td><code>jac</code></td><td>the gradient at the solution, which should be close to zero</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>8.4 Bounds and maximisation</h3>
+      <p>Lower and upper bounds on the variables are given as a list with one <code>(lower, upper)</code> pair per variable; use <code>None</code> for no bound. Not all methods accept them: use <code>L-BFGS-B</code>, <code>TNC</code>, <code>SLSQP</code>, <code>trust-constr</code>, <code>Nelder-Mead</code> or <code>Powell</code>. Bounds can change the answer: minimising \(x\cos 3x\) from \(x_0 = -4\) with bounds \((-4, 2)\) stops on the bound at \(x = -4\), because the true minimum at \(-4.215\) is outside the allowed range: the fence of the park again.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+from scipy.optimize import minimize
+
+f = lambda x: x[0] * np.cos(3 * x[0])
+
+free = minimize(f, x0=[-4], method="BFGS")
+bounded = minimize(f, x0=[-4], method="L-BFGS-B", bounds=[(-4, 2)])
+print("BFGS, no bounds:       x = %.4f, f = %.4f" % (free.x[0], free.fun))
+print("L-BFGS-B, -4 &lt;= x &lt;= 2: x = %.4f, f = %.4f"
+      % (bounded.x[0], bounded.fun))</code></pre>
+</figure>
+<pre class="out">BFGS, no bounds:       x = -4.2151, f = -4.2020
+L-BFGS-B, -4 &lt;= x &lt;= 2: x = -4.0000, f = -3.3754</pre>
+      <p>SciPy only minimises. To <strong>maximise</strong> \(f\), minimise \(-f\) and change the sign of <code>res.fun</code> back. For example, the global maximum of the damped cosine of section 3:</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+from scipy.optimize import minimize
+
+f = lambda x: np.cos(2 * x[0]) * np.exp(-0.1 * x[0]**2)
+
+res = minimize(lambda x: -f(x), x0=[0.4])
+print("maximum at x = %.4f, f = %.4f" % (res.x[0], -res.fun))</code></pre>
+</figure>
+<pre class="out">maximum at x = 0.0000, f = 1.0000</pre>
+      <div class="note">
+        <p><span class="label">Differs from the PDF.</span> The handout’s SciPy examples start from \(x_0 = 10\), outside the stated range \([-5, 2]\), and its second figure spans \(-10\) to \(10\). Here the examples start inside the range, from \(x_0 = -3.9\), so that SciPy and our own loops solve the same problem and can be compared directly.</p>
+      </div>
+      <div class="exercise">
+        <p><span class="label">Exercise 8.1.</span> Local and global optima with SciPy.</p>
+        <ol>
+          <li>Maximise \(f(x) = \cos(2x)\,e^{-0.1x^2}\) with <code>minimize</code> starting from \(x_0 = 2.5\). Which peak do you find?</li>
+          <li>Repeat from 20 starting points between −5 and 5 and keep the best result.</li>
+          <li>Use <code>minimize_scalar</code> with <code>bounds=(-5, 5)</code> on \(-f\). Does it find the global maximum?</li>
+        </ol>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+from scipy.optimize import minimize, minimize_scalar
+
+f = lambda x: np.cos(2 * x) * np.exp(-0.1 * x**2)
+
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+from scipy.optimize import minimize, minimize_scalar
+
+f = lambda x: np.cos(2 * x) * np.exp(-0.1 * x**2)
+
+# 1. one start
+res = minimize(lambda x: -f(x[0]), x0=[2.5])
+print("from 2.5: x = %.4f, f = %.4f" % (res.x[0], -res.fun))
+
+# 2. multi-start: keep the best of 20 local searches
+best = None
+for x0 in np.linspace(-5, 5, 20):
+    r = minimize(lambda x: -f(x[0]), x0=[x0])
+    if best is None or r.fun &lt; best.fun:
+        best = r
+print("best of 20 starts: x = %.4f, f = %.4f" % (best.x[0], -best.fun))
+
+# 3. bounded scalar search
+r = minimize_scalar(lambda x: -f(x), bounds=(-5, 5), method="bounded")
+print("minimize_scalar: x = %.4f, f = %.4f" % (r.x, -r.fun))</code></pre>
+</figure>
+<pre class="out">from 2.5: x = 2.9960, f = 0.3904
+best of 20 starts: x = -0.0000, f = 1.0000
+minimize_scalar: x = 2.9960, f = 0.3904</pre>
+        <p>From 2.5 the search climbs the nearest peak, at \(x \approx 3.0\). The multi-start search finds the global maximum at \(x = 0\). The bounded scalar method is also a local method: it finds <em>a</em> peak inside the interval, which need not be the highest one. Only checking several candidates, or a global method, protects against local optima.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== Part B -->
+    <section id="part-b" class="part-head">
+      <p class="tag">PART B</p>
+      <h2>Applications</h2>
+      <p>Two applications: the iterative methods in two variables on the smooth mountain of section 4, and the turbine spacing problem of section 2 solved with SciPy.</p>
+    </section>
+
+<!-- =========================================================== 9 -->
+    <section id="mountain">
+      <h2><span class="num">9</span>Climbing the mountain in two dimensions</h2>
+      <p>The methods of sections 6 and 7 work in any number of dimensions: replace the derivative by the gradient vector and the second derivative by the Hessian matrix. On the smooth mountain of section 4 we want the <em>highest</em> point, so we use gradient <strong>ascent</strong>, \(\mathbf{x}_{k+1} = \mathbf{x}_k + \alpha\,\nabla h(\mathbf{x}_k)\), starting from the south-west corner, \(\mathbf{x}_0 = (0.5, 5.5)\) km.</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">x = np.array([0.5, 5.5])        # initial guess (km)
+alpha = 0.01                    # learning rate
+path = [x]
+print(" k       x       y    height   |grad|")
+for k in range(1, 101):
+    step = alpha * grad_h(x)
+    x = x + step                # uphill: gradient ascent
+    path.append(x)
+    print("%2d %7.3f %7.3f %8.1f %8.2f"
+          % (k, x[0], x[1], h(x), np.linalg.norm(grad_h(x))))
+    if np.linalg.norm(step) &lt; 1e-4:
+        break
+path = np.array(path)
+
+X, Y = np.meshgrid(np.linspace(0, 8, 200), np.linspace(0, 6, 200))
+plt.contourf(X, Y, h([X, Y]), levels=15, cmap="Purples")
+plt.colorbar(label="height h (m)")
+plt.plot(path[:, 0], path[:, 1], "o-", color="#B3261E", ms=4,
+         label="gradient ascent")
+plt.plot(4, 3, "*", color="gold", ms=16, mec="black", label="peak (4, 3)")
+plt.xlabel("x (km)")
+plt.ylabel("y (km)")
+plt.legend()
+plt.show()</code></pre>
+</figure>
+<pre class="out"> k       x       y    height   |grad|
+ 1   2.850   4.150   1120.7    98.93
+ 2   3.655   3.575   1187.8    37.41
+ 3   3.920   3.311   1197.6    15.42
+ 4   3.999   3.178   1199.4     7.38
+ 5   4.017   3.107   1199.8     4.10
+ 6   4.018   3.066   1199.9     2.49
+ 7   4.014   3.041   1200.0     1.57
+ 8   4.010   3.026   1200.0     1.00
+ 9   4.006   3.017   1200.0     0.64
+10   4.004   3.011   1200.0     0.41
+11   4.003   3.007   1200.0     0.26
+12   4.002   3.004   1200.0     0.17
+13   4.001   3.003   1200.0     0.11
+14   4.001   3.002   1200.0     0.07
+15   4.000   3.001   1200.0     0.04
+16   4.000   3.001   1200.0     0.03
+17   4.000   3.000   1200.0     0.02
+18   4.000   3.000   1200.0     0.01
+19   4.000   3.000   1200.0     0.01
+20   4.000   3.000   1200.0     0.00</pre>
+<figure class="plot"><img src="assets/img/w7-gd-path.png" alt="Filled contour map of the smooth mountain with the path of gradient ascent from the corner (0.5, 5.5) curving up to the peak at (4, 3), marked with a gold star" width="565" height="445" loading="lazy"><figcaption>Gradient ascent on the smooth mountain: each step is perpendicular to the contours.</figcaption></figure>
+      <p>Twenty iterations to the peak. The path does not head straight for it: each step is perpendicular to the contour through the current point, so the path bends as the contours change direction. On long, narrow ridges (contours like stretched ellipses) gradient methods zig-zag and become very slow; that is one reason why curvature information helps.</p>
+      <p>Newton’s method uses the Hessian. Because this mountain is a quadratic function, its parabola (here a paraboloid) is exact, and a single Newton step lands on the peak from any starting point:</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">x = np.array([0.5, 5.5])
+for k in range(1, 4):
+    step = np.linalg.solve(hess_h(x), grad_h(x))   # H step = gradient
+    x = x - step
+    print("%d  x = %.4f, y = %.4f, height = %.2f, |grad| = %.1e"
+          % (k, x[0], x[1], h(x), np.linalg.norm(grad_h(x))))</code></pre>
+</figure>
+<pre class="out">1  x = 4.0000, y = 3.0000, height = 1200.00, |grad| = 1.4e-14
+2  x = 4.0000, y = 3.0000, height = 1200.00, |grad| = 0.0e+00
+3  x = 4.0000, y = 3.0000, height = 1200.00, |grad| = 0.0e+00</pre>
+      <p>The same with SciPy: maximise \(h\) by minimising \(-h\), with the gradient \(-\nabla h\):</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">from scipy.optimize import minimize
+
+res = minimize(lambda p: -h(p), x0=[0.5, 5.5],
+               jac=lambda p: -grad_h(p), method="BFGS")
+print("peak at", np.round(res.x, 4), "height %.1f m" % -res.fun)
+print("iterations:", res.nit, "success:", res.success)</code></pre>
+</figure>
+<pre class="out">peak at [4. 3.] height 1200.0 m
+iterations: 5 success: True</pre>
+      <div class="exercise">
+        <p><span class="label">Exercise 9.1.</span> Run the gradient ascent with \(\alpha = 0.02\), \(0.03\) and \(0.035\). How many iterations does each need? What happens with 0.035, and why? (Hint: the largest eigenvalue of the Hessian, in absolute value, is 64.1, and \(2/64.1 = 0.031\).)</p>
+<figure class="code sandbox" data-runnable data-setup="mountain">
+<pre><code class="language-python"># h(p), grad_h(p) and hess_h(p) are ready to use
+x = np.array([0.5, 5.5])
+
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">def ascent(alpha, x0=(0.5, 5.5), n_max=200, tol=1e-4):
+    x = np.array(x0)
+    for k in range(1, n_max + 1):
+        step = alpha * grad_h(x)
+        x = x + step
+        if np.linalg.norm(step) &lt; tol or np.linalg.norm(x) &gt; 1e6:
+            break
+    return k, x
+
+for alpha in [0.01, 0.02, 0.03, 0.035]:
+    k, x = ascent(alpha)
+    print("alpha = %.3f: %3d iterations, end at (%.3g, %.3g)"
+          % (alpha, k, x[0], x[1]))</code></pre>
+</figure>
+<pre class="out">alpha = 0.010:  20 iterations, end at (4, 3)
+alpha = 0.020:  10 iterations, end at (4, 3)
+alpha = 0.030: 145 iterations, end at (4, 3)
+alpha = 0.035:  57 iterations, end at (1.03e+06, -4.26e+05)</pre>
+        <p>\(\alpha = 0.02\) is the fastest here (10 iterations). At 0.03 the steps overshoot across the narrow direction of the mountain and the iterates oscillate, so convergence slows down again. Above \(2/64.1 = 0.031\), every overshoot is larger than the last and the method diverges: in two dimensions the largest curvature limits the learning rate.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 10 -->
+    <section id="turbines">
+      <h2><span class="num">10</span>The best spacing of two wind turbines</h2>
+      <p>Back to the problem of section 2.2: the power of two turbines in a row, with the Jensen wake deficit, minus a cost proportional to their spacing \(s\) (in rotor diameters). Setting \(dJ/ds = 0\) by hand is possible but messy; SciPy does not need the derivative. We maximise \(J\) by minimising \(-J\), with the spacing bounded between 2 and 15 diameters.</p>
+<figure class="code" data-runnable data-setup="turbine">
+<pre><code class="language-python">from scipy.optimize import minimize
+
+res = minimize(lambda s: -objective(s[0]), x0=[3],
+               method="L-BFGS-B", bounds=[(2, 15)])
+s_best = res.x[0]
+print("best spacing: %.2f rotor diameters" % s_best)
+print("objective: %.3f, success: %s" % (-res.fun, res.success))
+P2 = (1 - deficit(s_best))**3
+print("power of the second turbine: %.0f %% of the first" % (100 * P2))
+
+s = np.linspace(2, 15, 300)
+plt.plot(s, 1 + (1 - deficit(s))**3, label="power of both turbines")
+plt.plot(s, objective(s), lw=2.5, color="#68246D", label="objective = power − cost")
+plt.axvline(s_best, color="gray", ls="--")
+plt.plot(s_best, -res.fun, "*", ms=16, color="gold", mec="black")
+plt.xlabel("spacing s (rotor diameters)")
+plt.ylabel("power (units of one turbine)")
+plt.legend()
+plt.show()</code></pre>
+</figure>
+<pre class="out">best spacing: 7.82 rotor diameters
+objective: 1.251, success: True
+power of the second turbine: 56 % of the first</pre>
+<figure class="plot"><img src="assets/img/w7-turbines.png" alt="Two curves against the spacing in rotor diameters: the power of both turbines rising and levelling off, and the objective, power minus cost, with a maximum at about 7.8 diameters marked by a star" width="566" height="438" loading="lazy"><figcaption>The power of two turbines and the objective against their spacing; the star is the optimum found by SciPy.</figcaption></figure>
+      <p>The best spacing is about 7.8 rotor diameters, where the second turbine produces 56 % of the power of the first. Spacing them further apart would raise the power a little, but the extra cost would outweigh it.</p>
+      <p>An optimum is only as good as the model and its parameters. A quick <strong>sensitivity analysis</strong>, re-optimising for different spacing costs, shows how strongly the answer depends on the cost assumption:</p>
+<figure class="code" data-runnable data-setup="turbine">
+<pre><code class="language-python">from scipy.optimize import minimize
+
+for cost in [0.02, 0.03, 0.04, 0.05, 0.06]:
+    res = minimize(lambda s: -objective(s[0], cost=cost), x0=[3],
+                   method="L-BFGS-B", bounds=[(2, 15)])
+    print("cost %.2f per D: best spacing %5.2f D" % (cost, res.x[0]))</code></pre>
+</figure>
+<pre class="out">cost 0.02 per D: best spacing 13.82 D
+cost 0.03 per D: best spacing 10.22 D
+cost 0.04 per D: best spacing  7.82 D
+cost 0.05 per D: best spacing  5.96 D
+cost 0.06 per D: best spacing  4.36 D</pre>
+      <p>Cheaper land pushes the turbines apart, dearer land pulls them together. Real wind farm layouts are optimised with many turbines, the full wind rose (wind from every direction, weighted by how often it blows), the site boundary and cable costs: the same idea with hundreds of decision variables and constraints, which is exactly where iterative methods and libraries such as <code>scipy.optimize</code> are indispensable.</p>
+      <div class="exercise">
+        <p><span class="label">Exercise 10.1.</span> Offshore, the wake decays more slowly (\(k \approx 0.04\)). Find the best spacing offshore for a cost of 0.04 per diameter. Then solve the problem with <code>minimize_scalar</code> instead of <code>minimize</code>.</p>
+<figure class="code sandbox" data-runnable data-setup="turbine">
+<pre><code class="language-python">from scipy.optimize import minimize, minimize_scalar
+
+# objective(s, Ct=0.8, k=0.05, cost=0.04) is ready to use
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable data-setup="turbine">
+<pre><code class="language-python">from scipy.optimize import minimize, minimize_scalar
+
+res = minimize(lambda s: -objective(s[0], k=0.04), x0=[3],
+               method="L-BFGS-B", bounds=[(2, 15)])
+print("offshore, minimize:        %.2f D" % res.x[0])
+
+r = minimize_scalar(lambda s: -objective(s, k=0.04),
+                    bounds=(2, 15), method="bounded")
+print("offshore, minimize_scalar: %.2f D" % r.x)</code></pre>
+</figure>
+<pre class="out">offshore, minimize:        7.45 D
+offshore, minimize_scalar: 7.45 D</pre>
+        <p>With a slower wake recovery, the second turbine needs to be further away to escape the wake, so the best spacing increases. Both functions agree; <code>minimize_scalar</code> is the simpler choice for a single variable, and needs no starting point when it is given bounds.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 11 -->
+    <section id="further-reading">
+      <h2><span class="num">11</span>Further reading</h2>
+      <ul>
+        <li>Nocedal, J. and Wright, S. J. (2006). <em>Numerical Optimization</em>, 2nd edition. Springer. Chapters 2 and 3 (line search, gradient and Newton methods).</li>
+        <li>Rao, S. S. (2019). <em>Engineering Optimization: Theory and Practice</em>, 5th edition. Wiley.</li>
+        <li>Kiusalaas, J. (2013). <em>Numerical Methods in Engineering with Python 3</em>. Cambridge University Press. Chapter 10, Introduction to optimization.</li>
+        <li>Jensen, N. O. (1983). <em>A Note on Wind Generator Interaction</em>. Risø-M-2411, Risø National Laboratory.</li>
+        <li>SciPy documentation: <a href="https://docs.scipy.org/doc/scipy/reference/optimize.html">scipy.optimize</a> and the tutorial <a href="https://docs.scipy.org/doc/scipy/tutorial/optimize.html">Optimization</a>.</li>
+      </ul>
+      <p>Things to explore: the other methods of <code>minimize</code> on the same problems (how many function evaluations does <code>Nelder-Mead</code> need?), and how to maximise with every method (always minimise \(-f\)).</p>
+    </section>
+
+    <section id="notebook" class="wide">
+      <h2>Practice notebook</h2>
+      <p style="max-width:var(--measure)">All of this week’s code in one Jupyter notebook, with exercises at the end. Cells share variables, so run them from top to bottom with <kbd style="font-family:var(--mono);font-size:.85em">Shift + Enter</kbd>. Your edits are kept in this browser only; use <em>File → Download</em> to save a copy.</p>
+      <div class="notebook-shell">
+        <div class="notebook-bar">
+          <span>week7_optimisation.ipynb</span>
+          <span class="links" id="notebook-links"></span>
+        </div>
+        <div id="notebook-slot"></div>
+      </div>
+    </section>
+    <nav class="pager" id="pager" aria-label="Other weeks"></nav>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<!-- Setup code prepended to runnable blocks so each live window works on its own -->
+<script type="text/plain" id="setup-mountain" data-hint="The live window already has the smooth mountain h(p), its gradient grad_h(p) and Hessian hess_h(p), NumPy and Matplotlib.">import numpy as np
+import matplotlib.pyplot as plt
+
+def h(p):                       # height of the smooth mountain (m)
+    x, y = p
+    return -30*x**2 - 20*y**2 + 10*x*y + 210*x + 80*y + 660
+
+def grad_h(p):                  # gradient (Jacobian) of h
+    x, y = p
+    return np.array([-60*x + 10*y + 210, 10*x - 40*y + 80])
+
+def hess_h(p):                  # Hessian of h (constant)
+    return np.array([[-60.0, 10.0], [10.0, -40.0]])
+</script>
+<script type="text/plain" id="setup-turbine" data-hint="The live window already has the wake deficit(s) and objective(s, Ct, k, cost) of the turbine spacing problem.">import numpy as np
+import matplotlib.pyplot as plt
+
+def deficit(s, Ct=0.8, k=0.05):
+    """Jensen wake: wind speed deficit s rotor diameters behind a turbine."""
+    return (1 - np.sqrt(1 - Ct)) / (1 + 2*k*s)**2
+
+def objective(s, Ct=0.8, k=0.05, cost=0.04):
+    """Power of two turbines (units of one turbine) minus the cost of spacing s."""
+    return 1 + (1 - deficit(s, Ct, k))**3 - cost * s
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<script src="assets/site.js"></script>
+<script>
+/* ============ Hero: hikers climb a mountain range by gradient ascent ============ */
+(() => {
+  const canvas = document.getElementById('hero-sim');
+  const ctx = canvas.getContext('2d');
+  const nOut = document.getElementById('sim-n'), fOut = document.getElementById('sim-fit');
+  const replay = document.getElementById('sim-replay');
+  const reduce = reduceMotion;
+  // the mountain profile: a sum of smooth bumps on [0, 10]
+  const BUMPS = [[1.6, 0.55, 0.8], [3.9, 1.0, 0.7], [6.3, 0.7, 0.55], [8.4, 0.45, 0.6]];
+  const H = x => 0.06 + BUMPS.reduce((s, [c, a, w]) => s + a * Math.exp(-(((x - c) / w) ** 2)), 0);
+  const dH = x => BUMPS.reduce((s, [c, a, w]) => s - 2 * a * (x - c) / (w * w) * Math.exp(-(((x - c) / w) ** 2)), 0);
+  let XG = 0, HG = 0;
+  for (let x = 0; x <= 10; x += 0.001) if (H(x) > HG) { HG = H(x); XG = x; }
+  const TOTAL = 12, ALPHA = 0.05;
+  let hikers, raf, frame, done, global;
+  function colours() { const cs = getComputedStyle(document.documentElement);
+    return { ink: cs.getPropertyValue('--ink').trim(), accent: cs.getPropertyValue('--accent').trim(), grid: cs.getPropertyValue('--grid').trim(),
+      muted: cs.getPropertyValue('--muted').trim(), bad: cs.getPropertyValue('--bad').trim() || '#B3261E', good: cs.getPropertyValue('--good').trim() || '#1F7A4D',
+      soft: cs.getPropertyValue('--accent-soft').trim() || 'rgba(104,36,109,.12)' }; }
+  function size() { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect();
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return r; }
+  let box = size();
+  const pad = { l: 8, r: 8, t: 22, b: 10 };
+  const xOf = x => pad.l + x / 10 * (box.width - pad.l - pad.r);
+  const yOf = h => box.height - pad.b - h / (HG * 1.08) * (box.height - pad.t - pad.b);
+  function newHiker() { return { x: 0.6 + Math.random() * 9.0, trail: [], done: false }; }
+  function draw() {
+    const c = colours(), w = box.width, hgt = box.height;
+    ctx.clearRect(0, 0, w, hgt);
+    ctx.beginPath(); ctx.moveTo(xOf(0), hgt - pad.b);
+    for (let i = 0; i <= 300; i++) { const x = 10 * i / 300; ctx.lineTo(xOf(x), yOf(H(x))); }
+    ctx.lineTo(xOf(10), hgt - pad.b); ctx.closePath();
+    ctx.fillStyle = c.soft; ctx.fill(); ctx.strokeStyle = c.accent; ctx.lineWidth = 2.5; ctx.stroke();
+    // flag on the global peak
+    const fx = xOf(XG), fy = yOf(HG);
+    ctx.strokeStyle = c.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy - 18); ctx.stroke();
+    ctx.fillStyle = c.bad; ctx.beginPath(); ctx.moveTo(fx, fy - 18); ctx.lineTo(fx + 12, fy - 14); ctx.lineTo(fx, fy - 10); ctx.fill();
+    for (const hk of hikers) {
+      ctx.strokeStyle = c.muted; ctx.lineWidth = 1.2; ctx.setLineDash([3, 3]); ctx.beginPath();
+      hk.trail.forEach((x, i) => { const px = xOf(x), py = yOf(H(x)) - 5; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+      ctx.stroke(); ctx.setLineDash([]);
+      const reached = hk.done && Math.abs(hk.x - XG) < 0.1;
+      ctx.fillStyle = hk.done ? (reached ? c.good : c.ink) : c.bad;
+      ctx.beginPath(); ctx.arc(xOf(hk.x), yOf(H(hk.x)) - 5, hk.done ? 4.5 : 5.5, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+  function advance(hk) {
+    if (hk.done) return;
+    hk.trail.push(hk.x);
+    const step = ALPHA * dH(hk.x);
+    hk.x = Math.min(10, Math.max(0, hk.x + step));
+    if (Math.abs(step) < 2e-4) {
+      hk.done = true; done++;
+      if (Math.abs(hk.x - XG) < 0.1) global++;
+      nOut.textContent = done; fOut.textContent = `${global} of ${done}`;
+    }
+  }
+  function tick() {
+    frame++;
+    if (frame % 40 === 1 && hikers.length < TOTAL) hikers.push(newHiker());
+    hikers.forEach(advance);
+    draw();
+    if (done < TOTAL) raf = requestAnimationFrame(tick);
+  }
+  function start() {
+    cancelAnimationFrame(raf); hikers = []; frame = 0; done = 0; global = 0;
+    nOut.textContent = '0'; fOut.textContent = '–';
+    if (reduce) {
+      for (let i = 0; i < TOTAL; i++) { const hk = newHiker(); hikers.push(hk); for (let j = 0; j < 2000 && !hk.done; j++) advance(hk); }
+      draw();
+    } else raf = requestAnimationFrame(tick);
+  }
+  replay.addEventListener('click', start);
+  window.addEventListener('resize', () => { box = size(); draw(); });
+  darkQuery.addEventListener('change', draw);
+  start();
+})();
+</script>
+</body>
+</html>
