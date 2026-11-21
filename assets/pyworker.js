@@ -105,6 +105,18 @@ const ready = (async () => {
 // Package loading writes no progress or error text into the code-box output.
 const QUIET = errors => ({ messageCallback: () => {}, errorCallback: e => errors.push(e) });
 
+// Pure-Python packages that are not part of Pyodide: installed from PyPI with micropip.
+const PIP = { pygad: 'pygad', pyswarm: 'pyswarm' };
+async function pipInstall(names, errors) {
+  if (!names.length) return;
+  try {
+    await pyodide.loadPackage('micropip', QUIET(errors));
+    const micropip = pyodide.pyimport('micropip');
+    await micropip.install(names.map(n => PIP[n]));
+    micropip.destroy();
+  } catch (x) { errors.push(String(x)); }
+}
+
 // Messages are handled one at a time, in order: an optional package preload
 // ({t: 'preload', pkgs}) and then the code boxes as they are run.
 let chain = ready;
