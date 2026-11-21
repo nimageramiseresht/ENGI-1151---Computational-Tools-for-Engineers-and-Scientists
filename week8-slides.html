@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 8 slides: The genetic algorithm | ENGI 1151</title>
+<meta name="description" content="ENGI 1151 week 8 presentation: why metaheuristics, heuristics and metaheuristics, the genetic algorithm (chromosomes, selection, crossover, mutation, elitism, convergence), a GA on the mountain, and PyGAD.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/slides.css">
+<style>
+  /* week 8 widgets and layouts (shared with week 7) */
+  .formula { font-family: var(--serif); font-size: .8em; text-align: center; margin: 4px 0 8px !important; }
+  .reveal .katex { font-size: 1.05em; }
+  .wbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 8px; }
+  .wbar .wbtn.run { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .wstat { font: 17px/1.5 var(--mono); color: var(--ink); }
+  .wstat b { color: var(--accent); }
+  .wstat .muted { color: var(--muted); }
+  .wstat .bad { color: var(--bad); font-weight: 700; }
+  .wstat .good { color: var(--good); font-weight: 700; }
+  .ctl.sm { font-size: 17px; margin: 0 0 4px; gap: 14px; }
+  .ctl.sm input[type="range"] { width: 210px; }
+  .ctl.sm b { min-width: 3.4em; display: inline-block; }
+  .reveal table.t.compact { font-size: .58em; }
+  .reveal table.t.compact td, .reveal table.t.compact th { padding: .26em .45em; }
+  .reveal table.t.cmp { font-size: .62em; }
+  .reveal table.t.cmp td:first-child { font-weight: 600; }
+  table.iters { border-collapse: collapse; font: 15px/1.3 var(--mono); width: 100%; }
+  table.iters th, table.iters td { border: none; border-bottom: 1px solid var(--grid); padding: 2px 8px; text-align: right; }
+  table.iters th { color: var(--muted); font-weight: 500; border-bottom: 2px solid var(--ink); }
+  table.iters tr.new td { background: var(--accent-soft); }
+  .cards4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .cards4 .card { border: 1.5px solid var(--grid); border-radius: 6px; padding: 10px 12px; font-size: .58em; }
+  .cards4 .card h3 { font-size: 1.15em; margin: 0 0 .25em; color: var(--accent); }
+  .cards4 .card svg { display: block; width: 100%; height: auto; margin: 0 0 6px; }
+  .cards4 .card p { margin: .2em 0; }
+  .dg .area { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .dg .line-bad { stroke: var(--bad); stroke-width: 2.4; fill: none; }
+  .dg .line-good { stroke: var(--good); stroke-width: 2.4; fill: none; }
+  .dg .line-blue { stroke: #1D5FA3; stroke-width: 2.4; fill: none; }
+  .dg .line-acc { stroke-width: 2.6; }
+  .dg .fill-bad { fill: var(--bad); }
+  .dg .fill-good { fill: var(--good); }
+  .dg .blue { fill: #1D5FA3; }
+  .dg .grid { stroke: var(--grid); stroke-width: 1; }
+  .dg .wake { fill: #E4EEF8; stroke: #1D5FA3; stroke-width: 1.2; stroke-dasharray: 5 4; }
+  .imgfig { display: block; width: 100%; height: auto; border: 1px solid var(--grid); border-radius: 4px; }
+  .task ol li { margin: .12em 0; }
+  .co-gene { transform-box: view-box; }
+  .reveal .cards4 .card p { font-size: .95em; }
+</style>
+</head>
+<body data-py-packages="numpy,pygad">
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ 1 -->
+<section class="title-slide" style="display:flex;flex-direction:column;justify-content:center">
+  <p class="course">ENGI 1151 · Computational Tools for Engineers and Scientists · Week 8</p>
+  <h1>Advanced optimisation: the genetic algorithm</h1>
+  <p class="byline">Dr Nima Gerami Seresht · Department of Engineering · Durham University</p>
+  <p class="py-status" data-py-status>Python: loading…</p>
+  <p class="small">Full notes, worked code and the practice notebook: <a href="week8.html">week8.html</a></p>
+  <aside class="notes">
+Welcome to week 8, the second week of the optimisation part. Last week we found optima with calculus and with iterative methods: gradient descent and Newton's method. This week we look at their weaknesses and at a completely different way of searching: the genetic algorithm, which borrows its idea from evolution by natural selection.
+Plan: why we need metaheuristic methods; heuristics and metaheuristics; the idea of the genetic algorithm, chromosomes and crossover; the building blocks one by one: initialisation, population, selection, elitism, crossover, mutation, convergence; a genetic algorithm climbing the mountain; why the genetic algorithm is a discrete search; and finally the PyGAD library in Python.
+Next week: particle swarm optimisation, a second metaheuristic.
+The code boxes use NumPy and PyGAD; PyGAD is installed into the page the first time, which takes a few extra seconds.
+  </aside>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">1</p>
+  <h1>Why do we need more than gradients?</h1>
+  <aside class="notes">The limits of the methods of last week, and why engineers need something more robust.</aside>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+  <h2><span class="num">1</span>What we have so far</h2>
+  <p class="terms"><span>analytical method</span><span>iterative method</span><span>local search</span></p>
+  <div class="cols" style="gap:26px">
+    <div class="panel" style="font-size:.66em">
+      <h3>Analytical (closed form)</h3>
+      <p>Solve \(f'(x) = 0\) or \(\nabla f = \mathbf{0}\) by hand.</p>
+      <ul>
+        <li>Exact, and fast when it works.</li>
+        <li>Needs a formula we can differentiate <b>and</b> equations we can solve.</li>
+      </ul>
+    </div>
+    <div class="panel" style="font-size:.66em">
+      <h3>Iterative (gradient descent, Newton)</h3>
+      <p>Start from a guess and step downhill (or uphill) using the slope: \(\mathbf{x}_{k+1} = \mathbf{x}_k - \alpha\nabla f(\mathbf{x}_k)\).</p>
+      <ul>
+        <li>Works with any differentiable function, in many variables.</li>
+        <li>A <b>local search</b>: it follows the ground under its feet from <b>one</b> starting point.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="callout" style="font-size:.7em;margin-top:18px">Both look only at the neighbourhood of a single point. On a mountain range with many peaks, that is a serious limitation.</p>
+  <aside class="notes">
+A quick recap of last week. Analytical methods: set the derivative or the gradient to zero and solve. Exact, but they need a differentiable formula and equations we can actually solve.
+Iterative methods like gradient descent and Newton's method start from a guess and improve it step by step, using the local slope (and curvature). They work for many more problems, but they are local searches: like a hiker in fog, they only feel the ground under their feet. They know nothing about the rest of the landscape.
+On a smooth mountain with a single peak that is fine. Real engineering landscapes are rarely like that. Next slide.
+  </aside>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+  <h2><span class="num">1.1</span>Trap 1: the nearest peak is not the highest</h2>
+  <p class="terms"><span>local optimum</span><span>global optimum</span><span>basin of attraction</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px">
+    <svg class="dg" id="ls-svg" style="height:510px;width:auto;max-width:100%;margin:0 auto" viewBox="0 0 420 430" role="img" aria-label="Plan view of a mountain range with four peaks. Hikers dropped at random places climb by gradient ascent; their paths end on the peak nearest to where they started."></svg>
+    <div class="stack">
+      <div class="wbar"><button type="button" class="wbtn run" id="ls-drop">drop 10 hikers</button><button type="button" class="wbtn" id="ls-clear">clear</button></div>
+      <div class="ctl sm"><label>learning rate α <input type="range" id="ls-rate" min="0" max="2" step="1" value="1"> <b id="ls-ratev"></b></label></div>
+      <div class="wstat" id="ls-out" aria-live="polite"></div>
+      <p class="small" style="margin:0">Each hiker uses <b>gradient ascent</b> from a random start, with at most 150 steps. The highest peak (1250 m) is at (6.5, 6.0); three lower peaks are local optima.</p>
+    </div>
+  </div>
+  <aside class="notes">
+The mountain range we will use all week: four peaks, the highest one, 1250 m, at x = 6.5 km, y = 6.0 km, and three lower peaks of 1005, 901 and 804 m. The background is the contour map, darker is higher.
+Drop 10 hikers at random places. Each one climbs by gradient ascent, the method of last week. Each path ends at the top of the hill on which the hiker started: only the hikers who happen to start on the slopes of the big mountain reach the highest peak; the others stop proudly on a lower peak, a local optimum, convinced they are at the top, because every step from there goes down. The area that drains to a peak is called its basin of attraction.
+Drop more hikers: typically only about a third reach the highest peak. A single run of gradient ascent is a gamble.
+Now change the learning rate (each hiker has a budget of 150 steps). Too small (0.00005): many hikers run out of steps on the gentle slopes and stop part-way, in orange. Too large (0.003): the steps overshoot the narrow summits and the hikers bounce around the peaks without settling, also orange. With 0.001 every hiker settles on a summit, but still only about a third on the highest one. The right learning rate depends on the steepness and curvature of the landscape, which we do not know in advance.
+  </aside>
+</section>
+
+<!-- ============================================================ 5 -->
+<section>
+  <h2><span class="num">1.2</span>More reasons gradients struggle</h2>
+  <p class="terms"><span>learning rate</span><span>derivative-free</span><span>discrete variables</span><span>noisy objective</span></p>
+  <div class="cards4">
+    <div class="card">
+      <h3>Tuning α</h3>
+      <svg viewBox="0 0 200 110" class="dg" aria-hidden="true"><path class="line-acc" d="M10 20 Q100 190 190 20"/><path class="line-bad" d="M28 52 L170 46 L40 72 L156 70 L62 90" stroke-width="2"/><circle class="fill-bad" cx="28" cy="52" r="4"/></svg>
+      <p>Too large: zig-zag or diverge. Too small: thousands of tiny steps. The best value differs from problem to problem.</p>
+    </div>
+    <div class="card">
+      <h3>No derivative</h3>
+      <svg viewBox="0 0 200 110" class="dg" aria-hidden="true"><rect class="box-code" x="55" y="25" width="90" height="60" rx="5"/><text x="100" y="62" font-size="15" text-anchor="middle">model</text><path class="line" d="M10 55 H55 M145 55 H190"/><text x="14" y="46" font-size="12">x</text><text x="168" y="46" font-size="12">f(x)</text></svg>
+      <p>The objective is a simulation (Monte Carlo, finite elements): we get a number out, but no formula and no slope.</p>
+    </div>
+    <div class="card">
+      <h3>Discrete choices</h3>
+      <svg viewBox="0 0 200 110" class="dg" aria-hidden="true"><g class="fill-acc"><circle cx="30" cy="70" r="7"/><circle cx="70" cy="45" r="7"/><circle cx="110" cy="58" r="7"/><circle cx="150" cy="30" r="7"/><circle cx="185" cy="52" r="7"/></g><path class="line" d="M10 95 H195"/><text x="100" y="18" font-size="12" text-anchor="middle" class="muted">catalogue sizes only</text></svg>
+      <p>Number of turbines, pipe sizes from a catalogue, steel grade, yes or no. No slope between the options.</p>
+    </div>
+    <div class="card">
+      <h3>Rough landscapes</h3>
+      <svg viewBox="0 0 200 110" class="dg" aria-hidden="true"><path class="line-acc" d="M5 90 L20 70 L28 80 L40 50 L48 66 L60 40 L70 62 L82 30 L92 55 L104 20 L114 50 L126 35 L136 60 L150 45 L160 70 L175 55 L195 85"/></svg>
+      <p>Noisy, flat or discontinuous objectives (step costs, penalties). The local slope says little about where the optimum is.</p>
+    </div>
+  </div>
+  <p class="callout" style="font-size:.66em;margin-top:16px">We want a method that searches the <b>whole</b> landscape, needs only the <b>value</b> of the objective, and handles any type of variable.</p>
+  <aside class="notes">
+Local optima are not the only problem.
+First, the learning rate. We saw last week: too large and gradient descent zig-zags or diverges; too small and it crawls. The right value depends on how steep the function is, so it must be tuned for every problem.
+Second, derivatives. Many engineering objectives come from a simulation: last week's Monte Carlo wind farm, a finite element model, a traffic simulation. We can evaluate the objective, but there is no formula to differentiate; numerical derivatives of a noisy simulation are unreliable and expensive.
+Third, discrete decisions. How many turbines? Which pipe size from the catalogue? Which steel grade? Include a stiffener or not? There is no slope between pipe size 150 mm and 200 mm.
+Fourth, rough landscapes: noise, flat plateaus where the gradient is zero, step changes in cost, penalties for violating constraints. The local slope is a poor guide there.
+We want a method that looks at the whole landscape, needs only the value of the objective (no derivatives), and works with any type of variable. That is what metaheuristics offer.
+  </aside>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">2</p>
+  <h1>Heuristics and metaheuristics</h1>
+  <aside class="notes">Rules of thumb, and general-purpose search strategies.</aside>
+</section>
+
+<!-- ============================================================ 7 -->
+<section>
+  <h2><span class="num">2.1</span>Heuristic and metaheuristic methods</h2>
+  <p class="terms"><span>heuristic</span><span>metaheuristic</span><span>near-optimal</span><span>problem-independent</span></p>
+  <div class="cols" style="gap:26px">
+    <div class="panel" style="font-size:.64em">
+      <h3>Heuristic: a rule of thumb</h3>
+      <p>A <b>problem-specific</b> strategy, based on domain knowledge, that finds a <b>good</b> solution quickly.</p>
+      <ul>
+        <li>“Space wind turbines 7 rotor diameters apart along the wind.”</li>
+        <li>“Visit the nearest unvisited site next” (route planning).</li>
+        <li>“Size the beam for deflection first, then check stress.”</li>
+      </ul>
+      <p>Fast and sensible, but no guarantee of the optimum, and it does not transfer to other problems.</p>
+    </div>
+    <div class="panel" style="font-size:.64em">
+      <h3>Metaheuristic: a strategy for searching</h3>
+      <p>A <b>general-purpose</b> search framework that guides a search towards optimal or <b>near-optimal</b> solutions of <b>any</b> problem.</p>
+      <ul>
+        <li>Treats the objective as a <b>black box</b>: give it \(\mathbf{x}\), get back \(f(\mathbf{x})\).</li>
+        <li>Uses <b>many</b> candidate solutions and <b>randomness</b> to explore.</li>
+        <li>Often inspired by nature: evolution, swarms, annealing metal, ants.</li>
+      </ul>
+      <p>No guarantee of the global optimum, but usually a very good solution in reasonable time.</p>
+    </div>
+  </div>
+  <aside class="notes">
+Two words that sound alike.
+A heuristic is a rule of thumb: a strategy built from knowledge of one particular problem. Engineers use them all the time: space turbines about seven diameters apart; to plan a route, always drive to the nearest unvisited site; size a beam for deflection first. Heuristics are fast and usually give a sensible answer, but they are not guaranteed to be optimal, and a rule for turbine spacing is useless for scheduling a construction site.
+A metaheuristic is one level higher: a general strategy for searching that works on any problem. It treats the objective function as a black box: you give it a candidate solution, it gives back a number. No formula, no derivative needed. Metaheuristics work with many candidate solutions at the same time and use randomness to explore the landscape. Most are inspired by nature: the genetic algorithm by evolution, particle swarm optimisation by flocks of birds, simulated annealing by the cooling of metal, ant colony optimisation by ants.
+They do not guarantee the global optimum either, but in practice they find very good solutions to problems that defeat the methods of last week.
+  </aside>
+</section>
+
+<!-- ============================================================ 8 -->
+<section>
+  <h2><span class="num">2.2</span>Four families of methods</h2>
+  <p class="terms"><span>guarantee</span><span>derivatives</span><span>global search</span></p>
+  <table class="t cmp">
+    <thead><tr><th></th><th>Analytical</th><th>Iterative (gradient)</th><th>Heuristic</th><th>Metaheuristic</th></tr></thead>
+    <tbody>
+      <tr><td>Needs a formula</td><td>yes</td><td>yes (or a gradient)</td><td>no</td><td>no: values of \(f\) only</td></tr>
+      <tr><td>Needs derivatives</td><td>yes</td><td>yes</td><td>no</td><td>no</td></tr>
+      <tr><td>Searches</td><td>exactly</td><td>locally, one point</td><td>by a rule</td><td>globally, a population</td></tr>
+      <tr><td>Finds</td><td>the global optimum</td><td>a local optimum</td><td>a good solution</td><td>a (near-)global optimum</td></tr>
+      <tr><td>Variable types</td><td>continuous</td><td>continuous</td><td>any</td><td>any: real, integer, yes/no</td></tr>
+      <tr><td>Problem-specific</td><td>yes</td><td>no</td><td>yes</td><td>no</td></tr>
+      <tr><td>Cost</td><td>tiny</td><td>low</td><td>tiny</td><td>many evaluations of \(f\)</td></tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:10px">Metaheuristics trade computing time for robustness: thousands of evaluations of \(f\) instead of a few gradient steps.</p>
+  <aside class="notes">
+A summary of the four families, following the handout.
+Analytical methods: exact, the global optimum, but only for formulas we can differentiate and solve.
+Iterative gradient methods: any differentiable function, cheap, but local: they find the optimum nearest to the starting point.
+Heuristics: rules of thumb, problem-specific, fast, a good but not necessarily optimal solution.
+Metaheuristics: need only the value of the objective, handle any type of variable, search globally with a population of solutions. They usually find the global optimum or come very close, but they cost many evaluations of the objective function: typically thousands. When one evaluation is a long simulation, that matters.
+The trade-off: metaheuristics buy robustness with computing time.
+  </aside>
+</section>
+
+<!-- ============================================================ 9 -->
+<section>
+  <h2><span class="num">2.3</span>Metaheuristics: exploration and exploitation</h2>
+  <p class="terms"><span>exploration</span><span>exploitation</span><span>premature convergence</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:26px">
+    <div class="stack" style="font-size:.64em">
+      <ul>
+        <li><b>Genetic algorithm (GA)</b>: evolution by natural selection. <b>This week.</b></li>
+        <li><b>Particle swarm optimisation (PSO)</b>: a flock of birds searching together. <b>Next week.</b></li>
+        <li><b>Simulated annealing (SA)</b>: the slow cooling of metal; sometimes accepts a worse solution to escape a local optimum.</li>
+        <li><b>Ant colony optimisation (ACO)</b>: ants laying pheromone trails; routing and scheduling.</li>
+      </ul>
+    </div>
+    <div class="stack" style="font-size:.64em">
+      <svg class="dg" viewBox="0 0 420 170" role="img" aria-label="Left: exploration, points scattered over the whole landscape. Right: exploitation, points clustered on one peak.">
+        <path class="line-acc" d="M10 150 C40 150 50 70 80 70 C110 70 110 140 135 140 C160 140 165 40 200 40 C235 40 240 150 270 150"/>
+        <g class="fill-bad"><circle cx="30" cy="140" r="5"/><circle cx="80" cy="68" r="5"/><circle cx="125" cy="132" r="5"/><circle cx="175" cy="70" r="5"/><circle cx="245" cy="140" r="5"/></g>
+        <text x="140" y="20" font-size="14" text-anchor="middle" font-weight="700">exploration</text>
+        <path class="line-acc" d="M300 150 C330 150 340 30 360 30 C380 30 390 150 415 150"/>
+        <g class="fill-good"><circle cx="352" cy="38" r="5"/><circle cx="360" cy="30" r="5"/><circle cx="367" cy="36" r="5"/><circle cx="344" cy="55" r="5"/></g>
+        <text x="358" y="20" font-size="14" text-anchor="middle" font-weight="700">exploitation</text>
+      </svg>
+      <p><b>Exploration</b>: search widely, find new promising regions, escape local optima.</p>
+      <p><b>Exploitation</b>: refine the best solutions found so far, converge.</p>
+      <p class="callout" style="font-size:1em">Too much exploration: no convergence, wasted evaluations. Too much exploitation: <b>premature convergence</b> to a local optimum.</p>
+    </div>
+  </div>
+  <aside class="notes">
+The best-known metaheuristics, from the handout. The genetic algorithm, today. Particle swarm optimisation, next week. Simulated annealing, inspired by the slow cooling of metal: it sometimes accepts a worse solution on purpose, early in the search, to escape a local optimum. Ant colony optimisation, inspired by ants laying pheromone trails, which is good for routing and scheduling problems.
+All of them balance two forces. Exploration: spreading the search over the whole landscape to discover new, promising regions; this is what protects against local optima. Exploitation: concentrating on the best regions found so far to refine the solution and converge.
+A good metaheuristic balances the two. Too much exploration and it wanders forever, wasting evaluations without converging. Too much exploitation and it converges too early, prematurely, onto whatever peak it found first, which may be a local one. Keep these two words in mind: every parameter of the genetic algorithm moves the balance one way or the other.
+  </aside>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">3</p>
+  <h1>The genetic algorithm: evolution as optimisation</h1>
+  <aside class="notes">How evolution by natural selection becomes a search algorithm.</aside>
+</section>
+
+<!-- ============================================================ 11 -->
+<section>
+  <h2><span class="num">3.1</span>Natural selection as a search</h2>
+  <p class="terms"><span>survival of the fittest</span><span>generation</span><span>offspring</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:26px">
+    <div class="stack" style="font-size:.64em">
+      <p>In nature, individuals that suit their environment better survive longer and have more offspring. Offspring inherit a <b>mix</b> of their parents’ genes, with occasional random <b>mutations</b>. Over many generations the population <b>adapts</b>.</p>
+      <p>The <b>genetic algorithm</b> (Holland, 1975) copies this process: a population of candidate solutions evolves, generation after generation, towards better and better solutions.</p>
+      <svg class="dg" viewBox="0 0 420 120" role="img" aria-label="A cycle: population, fitness, selection, offspring, back to population.">
+        <g font-size="13" text-anchor="middle">
+          <rect class="box-acc" x="5" y="40" width="90" height="40" rx="6"/><text x="50" y="65">population</text>
+          <rect class="box" x="115" y="40" width="80" height="40" rx="6"/><text x="155" y="65">fitness</text>
+          <rect class="box" x="215" y="40" width="90" height="40" rx="6"/><text x="260" y="65">selection</text>
+          <rect class="box" x="325" y="40" width="90" height="40" rx="6"/><text x="370" y="65">offspring</text>
+        </g>
+        <path class="line" d="M95 60 H113 M195 60 H213 M305 60 H323"/>
+        <path class="line-acc" d="M370 82 V105 H50 V82"/><path class="fill-acc" d="M50 82 l-5 9 h10 z"/>
+        <text x="210" y="118" font-size="12" text-anchor="middle" class="acc">next generation</text>
+      </svg>
+    </div>
+    <table class="t compact" style="font-size:.62em">
+      <thead><tr><th>Biology</th><th>Genetic algorithm</th></tr></thead>
+      <tbody>
+        <tr><td>individual</td><td>a candidate solution</td></tr>
+        <tr><td>chromosome</td><td>the encoded solution, a string of values</td></tr>
+        <tr><td>gene</td><td>one decision variable</td></tr>
+        <tr><td>population</td><td>a set of candidate solutions</td></tr>
+        <tr><td>fitness</td><td>the value of the objective function</td></tr>
+        <tr><td>survival of the fittest</td><td><b>selection</b> of the best as parents</td></tr>
+        <tr><td>mating, inheritance</td><td><b>crossover</b> of two parents</td></tr>
+        <tr><td>mutation</td><td>a random change to a gene</td></tr>
+        <tr><td>generation</td><td>one iteration of the algorithm</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <aside class="notes">
+Where does the genetic algorithm come from? From Darwin. In nature, individuals better suited to their environment survive longer and have more offspring: survival of the fittest. Offspring inherit a mix of their parents' genes, plus occasional random mutations. Over many generations, the population adapts to its environment.
+John Holland turned this into an algorithm in the 1970s. Replace the individual by a candidate solution of our problem, its genes by the decision variables, and its fitness by the value of the objective function. Start with a population of random solutions, let the fittest ones have children, and repeat: generation after generation, the population evolves towards better solutions.
+The vocabulary on the right is worth learning: individual, chromosome, gene, population, fitness, selection, crossover, mutation, generation. We will meet each of them in detail.
+Note: in the genetic algorithm, fitness is something we maximise, like height on the mountain. To minimise a cost, use minus the cost as the fitness.
+  </aside>
+</section>
+
+<!-- ============================================================ 12 -->
+<section>
+  <h2><span class="num">3.2</span>Chromosomes: encoding a solution</h2>
+  <p class="terms"><span>chromosome</span><span>gene</span><span>encoding</span><span>population</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px">
+    <svg class="dg" viewBox="0 0 560 400" role="img" aria-label="Top: a point on the mountain at x = 6.2 km, y = 4.8 km is encoded as a chromosome with two genes. Middle: a beam design encoded with four genes of different types. Bottom: a population is a table of chromosomes.">
+      <text x="10" y="22" font-size="15" font-weight="700" class="acc">The mountain: find the highest point</text>
+      <text x="10" y="44" font-size="13" class="muted">decision variables: position x, y (km)</text>
+      <g font-size="17" text-anchor="middle" font-weight="600">
+        <rect x="150" y="56" width="100" height="44" rx="5" fill="#68246D"/><text x="200" y="85" fill="#fff">6.2</text>
+        <rect x="252" y="56" width="100" height="44" rx="5" fill="#68246D"/><text x="302" y="85" fill="#fff">4.8</text>
+      </g>
+      <text x="200" y="118" font-size="12" text-anchor="middle" class="muted">gene 1: x</text><text x="302" y="118" font-size="12" text-anchor="middle" class="muted">gene 2: y</text>
+      <text x="366" y="76" font-size="14">fitness</text><text x="366" y="96" font-size="14">h(6.2, 4.8) = 850 m</text>
+
+      <text x="10" y="160" font-size="15" font-weight="700" class="acc">A beam design: mixed types</text>
+      <g font-size="15" text-anchor="middle" font-weight="600">
+        <rect x="10" y="174" width="120" height="44" rx="5" fill="#1D5FA3"/><text x="70" y="202" fill="#fff">150</text>
+        <rect x="132" y="174" width="120" height="44" rx="5" fill="#1D5FA3"/><text x="192" y="202" fill="#fff">420</text>
+        <rect x="254" y="174" width="120" height="44" rx="5" fill="#A85A00"/><text x="314" y="202" fill="#fff">S355</text>
+        <rect x="376" y="174" width="120" height="44" rx="5" fill="#1F7A4D"/><text x="436" y="202" fill="#fff">yes</text>
+      </g>
+      <g font-size="12" text-anchor="middle" class="muted"><text x="70" y="236">width b (mm)</text><text x="192" y="236">depth d (mm)</text><text x="314" y="236">steel grade</text><text x="436" y="236">stiffeners</text></g>
+
+      <text x="10" y="278" font-size="15" font-weight="700" class="acc">A population: one chromosome per row</text>
+      <g font-size="14" font-family="var(--mono)">
+        <rect class="box-code" x="10" y="290" width="330" height="104" rx="4"/>
+        <text x="24" y="314">[[6.2, 4.8],    ← chromosome 1</text>
+        <text x="24" y="336"> [1.3, 9.1],    ← chromosome 2</text>
+        <text x="24" y="358"> [8.0, 2.4],</text>
+        <text x="24" y="380"> ...       ]</text>
+      </g>
+      <text x="356" y="330" font-size="13">a NumPy array of shape</text><text x="356" y="350" font-size="13">(population size, genes)</text>
+    </svg>
+    <div class="stack" style="font-size:.64em">
+      <p>A <b>chromosome</b> is one candidate solution written as a string of values. Each value is a <b>gene</b>: one decision variable.</p>
+      <p>The number of genes = the number of decision variables. The mountain needs 2 genes; a truss with 30 members needs 30.</p>
+      <p>Genes can be any type: real numbers, integers, items from a list, yes/no. This is a big advantage over gradient methods.</p>
+      <p>The <b>fitness</b> of a chromosome is the objective function evaluated at it. The GA never needs a derivative: only this number.</p>
+    </div>
+  </div>
+  <aside class="notes">
+The first step in any genetic algorithm is to decide how a solution is written as a chromosome: the encoding.
+For the mountain the decision variables are the position, x and y. A chromosome is simply the pair of numbers, for example 6.2 and 4.8: two genes. Its fitness is the height of the mountain at that point, 850 m.
+A beam design could have four genes of different types: the width and depth in millimetres (numbers, perhaps restricted to standard sizes), the steel grade (one item from a list) and whether stiffeners are used (yes or no). Gradient methods cannot handle the last two at all; for a genetic algorithm they are just genes.
+The number of genes is the number of decision variables. The handout's example has 10 inputs, so 10 genes.
+A population is a set of chromosomes; in Python it is conveniently a NumPy array with one chromosome per row: shape (population size, number of genes).
+The only thing the algorithm needs from our problem is the fitness of a chromosome: no formula, no derivative.
+  </aside>
+</section>
+
+<!-- ============================================================ 13 -->
+<section>
+  <h2><span class="num">3.3</span>Crossover: two parents, two children</h2>
+  <p class="terms"><span>crossover</span><span>cut point</span><span>offspring</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:22px">
+    <svg class="dg" id="co-svg" viewBox="0 0 640 320" role="img" aria-label="Two parent chromosomes with six genes each. A random cut point is chosen; the tails after the cut are exchanged, giving two children."></svg>
+    <div class="stack">
+      <div class="wbar"><button type="button" class="wbtn run" id="co-cutb">1. cut</button><button type="button" class="wbtn run" id="co-swap">2. swap tails</button><button type="button" class="wbtn" id="co-reset">reset</button></div>
+      <div class="wstat" id="co-out" aria-live="polite" style="font-size:15px"></div>
+      <p class="callout" style="font-size:.6em">Crossover is the heart of the GA: children <b>combine</b> good parts of good parents. Each child keeps the parents’ genes in the same positions.</p>
+    </div>
+  </div>
+  <aside class="notes">
+Crossover is the main operator of the genetic algorithm, the equivalent of mating.
+Take two parent chromosomes, here with six genes each: A in purple, B in blue. Press cut: a random cut point is chosen between two genes. Press swap tails: everything after the cut point is exchanged. Child 1 gets the head of A and the tail of B; child 2 the head of B and the tail of A. Two parents, two children.
+Press reset and repeat: the cut point changes every time, so the same parents can produce different children.
+The idea: if parent A has good values for the first genes and parent B good values for the last ones, one of the children may inherit the good parts of both and be better than either parent. Selection then keeps the good children and drops the bad ones.
+Notice: crossover creates no new numbers. Every gene of a child is copied from one of the parents, in the same position. This is important later, when we discuss why the GA is a discrete search.
+  </aside>
+</section>
+
+<!-- ============================================================ 14 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">4</p>
+  <h1>The building blocks of a GA</h1>
+  <aside class="notes">The algorithm step by step: initialisation, population, selection, elitism, crossover, mutation and convergence.</aside>
+</section>
+
+<!-- ============================================================ 15 -->
+<section>
+  <h2><span class="num">4.1</span>The genetic algorithm in one picture</h2>
+  <p class="terms"><span>generation</span><span>loop</span><span>stopping criterion</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px">
+    <svg class="dg" viewBox="0 0 560 420" role="img" aria-label="Flowchart of a genetic algorithm: random initial population, evaluate fitness, stop if converged, otherwise select parents, crossover, mutation, elitism, new generation, and back to evaluation.">
+      <g font-size="14" text-anchor="middle">
+        <rect class="box-acc" x="170" y="8" width="220" height="40" rx="20"/><text x="280" y="33">random initial population</text>
+        <rect class="box" x="170" y="72" width="220" height="40" rx="5"/><text x="280" y="97">evaluate fitness, rank</text>
+        <polygon class="box-acc" points="280,132 380,162 280,192 180,162"/><text x="280" y="167">converged?</text>
+        <rect class="box-acc" x="430" y="142" width="120" height="40" rx="20"/><text x="490" y="167">best solution</text>
+        <rect class="box" x="170" y="214" width="220" height="40" rx="5"/><text x="280" y="239">select the parents</text>
+        <rect class="box" x="170" y="270" width="220" height="40" rx="5"/><text x="280" y="295">crossover → children</text>
+        <rect class="box" x="170" y="326" width="220" height="40" rx="5"/><text x="280" y="351">mutate some genes</text>
+        <rect class="box" x="170" y="380" width="220" height="36" rx="5"/><text x="280" y="403">elitism: keep the best</text>
+      </g>
+      <path class="line" d="M280 48 V70 M280 112 V130 M280 192 V212 M280 254 V268 M280 310 V324 M280 366 V378"/>
+      <path class="line" d="M380 162 H428"/><text x="398" y="154" font-size="12" class="good" font-weight="700">yes</text>
+      <text x="290" y="207" font-size="12" class="bad" font-weight="700">no</text>
+      <path class="line-acc" d="M170 398 H110 V92 H168"/><path class="fill-acc" d="M168 92 l-9 -5 v10 z"/>
+      <text x="100" y="250" font-size="13" class="acc" text-anchor="middle" transform="rotate(-90 100 250)">next generation</text>
+    </svg>
+    <div class="stack" style="font-size:.62em">
+      <ol style="margin:0 0 0 1.1em">
+        <li>Create a <b>random</b> population of chromosomes.</li>
+        <li>Evaluate the <b>fitness</b> of each one and rank them.</li>
+        <li>If the stopping criterion is met, stop.</li>
+        <li><b>Select</b> parents, the fitter the more likely.</li>
+        <li><b>Cross over</b> pairs of parents to make children.</li>
+        <li><b>Mutate</b> a few genes at random.</li>
+        <li>Keep the best (<b>elitism</b>): the new generation. Back to step 2.</li>
+      </ol>
+      <p class="small">Steps 2 to 7 are one <b>generation</b>. The population size stays constant.</p>
+    </div>
+  </div>
+  <aside class="notes">
+The whole algorithm on one slide, following the handout's step list.
+Start: create a population of random chromosomes. Then the loop, one generation per pass. Evaluate the fitness of every chromosome and rank them. Check the stopping criterion: if converged, report the best chromosome. Otherwise, select parents: fitter chromosomes are more likely to be chosen. Cross over pairs of parents to create children. Mutate a few genes at random. Keep the best chromosomes unchanged (elitism). Together they form the next generation, which goes back to evaluation.
+Note the arrow goes back to evaluation, not to the random initialisation: the handout says “go back to step 1”, but we do not create a fresh random population each generation, otherwise we would throw away all the progress.
+The population size stays the same from generation to generation. The next slides take each box in turn.
+  </aside>
+</section>
+
+<!-- ============================================================ 16 -->
+<section>
+  <h2><span class="num">4.2</span>Random initialisation and the population</h2>
+  <p class="terms"><span>random initialisation</span><span>population size</span><span>diversity</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
+    <img class="imgfig" src="assets/img/w8-population.png" alt="Contour map of the mountain range with 12 red points scattered at random over the whole square: the initial population.">
+    <div class="stack" style="font-size:.64em">
+      <p>Generation 0: each gene is drawn at random between its <b>lower and upper bounds</b>, e.g. <code>np.random.uniform(0, 10, (12, 2))</code>.</p>
+      <p>Random points are spread over the whole landscape: the GA starts by <b>exploring</b> everywhere, not from one guess.</p>
+      <p>The <b>population size</b> (typically 20 to 200) controls the balance:</p>
+      <ul>
+        <li>small: fast generations, little <b>diversity</b>, risk of premature convergence;</li>
+        <li>large: explores better, but each generation costs more evaluations of \(f\).</li>
+      </ul>
+      <p class="small">Cost of a run ≈ population size × number of generations evaluations of \(f\).</p>
+    </div>
+  </div>
+  <aside class="notes">
+Step 1: random initialisation. Each gene of each chromosome is drawn at random within its allowed range: here x and y uniformly between 0 and 10 km, with one line of NumPy. The figure shows 12 random chromosomes on the mountain map: some land near the big peak, some on the small peaks, some on the plain.
+Compare with gradient methods: instead of one starting point, we start from many points spread over the whole landscape. This is exploration from the very beginning.
+The population size is the first parameter to choose. A small population is cheap per generation but has little diversity, the variety of genes in the population; it can converge quickly onto a local peak. A large population explores better but costs more: the total cost of a run is roughly population size times number of generations evaluations of the objective function. With 50 chromosomes and 100 generations that is 5000 evaluations: nothing for a formula, a lot for a one-minute simulation.
+  </aside>
+</section>
+
+<!-- ============================================================ 17 -->
+<section>
+  <h2><span class="num">4.3</span>Fitness and selection</h2>
+  <p class="terms"><span>fitness</span><span>selection pressure</span><span>roulette wheel</span><span>tournament</span><span>rank</span></p>
+  <svg class="dg" viewBox="0 0 1160 270" role="img" aria-label="Four selection methods. Truncation: the top-ranked chromosomes are kept. Roulette wheel: each chromosome gets a slice proportional to its fitness. Rank: slices by rank. Tournament: pick a few at random, the best of them wins.">
+    <g font-size="15" font-weight="700" class="acc"><text x="10" y="22">Truncation (top-ranked)</text><text x="300" y="22">Roulette wheel</text><text x="590" y="22">Rank</text><text x="880" y="22">Tournament</text></g>
+    <g>
+      <rect x="20" y="40" width="210" height="24" fill="#68246D"/><rect x="20" y="70" width="180" height="24" fill="#68246D"/><rect x="20" y="100" width="150" height="24" fill="#68246D"/>
+      <rect x="20" y="130" width="100" height="24" fill="#c9c3cf"/><rect x="20" y="160" width="70" height="24" fill="#c9c3cf"/><rect x="20" y="190" width="40" height="24" fill="#c9c3cf"/>
+      <path class="line-muted" d="M10 125 H250"/><text x="240" y="118" font-size="12" text-anchor="end" class="acc">parents</text>
+    </g>
+    <g transform="translate(410 148)">
+      <path d="M0 0 L0 -90 A90 90 0 0 1 85.6 -27.8 Z" fill="#68246D"/>
+      <path d="M0 0 L85.6 -27.8 A90 90 0 0 1 52.9 72.8 Z" fill="#8b4a90"/>
+      <path d="M0 0 L52.9 72.8 A90 90 0 0 1 -38.4 81.4 Z" fill="#a877ac"/>
+      <path d="M0 0 L-38.4 81.4 A90 90 0 0 1 -85.6 27.8 Z" fill="#c4a3c7"/>
+      <path d="M0 0 L-85.6 27.8 A90 90 0 0 1 -72.8 -52.9 Z" fill="#dcc9de"/>
+      <path d="M0 0 L-72.8 -52.9 A90 90 0 0 1 0 -90 Z" fill="#ece2ed"/>
+      <circle r="90" fill="none" stroke="#fff" stroke-width="2"/>
+      <path d="M0 -92 l-8 -14 h16 z" class="fill-ink"/>
+    </g>
+    <g font-size="12" text-anchor="middle">
+      <g transform="translate(600 40)">
+        <rect x="0" y="0" width="230" height="22" rx="3" fill="#68246D"/><text x="115" y="16" fill="#fff">rank 1: probability 6/21</text>
+        <rect x="0" y="28" width="192" height="22" rx="3" fill="#8b4a90"/><text x="96" y="44" fill="#fff">rank 2: 5/21</text>
+        <rect x="0" y="56" width="153" height="22" rx="3" fill="#a877ac"/><text x="76" y="72" fill="#fff">rank 3: 4/21</text>
+        <rect x="0" y="84" width="115" height="22" rx="3" fill="#c4a3c7"/><text x="57" y="100">rank 4: 3/21</text>
+        <rect x="0" y="112" width="77" height="22" rx="3" fill="#dcc9de"/><text x="38" y="128">2/21</text>
+        <rect x="0" y="140" width="38" height="22" rx="3" fill="#ece2ed"/><text x="19" y="156">1/21</text>
+      </g>
+    </g>
+    <g transform="translate(890 40)" font-size="13">
+      <circle cx="30" cy="40" r="20" fill="#c4a3c7"/><text x="30" y="45" text-anchor="middle">720</text>
+      <circle cx="85" cy="40" r="20" fill="#68246D"/><text x="85" y="45" text-anchor="middle" fill="#fff">1010</text>
+      <circle cx="140" cy="40" r="20" fill="#dcc9de"/><text x="140" y="45" text-anchor="middle">380</text>
+      <path class="line" d="M30 62 L85 110 M85 62 L85 110 M140 62 L85 110"/>
+      <rect class="box-acc" x="40" y="112" width="90" height="34" rx="5"/><text x="85" y="134" text-anchor="middle">1010 wins</text>
+      <text x="0" y="180" class="muted">pick k = 3 at random,</text><text x="0" y="198" class="muted">the fittest becomes a parent</text>
+    </g>
+    <g font-size="12" class="muted"><text x="320" y="250">slice ∝ fitness</text><text x="600" y="250">slice ∝ rank, not fitness</text><text x="20" y="250">keep the best N, drop the rest</text></g>
+  </svg>
+  <p style="font-size:.6em;margin-top:6px"><b>Selection pressure</b>: how strongly the best are favoured. High pressure (truncation, large tournaments) converges fast but loses diversity; low pressure (roulette, rank) keeps weaker chromosomes in the game and explores more.</p>
+  <aside class="notes">
+Step 2: fitness and selection. The fitness of a chromosome is the value of the objective at that chromosome: the height on the mountain. Selection decides which chromosomes become parents. The common methods:
+Truncation, or top-ranked selection, used in the handout: rank the population and keep the best N as parents; the rest are dropped. Simple and strong.
+Roulette wheel, or fitness-proportionate selection: each chromosome gets a slice of a wheel proportional to its fitness; spin the wheel to choose each parent. Fitter chromosomes are more likely to be chosen, but every chromosome has a chance. It needs positive fitness values, and one very fit chromosome can take over the wheel.
+Rank selection: like the roulette wheel, but the slice depends on the rank, not on the fitness value, so the method is not affected by the scale of the fitness. With 6 chromosomes the best gets 6 out of 21 shares, the worst 1. PyGAD's example in the handout uses rank selection.
+Tournament selection: pick k chromosomes at random, the fittest of them wins and becomes a parent. Repeat for each parent. Larger k means stronger pressure.
+The key idea is selection pressure: how strongly the best are favoured. High pressure converges fast but loses diversity; low pressure explores more. Again, exploration against exploitation.
+  </aside>
+</section>
+
+<!-- ============================================================ 18 -->
+<section>
+  <h2><span class="num">4.4</span>Elitism: never lose the best</h2>
+  <p class="terms"><span>elitism</span><span>elite</span><span>monotonic best</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px">
+    <div class="stack" style="font-size:.64em">
+      <p>Crossover and mutation can destroy a good chromosome: its children may all be worse. Without protection, the best solution found so far can be <b>lost</b>.</p>
+      <p><b>Elitism</b>: copy the best one or few chromosomes (the <b>elite</b>) <b>unchanged</b> into the next generation.</p>
+      <svg class="dg" viewBox="0 0 470 120" role="img" aria-label="The two best chromosomes of generation k are copied directly into generation k + 1; the rest of generation k + 1 are children.">
+        <g font-size="13" text-anchor="middle">
+          <text x="60" y="16" class="muted">generation k</text><text x="330" y="16" class="muted">generation k + 1</text>
+          <rect x="20" y="26" width="80" height="22" rx="3" fill="#68246D"/><rect x="20" y="52" width="80" height="22" rx="3" fill="#8b4a90"/>
+          <rect x="20" y="78" width="80" height="16" rx="3" fill="#c9c3cf"/><rect x="20" y="98" width="80" height="16" rx="3" fill="#c9c3cf"/>
+          <rect x="290" y="26" width="80" height="22" rx="3" fill="#68246D" stroke="gold" stroke-width="3"/><rect x="290" y="52" width="80" height="22" rx="3" fill="#8b4a90" stroke="gold" stroke-width="3"/>
+          <rect x="290" y="78" width="80" height="16" rx="3" fill="#E08A1E"/><rect x="290" y="98" width="80" height="16" rx="3" fill="#E08A1E"/>
+          <text x="388" y="107" font-size="12" text-anchor="start">children</text>
+        </g>
+        <path class="line-acc" d="M102 37 H286 M102 63 H286"/><text x="195" y="30" font-size="12" class="acc" text-anchor="middle">copied unchanged</text>
+      </svg>
+      <p>The best fitness then never decreases from one generation to the next. Usually 1 or 2 elites; too many reduce diversity.</p>
+    </div>
+    <div class="stack">
+      <img class="imgfig" src="assets/img/w8-elitism.png" alt="Best height per generation, averaged over 100 runs: with elitism it rises smoothly to about 1215 m; without elitism it stays lower, about 1145 m.">
+      <p class="small" style="margin:0;font-size:.55em">The same GA on the mountain, 100 runs each: with two elites the best chromosome climbs higher.</p>
+    </div>
+  </div>
+  <aside class="notes">
+Step 3: elitism. Crossover and mutation are random. The children of the best chromosome may all be worse than their parent; if the next generation consists only of children, the best solution found so far can simply disappear.
+Elitism prevents this: the best one or two chromosomes, the elite, are copied unchanged into the next generation. The handout: the best chromosome of every generation is passed directly to the next one. With elitism, the best fitness can never go down from one generation to the next.
+The plot: the same genetic algorithm on our mountain, run 100 times with and without two elites, averaging the best height in each generation. With elitism the best chromosome climbs to about 1215 m on average; without it, good chromosomes are lost and the average stalls around 1145 m.
+Usually one or two elites are enough. Too many elites copy the same few chromosomes again and again and reduce diversity: more exploitation, less exploration.
+  </aside>
+</section>
+
+<!-- ============================================================ 19 -->
+<section>
+  <h2><span class="num">4.5</span>Crossover operators</h2>
+  <p class="terms"><span>single-point</span><span>two-point</span><span>uniform</span><span>crossover probability</span></p>
+  <svg class="dg" viewBox="0 0 1160 300" role="img" aria-label="Three crossover types for six-gene parents: single-point exchanges the tails after one cut; two-point exchanges the middle segment between two cuts; uniform chooses each gene from either parent at random.">
+    <g font-size="15" font-weight="700" class="acc"><text x="10" y="22">Single-point</text><text x="400" y="22">Two-point</text><text x="790" y="22">Uniform</text></g>
+    <g><text x="10" y="56" font-size="12" class="muted">A</text><text x="10" y="94" font-size="12" class="muted">B</text><rect x="30" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="56" y="56" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="86" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="112" y="56" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="142" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="168" y="56" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="198" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="224" y="56" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="254" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="280" y="56" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="310" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="336" y="56" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="30" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="56" y="94" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="86" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="112" y="94" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="142" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="168" y="94" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="198" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="224" y="94" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="254" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="280" y="94" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="310" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="336" y="94" font-size="14" text-anchor="middle" fill="#fff">b6</text><path d="M196 28 V 112" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="5 4"/><path class="line" d="M196 120 V 146"/><path class="fill-ink" d="M196 150 l-5 -9 h10 z"/><text x="10" y="178" font-size="12" class="muted">1</text><text x="10" y="216" font-size="12" class="muted">2</text><rect x="30" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="56" y="178" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="86" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="112" y="178" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="142" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="168" y="178" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="198" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="224" y="178" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="254" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="280" y="178" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="310" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="336" y="178" font-size="14" text-anchor="middle" fill="#fff">b6</text><rect x="30" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="56" y="216" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="86" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="112" y="216" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="142" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="168" y="216" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="198" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="224" y="216" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="254" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="280" y="216" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="310" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="336" y="216" font-size="14" text-anchor="middle" fill="#fff">a6</text><text x="400" y="56" font-size="12" class="muted">A</text><text x="400" y="94" font-size="12" class="muted">B</text><rect x="420" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="446" y="56" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="476" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="502" y="56" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="532" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="558" y="56" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="588" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="614" y="56" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="644" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="670" y="56" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="700" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="726" y="56" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="420" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="446" y="94" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="476" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="502" y="94" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="532" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="558" y="94" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="588" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="614" y="94" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="644" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="670" y="94" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="700" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="726" y="94" font-size="14" text-anchor="middle" fill="#fff">b6</text><path d="M530 28 V 112" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="5 4"/><path d="M642 28 V 112" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="5 4"/><path class="line" d="M586 120 V 146"/><path class="fill-ink" d="M586 150 l-5 -9 h10 z"/><text x="400" y="178" font-size="12" class="muted">1</text><text x="400" y="216" font-size="12" class="muted">2</text><rect x="420" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="446" y="178" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="476" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="502" y="178" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="532" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="558" y="178" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="588" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="614" y="178" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="644" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="670" y="178" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="700" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="726" y="178" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="420" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="446" y="216" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="476" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="502" y="216" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="532" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="558" y="216" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="588" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="614" y="216" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="644" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="670" y="216" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="700" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="726" y="216" font-size="14" text-anchor="middle" fill="#fff">b6</text><text x="790" y="56" font-size="12" class="muted">A</text><text x="790" y="94" font-size="12" class="muted">B</text><rect x="810" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="836" y="56" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="866" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="892" y="56" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="922" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="948" y="56" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="978" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="1004" y="56" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="1034" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="1060" y="56" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="1090" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="1116" y="56" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="810" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="836" y="94" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="866" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="892" y="94" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="922" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="948" y="94" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="978" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1004" y="94" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="1034" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1060" y="94" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="1090" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1116" y="94" font-size="14" text-anchor="middle" fill="#fff">b6</text><path class="line" d="M976 120 V 146"/><path class="fill-ink" d="M976 150 l-5 -9 h10 z"/><text x="790" y="178" font-size="12" class="muted">1</text><text x="790" y="216" font-size="12" class="muted">2</text><rect x="810" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="836" y="178" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="866" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="892" y="178" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="922" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="948" y="178" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="978" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="1004" y="178" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="1034" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1060" y="178" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="1090" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="1116" y="178" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="810" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="836" y="216" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="866" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="892" y="216" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="922" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="948" y="216" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="978" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1004" y="216" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="1034" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="1060" y="216" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="1090" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1116" y="216" font-size="14" text-anchor="middle" fill="#fff">b6</text></g>
+    <g font-size="12" class="muted"><text x="10" y="290">tails after the cut are exchanged</text><text x="400" y="290">the segment between the cuts is exchanged</text><text x="790" y="290">each gene from A or B, like a coin toss</text></g>
+  </svg>
+  <p style="font-size:.6em;margin-top:6px">Crossover is applied to a pair of parents with a <b>crossover probability</b> (often 0.7 to 0.9); otherwise the children are copies of the parents. With only <b>two genes</b>, as on the mountain, there is one possible cut: the children are \((x_A, y_B)\) and \((x_B, y_A)\).</p>
+  <aside class="notes">
+Step 4: crossover, in more detail. Three common operators, all available in PyGAD.
+Single-point crossover, the one we animated: one random cut, tails exchanged. This is the handout's version and PyGAD's crossover_type equals single_point.
+Two-point crossover: two random cuts; the segment between them is exchanged. It mixes genes from the middle of the chromosome more easily.
+Uniform crossover: for each gene, toss a coin to decide which parent it comes from. Maximum mixing.
+Crossover is usually applied with a probability, often 0.7 to 0.9; otherwise the children are simply copies of the parents and only mutation can change them.
+With only two genes, as on our mountain, the only possible cut is between x and y, so the children are always (x of A, y of B) and (x of B, y of A). Keep that in mind for the mountain animation.
+  </aside>
+</section>
+
+<!-- ============================================================ 20 -->
+<section>
+  <h2><span class="num">4.6</span>Mutation: keeping the population diverse</h2>
+  <p class="terms"><span>mutation</span><span>mutation rate</span><span>diversity</span><span>random reset</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px">
+    <svg class="dg" viewBox="0 0 560 300" role="img" aria-label="A child chromosome before and after mutation: one gene changes from 4.2 to 4.9. Random reset replaces the gene with a new random value; random perturbation adds a small random number.">
+      <g font-size="17" text-anchor="middle" font-weight="600">
+        <text x="10" y="36" font-size="14" text-anchor="start" font-weight="700">before</text>
+        <rect x="90" y="12" width="70" height="40" rx="5" fill="#E08A1E"/><text x="125" y="38" fill="#fff">2.4</text>
+        <rect x="162" y="12" width="70" height="40" rx="5" fill="#E08A1E"/><text x="197" y="38" fill="#fff">7.1</text>
+        <rect x="234" y="12" width="70" height="40" rx="5" fill="#E08A1E"/><text x="269" y="38" fill="#fff">4.2</text>
+        <rect x="306" y="12" width="70" height="40" rx="5" fill="#E08A1E"/><text x="341" y="38" fill="#fff">8.7</text>
+        <text x="10" y="116" font-size="14" text-anchor="start" font-weight="700">after</text>
+        <rect x="90" y="92" width="70" height="40" rx="5" fill="#E08A1E"/><text x="125" y="118" fill="#fff">2.4</text>
+        <rect x="162" y="92" width="70" height="40" rx="5" fill="#E08A1E"/><text x="197" y="118" fill="#fff">7.1</text>
+        <rect x="234" y="92" width="70" height="40" rx="5" fill="#1F7A4D" stroke="var(--ink)" stroke-width="2"/><text x="269" y="118" fill="#fff">4.9</text>
+        <rect x="306" y="92" width="70" height="40" rx="5" fill="#E08A1E"/><text x="341" y="118" fill="#fff">8.7</text>
+      </g>
+      <path class="line-acc" d="M269 54 V88"/><path class="fill-acc" d="M269 90 l-5 -9 h10 z"/>
+      <text x="390" y="78" font-size="13" class="acc">one gene changes</text>
+      <g font-size="13">
+        <text x="10" y="180" font-weight="700">Random reset</text><text x="10" y="200" class="muted">a new random value in the range</text><text x="10" y="220" class="muted">4.2 → 9.3: a big jump</text><text x="10" y="240" class="muted">(exploration)</text>
+        <text x="300" y="180" font-weight="700">Random perturbation</text><text x="300" y="200" class="muted">add a small random number</text><text x="300" y="220" class="muted">4.2 → 4.9: a small step</text><text x="300" y="240" class="muted">(exploitation)</text>
+      </g>
+      <text x="10" y="280" font-size="13">Yes/no genes: flip. Catalogue genes: pick another item.</text>
+    </svg>
+    <div class="stack" style="font-size:.64em">
+      <p>Crossover only reshuffles genes that are already in the population. If no chromosome has a good value of \(y\), crossover can never create one.</p>
+      <p><b>Mutation</b> changes a few genes at random after crossover. It brings <b>new</b> values into the population and maintains <b>diversity</b>.</p>
+      <p>The <b>mutation rate</b> is small: typically 1 to 10 % of the genes. Too high and the GA becomes a random search; too low and the population collapses onto one point.</p>
+    </div>
+  </div>
+  <aside class="notes">
+Step 5: mutation. After crossover, a few genes of the children are changed at random.
+Why do we need it? Crossover only reshuffles genes that already exist in the population. Suppose no chromosome in the population has a y value near 6: then no amount of crossover can produce one. Mutation introduces new values, and keeps the population diverse.
+Two common ways for real-valued genes. Random reset: replace the gene by a new random value from its range, a big jump, good for exploration. Random perturbation: add a small random number, a small step, good for fine-tuning. PyGAD's default random mutation adds a random number between −1 and 1. For yes/no genes, mutation flips the value; for genes chosen from a list, it picks another item.
+The mutation rate is the fraction of genes that mutate, usually small: 1 to 10 per cent. Too high, and the children no longer resemble their parents: the GA turns into a random search. Too low, and the population quickly becomes a set of near-identical copies: premature convergence.
+  </aside>
+</section>
+
+<!-- ============================================================ 21 -->
+<section>
+  <h2><span class="num">4.7</span>Convergence: when to stop</h2>
+  <p class="terms"><span>convergence</span><span>stopping criterion</span><span>stagnation</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px">
+    <img class="imgfig" src="assets/img/w8-convergence.png" alt="Best height and population mean against generation. The best rises from 800 m to 1250 m within 5 generations and then stays flat; the mean rises and fluctuates below it; the population range narrows.">
+    <div class="stack" style="font-size:.64em">
+      <p>Over the generations the population <b>converges</b>: the chromosomes gather around the best region and the best fitness levels off.</p>
+      <p><b>Stopping criteria</b> (the handout):</p>
+      <ul>
+        <li>a maximum number of generations, or</li>
+        <li>no improvement of the best fitness for a set number of generations (<b>stagnation</b>), or</li>
+        <li>a target fitness is reached.</li>
+      </ul>
+      <p>The population mean stays below the best: mutation keeps throwing in worse chromosomes, which is the price of exploration.</p>
+    </div>
+  </div>
+  <aside class="notes">
+Step 6: convergence. The plot shows one run of a genetic algorithm with 20 chromosomes on our mountain. The purple line is the best chromosome of each generation; with elitism it never goes down. It rises from about 800 m in the random population to 1250 m, the highest peak, within a handful of generations, and stays there. The dashed line is the mean of the population, and the shaded band is the range from worst to best chromosome.
+As the population converges, the chromosomes gather around the best peak. The mean stays below the best because mutation keeps creating some poorer chromosomes: the price of continued exploration.
+When do we stop? The handout gives the usual criteria: a maximum number of generations, or stagnation: the best fitness has not improved for a set number of generations. Sometimes a target value is known. PyGAD supports all of these: num_generations, and stop_criteria such as saturate_15 for 15 generations without improvement.
+Note that convergence of a GA does not prove that we found the global optimum: the population may have converged onto a local peak.
+  </aside>
+</section>
+
+<!-- ============================================================ 22 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">5</p>
+  <h1>A genetic algorithm on the mountain</h1>
+  <aside class="notes">All the building blocks together, generation by generation, on the 3-D mountain.</aside>
+</section>
+
+<!-- ============================================================ 23 -->
+<section>
+  <h2><span class="num">5.1</span>Watch the population climb</h2>
+  <p class="terms"><span>selection</span><span>crossover</span><span>mutation</span><span>elitism</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.42fr) minmax(0,1fr);gap:18px">
+    <svg class="dg" id="gam-svg" viewBox="0 0 680 440" role="img" aria-label="A 3-D sketch of the mountain range with the chromosomes of the genetic algorithm as points on its surface. Parents are purple, children orange, mutated children green; a flag marks the best point found."></svg>
+    <div class="stack">
+      <div class="wbar"><button type="button" class="wbtn run" id="gam-next">next step</button><button type="button" class="wbtn run" id="gam-gen">next generation</button><button type="button" class="wbtn" id="gam-five">+5 generations</button><button type="button" class="wbtn" id="gam-reset">new population</button></div>
+      <div class="wstat" id="gam-step" style="font-size:15px;line-height:1.4"></div>
+      <div class="wstat" id="gam-best" style="font-size:15px"></div>
+      <table class="iters" id="gam-tab" style="font-size:12.5px"></table>
+    </div>
+  </div>
+  <aside class="notes">
+Now everything together on the mountain. The 3-D sketch is our mountain range; each red point is one chromosome (x, y) sitting on the surface at its height h(x, y). Population of 12, 6 parents, 2 elites, mutation probability 0.3.
+Generation 0: 12 random points scattered over the range. Press next step and follow the five steps.
+1, evaluate and rank: the table lists the chromosomes from highest to lowest.
+2, select: the top 6 become parents, in purple; the other 6 fade out.
+3, crossover: each pair of parents A and B produces two children, orange: one with x from A and y from B, the other with x from B and y from A. The dashed lines show where each child got its genes: purple from parent A, blue from B. Notice the children appear at completely new places on the mountain, at the intersection of the parents' coordinates: if one parent is directly south of the peak and another directly west of it, one child lands right on the peak.
+4, mutation: some genes are nudged at random; the green arrows show the moves.
+5, new generation: the two best parents survive unchanged, gold rings, and join the 10 children. Rank again.
+Press next generation a few times: within a few generations the population gathers on the highest peak and the flag, the best so far, sits on the summit. Press new population and repeat: usually the GA finds the highest peak, but sometimes the population converges on a lower one, especially with a population as small as 12. A metaheuristic improves the odds; it does not give a guarantee.
+  </aside>
+</section>
+
+<!-- ============================================================ 24 -->
+<section>
+  <h2><span class="num">5.2</span>The GA is a discrete search</h2>
+  <p class="terms"><span>discrete search</span><span>repeatability</span><span>random seed</span><span>hybrid</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px">
+    <div class="stack">
+      <img class="imgfig" src="assets/img/w8-ten-runs.png" alt="Left: the best answers of 10 runs of the GA on the mountain map; nine are on the highest peak, one on its shoulder. Right: zoom on the summit; the nine answers are scattered within about 0.05 km of the true peak at (6.5, 6.0).">
+      <p class="small" style="margin:0;font-size:.55em">10 runs, 20 chromosomes, 40 generations each. Nine land within about 0.05 km of the summit, all at different points; run 8 stalls on the shoulder at 1023 m.</p>
+    </div>
+    <div class="stack" style="font-size:.62em">
+      <p>Gradient methods <b>move</b> a point in small, continuous steps until the slope is zero.</p>
+      <p>Crossover does not change numbers, it <b>exchanges</b> them: children are made of values that already exist. New values only come from random mutation jumps. The GA <b>samples</b> the landscape in discrete jumps.</p>
+      <p>Consequences on a continuous problem like the mountain:</p>
+      <ul>
+        <li>10 runs give 10 <b>different</b> answers: close, but not the same;</li>
+        <li>the answer is near the optimum, not exactly on it;</li>
+        <li>use <code>random_seed</code> to make a run repeatable.</li>
+      </ul>
+      <p class="callout" style="font-size:1em">Tip: polish the GA’s answer with a gradient method (a <b>hybrid</b>): the GA finds the right peak, the gradient climbs to its exact top.</p>
+    </div>
+  </div>
+  <aside class="notes">
+An important property of the genetic algorithm, highlighted in the handout. Gradient descent moves one point in small continuous steps, guided by the slope, until the slope is exactly zero: it converges to the exact top, to many decimal places.
+The genetic algorithm works differently: crossover does not change numbers, it exchanges them. Every gene of a child is copied from a parent. New values only appear through mutation, which makes random jumps. So the GA samples the landscape in discrete jumps rather than sliding continuously.
+Consequence: run the GA ten times on the same continuous problem and you get ten different answers. The figure: 10 runs on the mountain. Nine end within about 0.05 km of the summit, each at a slightly different point, none exactly on it; and run 8 got stuck on the shoulder of the mountain at 1023 m, because its population lost diversity before reaching the top.
+So: on continuous problems the GA gives a good approximate answer, not an exact one. Use a random seed to make a run repeatable, and run it several times to check. A common practical trick is a hybrid: use the GA to find the right peak, then polish its answer with a gradient method, for example scipy.optimize.minimize starting from the GA's best chromosome.
+On truly discrete problems, catalogue sizes, integers, yes/no choices, this property is not a weakness at all: it is exactly what we want.
+  </aside>
+</section>
+
+<!-- ============================================================ 25 -->
+<section class="divider" data-background-color="#68246D">
+  <p class="dnum">6</p>
+  <h1>Genetic algorithms in Python: PyGAD</h1>
+  <aside class="notes">A library does the bookkeeping; we supply the fitness function and the settings.</aside>
+</section>
+
+<!-- ============================================================ 26 -->
+<section>
+  <h2><span class="num">6.1</span>The PyGAD library</h2>
+  <p class="terms"><span>pygad.GA</span><span>fitness_func</span><span>run()</span><span>best_solution()</span></p>
+  <div class="cols" style="grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px">
+    <table class="t compact" style="font-size:.56em">
+      <thead><tr><th>Argument of <code>pygad.GA(…)</code></th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>fitness_func</code></td><td>function <code>f(ga_instance, solution, solution_idx)</code> returning the fitness</td></tr>
+        <tr><td><code>num_genes</code></td><td>genes per chromosome = number of variables</td></tr>
+        <tr><td><code>sol_per_pop</code></td><td>population size</td></tr>
+        <tr><td><code>num_generations</code></td><td>maximum number of generations</td></tr>
+        <tr><td><code>num_parents_mating</code></td><td>number of parents selected</td></tr>
+        <tr><td><code>init_range_low</code>, <code>init_range_high</code></td><td>range of the random initial genes</td></tr>
+        <tr><td><code>gene_space</code></td><td>allowed values or range of each gene (optional)</td></tr>
+        <tr><td><code>parent_selection_type</code></td><td><code>"sss"</code>, <code>"rws"</code> (roulette), <code>"rank"</code>, <code>"tournament"</code>, …</td></tr>
+        <tr><td><code>keep_elitism</code></td><td>number of elite chromosomes</td></tr>
+        <tr><td><code>crossover_type</code></td><td><code>"single_point"</code>, <code>"two_points"</code>, <code>"uniform"</code></td></tr>
+        <tr><td><code>mutation_type</code>, <code>mutation_percent_genes</code></td><td><code>"random"</code>, …; percentage of genes mutated</td></tr>
+        <tr><td><code>random_seed</code></td><td>makes a run repeatable</td></tr>
+      </tbody>
+    </table>
+    <div class="stack" style="font-size:.62em">
+      <p>Install once: <code>pip install pygad</code> (in a notebook: <code>%pip install pygad</code>).</p>
+      <p>Three steps: create a <code>pygad.GA</code> object, call <code>.run()</code>, read <code>.best_solution()</code>, which returns the best chromosome, its fitness and its index.</p>
+      <p class="callout" style="font-size:1em"><b>PyGAD maximises the fitness</b>, unlike <code>scipy.optimize</code>, which minimises. To minimise \(f\), return \(-f\) from the fitness function.</p>
+    </div>
+  </div>
+  <aside class="notes">
+PyGAD is an open-source Python library for genetic algorithms, the one used in the handout. Install it once with pip install pygad, or percent pip install pygad inside a notebook; on these slides it is installed automatically.
+The whole algorithm is one object, pygad.GA, configured with keyword arguments. The table lists the important ones, and they map directly onto today's building blocks: the fitness function; the number of genes; the population size, sol_per_pop; the number of generations; the number of parents; the range of the random initial population; optionally gene_space to restrict genes to a range or a list of allowed values; the selection type: steady-state, roulette wheel, rank, tournament and others; the number of elites; the crossover type; the mutation type and the percentage of genes to mutate; and a random seed.
+The fitness function must have three parameters: the GA object, the solution (a NumPy array of genes) and its index in the population. It returns one number.
+Then call run, and best_solution, which returns the best chromosome, its fitness and its index.
+The most important warning, from the handout: PyGAD maximises the fitness. SciPy minimises. To minimise a function f, return minus f, and change the sign back when you print the result.
+  </aside>
+</section>
+
+<!-- ============================================================ 27 -->
+<section>
+  <h2><span class="num">6.2</span>Minimising a bumpy function with PyGAD</h2>
+  <p class="terms"><span>fitness = −f</span><span>rank selection</span><span>single-point crossover</span></p>
+  <p class="formula" style="font-size:.62em">\(f(x, y) = (x-\pi)^2 + (y-\tfrac{\pi}{2})^2 + \sin(3x+\tfrac{\pi}{3}) + \sin(4y-\tfrac{\pi}{4})\, e^{-((x-3)^2+(y-3)^2)}\)</p>
+  <div class="py side xs" data-hint="PyGAD installs on the first run" style="--code-w:62%"><pre>
+import numpy as np
+import pygad
+
+def fitness(ga_instance, solution, solution_idx):
+    x, y = solution
+    f = ((x - np.pi)**2 + (y - np.pi/2)**2 + np.sin(3*x + np.pi/3)
+         + np.sin(4*y - np.pi/4) * np.exp(-((x - 3)**2 + (y - 3)**2)))
+    return -f                       # PyGAD maximises: maximise -f to minimise f
+
+ga_instance = pygad.GA(num_generations=200, num_parents_mating=10,
+                       sol_per_pop=12, num_genes=2, fitness_func=fitness,
+                       init_range_low=-10, init_range_high=10,
+                       parent_selection_type="rank", keep_elitism=1,
+                       crossover_type="single_point", mutation_type="random",
+                       mutation_percent_genes=50, random_seed=1,
+                       suppress_warnings=True)
+ga_instance.run()
+solution, solution_fitness, solution_idx = ga_instance.best_solution()
+print("best (x, y) =", np.round(solution, 4))
+print("minimum f   =", round(-solution_fitness, 4))
+print("found in generation", ga_instance.best_solution_generation)
+</pre></div>
+  <aside class="notes">
+The handout's example: minimise this bumpy function of two variables. It is a bowl, (x − π)² + (y − π/2)², plus sine ripples, and a bump near (3, 3). It has several local minima: at about (1.69, 1.56), (3.25, 2.79) and the global minimum at about (3.28, 1.55), where f = −1.0608. Gradient descent started in the wrong place ends in one of the local minima.
+The code: the fitness function receives the solution, a NumPy array with two genes, x and y, computes f and returns minus f, because PyGAD maximises.
+The GA: 12 chromosomes, 2 genes, 10 parents, 200 generations; initial genes between −10 and 10; rank selection; one elite; single-point crossover; random mutation of 50 per cent of the genes, which for two genes means one gene per child. (The handout uses 10 per cent, which is less than one gene; PyGAD then warns and mutates one gene anyway.) random_seed makes the run repeatable; suppress_warnings hides PyGAD's warnings.
+Run it: best (x, y) ≈ (3.283, 1.556), f ≈ −1.0606, very close to the global minimum: the GA was not fooled by the local minima. Remember to flip the sign of the fitness when printing.
+  </aside>
+</section>
+
+<!-- ============================================================ 28 -->
+<section>
+  <h2><span class="num">6.3</span>Ten runs, ten answers</h2>
+  <p class="terms"><span>repeat runs</span><span>random seed</span><span>discrete search</span></p>
+  <div class="py side xs" data-hint="no random_seed: every run differs" style="--code-w:62%"><pre>
+import numpy as np
+import pygad
+
+def fitness(ga_instance, solution, solution_idx):
+    x, y = solution
+    f = ((x - np.pi)**2 + (y - np.pi/2)**2 + np.sin(3*x + np.pi/3)
+         + np.sin(4*y - np.pi/4) * np.exp(-((x - 3)**2 + (y - 3)**2)))
+    return -f
+
+print("run       x        y        f(x, y)")
+for run in range(1, 11):
+    ga_instance = pygad.GA(num_generations=100, num_parents_mating=10,
+                           sol_per_pop=12, num_genes=2, fitness_func=fitness,
+                           init_range_low=-10, init_range_high=10,
+                           parent_selection_type="rank", keep_elitism=1,
+                           mutation_percent_genes=50, suppress_warnings=True)
+    ga_instance.run()
+    s, fit, _ = ga_instance.best_solution()
+    print("%3d  %8.4f %8.4f %10.5f" % (run, s[0], s[1], -fit))
+</pre></div>
+  <p class="small" style="margin-top:8px;font-size:.55em">Exact minimum: \(x^* = 3.2799\), \(y^* = 1.5500\), \(f^* = -1.06076\). Every run lands near it, never exactly on it, and never twice at the same point.</p>
+  <aside class="notes">
+The discreteness of the GA, live. The same GA ten times, without a random seed, 100 generations each.
+Run it: ten different answers, all close to the global minimum at (3.2799, 1.5500), f = −1.06076, which I found by polishing with scipy.optimize. Typically x varies in the second decimal place and f in the fourth. Run the box again: ten new answers.
+This is exactly the behaviour described in the handout: run the GA several times and the optimum changes slightly each time, because the GA explores by exchanging and jumping, not by sliding down a slope. For a continuous problem the answer is good, not exact. For the exact value, use the GA's best solution as the starting point of a gradient method, a hybrid.
+Exercise for later: add a random_seed to make each run repeatable, and compare the spread for 100 generations and for 500 generations.
+  </aside>
+</section>
+
+<!-- ============================================================ 29 -->
+<section>
+  <h2>Summary</h2>
+  <p class="terms"><span>metaheuristic</span><span>chromosome</span><span>selection</span><span>crossover</span><span>mutation</span><span>elitism</span></p>
+  <div class="cols" style="font-size:.7em">
+    <ul>
+      <li>Gradient methods are <b>local</b>: they find the peak nearest the start, need derivatives and a tuned learning rate, and cannot handle discrete variables.</li>
+      <li><b>Heuristics</b> are problem-specific rules of thumb; <b>metaheuristics</b> are general search strategies that need only the value of the objective.</li>
+      <li>The <b>GA</b> evolves a <b>population</b> of <b>chromosomes</b> (one gene per variable) by <b>selection</b>, <b>crossover</b> and <b>mutation</b>, with <b>elitism</b>.</li>
+    </ul>
+    <ul>
+      <li>Exploration (diversity, mutation, large populations) against exploitation (selection pressure, elitism).</li>
+      <li>The GA is a <b>discrete</b> search: repeated runs give slightly different answers; polish with a gradient method if needed.</li>
+      <li><b>PyGAD</b>: <code>pygad.GA(…)</code>, <code>.run()</code>, <code>.best_solution()</code>. It <b>maximises</b>: return \(-f\) to minimise.</li>
+    </ul>
+  </div>
+  <aside class="notes">
+Recap. Gradient methods are local searches: they need derivatives and a learning rate and find the peak nearest the start. Heuristics are rules of thumb for one problem; metaheuristics are general-purpose search strategies that need only the value of the objective function.
+The genetic algorithm: a population of chromosomes, one gene per decision variable, evolves through selection of the fittest, crossover of pairs of parents, random mutation, and elitism, generation after generation, until it converges.
+Its parameters balance exploration and exploitation. It is a discrete search: on continuous problems, repeated runs give slightly different answers.
+In Python: PyGAD. Remember it maximises.
+Next week: particle swarm optimisation, a metaheuristic designed for continuous problems, which moves particles with velocities instead of exchanging genes.
+  </aside>
+</section>
+
+<!-- ============================================================ 30 -->
+<section>
+  <h2>Practise</h2>
+  <p class="terms"><span>notebook</span><span>notes</span></p>
+  <div class="cols" style="font-size:.74em">
+    <div class="stack">
+      <p><b>Notes:</b> <a href="week8.html">week8.html</a>, with a genetic algorithm written from scratch in NumPy, the mountain, and an engineering design with catalogue sizes.</p>
+      <p><b>Notebook:</b> <code>week8_genetic_algorithm.ipynb</code> on the notes page: every example, plus exercises.</p>
+      <p><b>Next week:</b> particle swarm optimisation.</p>
+    </div>
+    <div class="panel">
+      <h3>Try at home</h3>
+      <ul style="font-size:.88em">
+        <li>Change <code>parent_selection_type</code> to <code>"tournament"</code> and <code>"rws"</code>. Does the answer improve?</li>
+        <li>Set <code>keep_elitism=0</code>. What happens to the best fitness?</li>
+        <li>Minimise the same function with <code>scipy.optimize.minimize</code> from (2, 2) and from (3, 3). Compare with the GA.</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+Before next week: the notes page has a complete genetic algorithm written from scratch in about 30 lines of NumPy, so you can see every step in code; the mountain example; and an engineering design problem with catalogue sizes, where the discrete nature of the GA becomes an advantage. The notebook has all the code and exercises.
+The exercises on the right explore the parameters: selection type, elitism, and a comparison with last week's gradient method, which gets trapped in a local minimum from some starting points.
+  </aside>
+</section>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/notes/notes.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="assets/slides.js"></script>
+<script src="assets/slides-week8.js"></script>
+</body>
+</html>

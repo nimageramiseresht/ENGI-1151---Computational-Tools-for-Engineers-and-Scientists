@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Week 8: Advanced optimisation, the genetic algorithm | ENGI 1151</title>
+<meta name="description" content="Lecture notes with live, in-browser Python: why metaheuristics, heuristic and metaheuristic methods, the genetic algorithm (chromosomes, selection, crossover, mutation, elitism, convergence), a GA in NumPy, and the PyGAD library.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  /* week 8 page */
+  .part-head { border-top: 3px solid var(--accent); padding-top: 1rem; }
+  .part-head .tag { font-family: var(--mono); color: var(--accent); margin: 0; font-size: .95rem; letter-spacing: .04em; }
+  .part-head h2 { margin: .2rem 0 .75rem; font-size: 2.1rem; }
+  .tbl-wrap { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+  table.tbl { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+  table.tbl th, table.tbl td { border-bottom: 1px solid var(--grid); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  table.tbl th { border-bottom: 2px solid var(--ink); font-family: var(--mono); font-weight: 500; color: var(--muted); white-space: nowrap; }
+  table.tbl td code { white-space: nowrap; }
+  figure.plot { margin: -1.5rem 0 1.75rem; border: 1px solid var(--grid); border-top: 0; background: var(--paper); padding: 0.75rem 1rem 0.6rem; }
+  figure.plot img { display: block; width: 100%; max-width: 640px; height: auto; margin: 0 auto; background: #fff; border-radius: 2px; }
+  figure.plot figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+  figure.plot::before { content: "Output"; display: block; font: 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  pre.out + figure.plot::before { content: none; }
+  figure.pic { margin: 1.5rem 0; }
+  figure.pic img { display: block; width: 100%; max-width: 660px; height: auto; margin: 0 auto; background: #fff; border: 1px solid var(--grid); }
+  figure.pic figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.5; }
+  figure.pic svg { display: block; width: 100%; max-width: 660px; height: auto; margin: 0 auto; }
+  figure.pic svg text { font-family: var(--mono); fill: var(--ink); }
+  figure.pic svg .muted { fill: var(--muted); }
+  figure.pic svg .acc { fill: var(--accent); }
+  figure.pic svg .good { fill: var(--good, #1F7A4D); }
+  figure.pic svg .bad { fill: var(--bad, #B3261E); }
+  figure.pic svg .line { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  figure.pic svg .line-acc { stroke: var(--accent); stroke-width: 2.4; fill: none; }
+  figure.pic svg .line-muted { stroke: var(--muted); stroke-width: 1.2; fill: none; stroke-dasharray: 4 4; }
+  figure.pic svg .line-bad { stroke: var(--bad, #B3261E); stroke-width: 2.4; fill: none; }
+  figure.pic svg .fill-bad { fill: var(--bad, #B3261E); }
+  figure.pic svg .fill-good { fill: var(--good, #1F7A4D); }
+  figure.pic svg .fill-acc { fill: var(--accent); }
+  figure.pic svg .fill-ink { fill: var(--ink); }
+  figure.pic svg .grid { stroke: var(--grid); stroke-width: 1; }
+  figure.pic svg .blue { fill: #1D5FA3; }
+  figure.pic svg .area { fill: var(--accent-soft, #EFE6F0); stroke: var(--accent); stroke-width: 2; }
+  .math, .tbl-wrap { position: relative; }   /* clip the hidden MathML inside scrolling boxes */
+  .dg .good { fill: var(--good); } .dg .bad { fill: var(--bad); } .dg .line-bad { stroke: var(--bad); stroke-width: 2.4; fill: none; }
+</style>
+</head>
+
+<body data-week="8" data-notebook="week8_genetic_algorithm.ipynb">
+
+<div id="topbar"><noscript><a href="index.html">ENGI 1151 · all weeks</a></noscript></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="course"><strong>ENGI 1151</strong> Computational Tools for Engineers and Scientists, week 8</p>
+      <h1>Advanced optimisation: the genetic algorithm</h1>
+      <p class="lede">When the slope is a poor guide, let a population of solutions evolve: selection, crossover and mutation, generation after generation.</p>
+      <p class="byline">Dr Nima Gerami Seresht <br>Department of Engineering <br>Durham University</p>
+    </div>
+    <figure class="sim-panel" style="margin:0">
+      <canvas id="hero-sim" aria-label="Animated contour map of a mountain range with a population of points evolving by a genetic algorithm: the points gather on the highest peak over the generations" role="img"></canvas>
+      <div class="sim-readout" aria-live="off">
+        <span>generation <output id="sim-n">0</output></span>
+        <span>best height <output id="sim-fit">–</output></span>
+        <button type="button" id="sim-replay">Run again</button>
+      </div>
+      <figcaption class="sim-caption">A genetic algorithm on the mountain range of this week. Each dot is a chromosome (x, y); every generation the fittest are selected, crossed over and mutated. The gold dot is the best so far. Some runs end on a lower peak: a metaheuristic improves the odds, it gives no guarantee.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li class="plain"><a href="#part-a">Part A · Theory</a></li>
+      <li><a data-n="1" href="#why">Why metaheuristics?</a></li>
+      <li><a data-n="2" href="#meta">Heuristics, metaheuristics</a></li>
+      <li><a data-n="3" href="#ga">The genetic algorithm</a></li>
+      <li><a data-n="4" href="#chromosomes">Chromosomes, population</a></li>
+      <li><a data-n="5" href="#crossover">Crossover</a></li>
+      <li><a data-n="6" href="#operators">Selection, elitism, mutation</a></li>
+      <li><a data-n="7" href="#convergence">Convergence</a></li>
+      <li><a data-n="8" href="#ga-numpy">A GA in NumPy</a></li>
+      <li><a data-n="9" href="#discrete">A discrete search</a></li>
+      <li class="plain"><a href="#part-b">Part B · Application</a></li>
+      <li><a data-n="10" href="#pygad">PyGAD</a></li>
+      <li><a data-n="11" href="#beam">A beam from a catalogue</a></li>
+      <li><a data-n="12" href="#further-reading">Further reading</a></li>
+      <li class="plain"><a href="#notebook">Practice notebook</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="part-a" class="part-head">
+      <p class="tag">PART A</p>
+      <h2>Searching with a population</h2>
+      <p>Last week we found optima with calculus and with gradient-based iterative methods. This week we look at where those methods fail and at a completely different way of searching: the <strong>genetic algorithm</strong>, which borrows its idea from evolution by natural selection. Next week we meet a second method of the same family, particle swarm optimisation. The interactive figures (hikers trapped on local peaks, crossover, and a genetic algorithm climbing a 3-D mountain) are in the <a href="week8-slides.html">lecture slides</a>.</p>
+    </section>
+
+<!-- =========================================================== 1 -->
+    <section id="why">
+      <h2><span class="num">1</span>Why do we need metaheuristic methods?</h2>
+      <p>The methods of last week fall into two groups. <strong>Analytical methods</strong> solve \(f'(x) = 0\) or \(\nabla f = \mathbf{0}\) by hand: exact, but only for formulas we can differentiate and equations we can solve. <strong>Iterative methods</strong> such as gradient descent and Newton’s method start from a guess and improve it step by step using the local slope: they work for many more problems, and they are computationally efficient. But they are <strong>local searches</strong>: like a hiker in fog, they only feel the ground under their feet.</p>
+
+      <h3>1.1 Trap 1: local optima</h3>
+      <p>This week we use a mountain range with four peaks, defined on a 10 km × 10 km square. The highest peak, 1250 m, is at \((x, y) = (6.5, 6.0)\) km; three lower peaks, of 1005, 901 and 804 m, are local optima. The height is a sum of four smooth bumps on a base of 150 m:</p>
+      <div class="math">$$h(x, y) = 150 + \sum_{i=1}^{4} a_i \exp\!\left(-\frac{(x - c_{x,i})^2 + (y - c_{y,i})^2}{2 w_i^2}\right)$$</div>
+      <p>Drop hikers at random places and let each one climb by gradient ascent, \(\mathbf{x}_{k+1} = \mathbf{x}_k + \alpha\nabla h(\mathbf{x}_k)\). Each hiker ends at the top of the hill on which it started, the peak whose <strong>basin of attraction</strong> contains the starting point:</p>
+      <figure class="pic">
+        <img src="assets/img/w8-trapped.png" alt="Contour map of the mountain range with 12 gradient ascent paths from random white starting points. Five green paths end on the highest peak; seven red paths end on the three lower peaks." width="682" height="594" loading="lazy">
+        <figcaption>Gradient ascent from 12 random starts: 5 reach the highest peak (green), 7 stop on a lower peak (red). Every hiker that stops believes it is at the top: every step from a peak goes down.</figcaption>
+      </figure>
+      <p>The same experiment in code, with 1000 random starts. The function <code>climb</code> is last week’s gradient method in two dimensions:</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">def climb(x, y, alpha=0.001, n_max=300):
+    """Gradient ascent; x and y can be arrays of many starting points."""
+    for k in range(n_max):
+        gx, gy = grad_h(x, y)
+        x = np.clip(x + alpha * gx, 0, 10)
+        y = np.clip(y + alpha * gy, 0, 10)
+    return x, y
+
+rng = np.random.default_rng(1)
+x0, y0 = rng.uniform(0, 10, (2, 1000))      # 1000 random starting points
+x, y = climb(x0, y0)                        # all hikers climb at once
+
+tops = np.array([h(cx, cy) for cx, cy, a, w in PEAKS])
+ends = h(x, y)
+for top in tops:
+    print("peak of %4.0f m: %3d hikers" % (top, np.sum(abs(ends - top) &lt; 5)))
+print("still on a slope:", np.sum(np.min(abs(ends[:, None] - tops), axis=1) &gt;= 5))</code></pre>
+</figure>
+<pre class="out">peak of 1250 m: 370 hikers
+peak of 1005 m: 212 hikers
+peak of  901 m: 258 hikers
+peak of  804 m: 160 hikers
+still on a slope: 0</pre>
+      <p>Only about a third of the starting points lead to the highest peak. A single run of a gradient method is a gamble whose odds depend on the size of the basins, which we do not know in advance.</p>
+
+      <h3>1.2 More reasons gradients struggle</h3>
+      <ul>
+        <li><strong>The learning rate must be tuned.</strong> Too large and the steps overshoot narrow peaks and bounce around them, or diverge; too small and the method crawls. For this mountain, \(\alpha = 0.003\) already overshoots the narrow peaks, while \(\alpha = 0.00005\) leaves many hikers half-way after 150 steps. The right value depends on the steepness and curvature of the landscape.</li>
+        <li><strong>Derivatives may not exist.</strong> Many engineering objectives are the output of a simulation (a Monte Carlo model, a finite element analysis, a traffic simulation): we get a number, but no formula to differentiate. Numerical derivatives of a noisy simulation are unreliable and costly.</li>
+        <li><strong>Many decisions are discrete.</strong> The number of turbines, a pipe size from a catalogue, a steel grade, whether to add stiffeners: there is no slope between one catalogue size and the next.</li>
+        <li><strong>Rough landscapes.</strong> Noise, flat plateaus where the gradient is zero, step changes in cost and penalty terms make the local slope a poor guide to the optimum.</li>
+      </ul>
+      <p>We want a method that searches the <strong>whole</strong> landscape, needs only the <strong>value</strong> of the objective, and handles any type of variable. Metaheuristics offer exactly that.</p>
+    </section>
+
+<!-- =========================================================== 2 -->
+    <section id="meta">
+      <h2><span class="num">2</span>Heuristic and metaheuristic methods</h2>
+      <p>Traditional optimisation approaches can be broadly classified into four groups:</p>
+      <ul>
+        <li><strong>Analytical methods</strong>: a closed-form solution derived with calculus or algebra. They find the absolute optimum of the function, the global optimum.</li>
+        <li><strong>Iterative methods</strong>: an algorithm refines an initial guess step by step, for example gradient descent and Newton’s method. They are computationally efficient, but they may get stuck at local optima.</li>
+        <li><strong>Heuristic methods</strong>: problem-specific strategies or rules of thumb that aim to find good solutions efficiently, usually based on domain knowledge. They produce feasible solutions quickly, but they are not guaranteed to be optimal and do not adapt to other types of problem. Examples: “space wind turbines about seven rotor diameters apart along the prevailing wind”; “always drive to the nearest unvisited site” for a delivery route.</li>
+        <li><strong>Metaheuristic methods</strong>: high-level, general-purpose search frameworks that guide the search towards optimal or near-optimal solutions. They are problem-independent and can be applied to a wide range of optimisation tasks.</li>
+      </ul>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th></th><th>Analytical</th><th>Iterative</th><th>Heuristic</th><th>Metaheuristic</th></tr></thead>
+        <tbody>
+          <tr><td>Needs a formula</td><td>yes</td><td>yes, or a gradient</td><td>no</td><td>no: values of \(f\) only</td></tr>
+          <tr><td>Needs derivatives</td><td>yes</td><td>yes</td><td>no</td><td>no</td></tr>
+          <tr><td>Search</td><td>exact</td><td>local, from one point</td><td>by a rule</td><td>global, with a population</td></tr>
+          <tr><td>Result</td><td>global optimum</td><td>a local optimum</td><td>a good solution</td><td>near-global optimum</td></tr>
+          <tr><td>Variable types</td><td>continuous</td><td>continuous</td><td>any</td><td>any: real, integer, yes/no</td></tr>
+          <tr><td>Problem-specific</td><td>yes</td><td>no</td><td>yes</td><td>no</td></tr>
+          <tr><td>Cost</td><td>tiny</td><td>low</td><td>tiny</td><td>many evaluations of \(f\)</td></tr>
+        </tbody>
+      </table></div>
+      <p>A metaheuristic treats the objective function as a <strong>black box</strong>: give it a candidate solution, get back a number. Metaheuristics do not guarantee the global optimum, like analytical methods do, but they often provide very good solutions within a reasonable time. The price is computing time: thousands of evaluations of the objective instead of a few gradient steps.</p>
+
+      <h3>2.1 A family of nature-inspired methods</h3>
+      <ul>
+        <li><strong>Genetic algorithm (GA)</strong>: inspired by natural selection and genetics. A solution is encoded as a chromosome, and the search proceeds by combining (“marrying”) highly ranked chromosomes. This week.</li>
+        <li><strong>Particle swarm optimisation (PSO)</strong>: inspired by birds flocking and fish schooling. Particles move through the search space with a velocity, which suits continuous problems. Next week.</li>
+        <li><strong>Simulated annealing (SA)</strong>: based on the annealing of metals. It explores the decision space by sometimes accepting worse solutions, with a probability that decreases over time.</li>
+        <li><strong>Ant colony optimisation (ACO)</strong>: inspired by ants depositing pheromones; it works well for combinatorial problems such as routing and scheduling.</li>
+      </ul>
+
+      <h3>2.2 Exploration and exploitation</h3>
+      <p>A central concept in all metaheuristics is the balance between two forces. <strong>Exploration</strong> means searching broadly across the decision space to discover new, potentially better regions; it prevents the algorithm from getting stuck in poor local optima. <strong>Exploitation</strong> means refining and improving solutions in promising regions already found; it ensures convergence towards high-quality solutions. Excessive exploration wastes evaluations without converging; excessive exploitation leads to <strong>premature convergence</strong> onto a suboptimal solution. Every parameter of the genetic algorithm moves this balance one way or the other.</p>
+    </section>
+
+<!-- =========================================================== 3 -->
+    <section id="ga">
+      <h2><span class="num">3</span>The genetic algorithm: evolution as optimisation</h2>
+      <p>In nature, individuals that suit their environment better survive longer and have more offspring: survival of the fittest. Offspring inherit a mix of their parents’ genes, with occasional random mutations, and over many generations the population adapts to its environment. John Holland turned this process into a search algorithm in the 1970s: replace the individual by a candidate solution, its genes by the decision variables, and its fitness by the value of the objective function. A population of solutions then evolves, generation after generation, towards better solutions.</p>
+      <div class="tbl-wrap"><table class="tbl" style="max-width:40rem">
+        <thead><tr><th>Biology</th><th>Genetic algorithm</th></tr></thead>
+        <tbody>
+          <tr><td>individual</td><td>a candidate solution</td></tr>
+          <tr><td>chromosome</td><td>the encoded solution, a string of values</td></tr>
+          <tr><td>gene</td><td>one decision variable</td></tr>
+          <tr><td>population</td><td>a set of candidate solutions</td></tr>
+          <tr><td>fitness</td><td>the value of the objective function</td></tr>
+          <tr><td>survival of the fittest</td><td>selection of the best as parents</td></tr>
+          <tr><td>mating and inheritance</td><td>crossover of two parents</td></tr>
+          <tr><td>mutation</td><td>a random change to a gene</td></tr>
+          <tr><td>generation</td><td>one iteration of the algorithm</td></tr>
+        </tbody>
+      </table></div>
+      <p>The algorithm, as an ordered list of steps:</p>
+      <ol class="steps">
+        <li>Generate a random <strong>population</strong> of chromosomes.</li>
+        <li>Evaluate the <strong>fitness</strong> of every chromosome with the objective function, and rank the chromosomes.</li>
+        <li>If the stopping criterion is met (a maximum number of generations, or no improvement of the best fitness for a set number of generations), stop and report the best chromosome.</li>
+        <li><strong>Select</strong> parents for the next generation: fitter chromosomes are more likely to be chosen.</li>
+        <li><strong>Cross over</strong> pairs of parents: each pair gives birth to two children.</li>
+        <li><strong>Mutate</strong> a few genes of the children at random.</li>
+        <li>Copy the best chromosomes unchanged (<strong>elitism</strong>); together with the children they form the new generation. Go back to step 2.</li>
+      </ol>
+      <figure class="diagram">
+<svg class="dg" style="max-width:420px;margin:0 auto" viewBox="0 0 560 420" role="img" aria-label="Flowchart of a genetic algorithm: random initial population, evaluate fitness, stop if converged, otherwise select parents, crossover, mutation, elitism, new generation, and back to evaluation.">
+      <g font-size="14" text-anchor="middle">
+        <rect class="box-acc" x="170" y="8" width="220" height="40" rx="20"/><text x="280" y="33">random initial population</text>
+        <rect class="box" x="170" y="72" width="220" height="40" rx="5"/><text x="280" y="97">evaluate fitness, rank</text>
+        <polygon class="box-acc" points="280,132 380,162 280,192 180,162"/><text x="280" y="167">converged?</text>
+        <rect class="box-acc" x="430" y="142" width="120" height="40" rx="20"/><text x="490" y="167">best solution</text>
+        <rect class="box" x="170" y="214" width="220" height="40" rx="5"/><text x="280" y="239">select the parents</text>
+        <rect class="box" x="170" y="270" width="220" height="40" rx="5"/><text x="280" y="295">crossover → children</text>
+        <rect class="box" x="170" y="326" width="220" height="40" rx="5"/><text x="280" y="351">mutate some genes</text>
+        <rect class="box" x="170" y="380" width="220" height="36" rx="5"/><text x="280" y="403">elitism: keep the best</text>
+      </g>
+      <path class="line" d="M280 48 V70 M280 112 V130 M280 192 V212 M280 254 V268 M280 310 V324 M280 366 V378"/>
+      <path class="line" d="M380 162 H428"/><text x="398" y="154" font-size="12" class="good" font-weight="700">yes</text>
+      <text x="290" y="207" font-size="12" class="bad" font-weight="700">no</text>
+      <path class="line-acc" d="M170 398 H110 V92 H168"/><path class="fill-acc" d="M168 92 l-9 -5 v10 z"/>
+      <text x="100" y="250" font-size="13" class="acc" text-anchor="middle" transform="rotate(-90 100 250)">next generation</text>
+    </svg>
+        <figcaption>The genetic algorithm as a loop. One pass through the loop is one generation; the population size stays the same.</figcaption>
+      </figure>
+      <div class="note">
+        <p><span class="label">Differs from the handout.</span> The handout’s algorithm ends with “go back to step 1”, where step 1 creates a random population. The loop must go back to the evaluation of the fitness (step 2 here): a new random population every generation would throw away all the progress made. The handout also introduces an objective function “with 10 inputs” but writes a sum of five terms, \(f = \sum_{i=1}^{5} w_i x_i\); either way, the number of genes equals the number of inputs.</p>
+      </div>
+      <p>The genetic algorithm is highly flexible: chromosomes can represent any type of variable (real numbers, integers, yes/no values, items from a list), and the algorithm needs only the value of the objective, so it works for non-differentiable problems, for global search, and also for problems with several objectives.</p>
+    </section>
+
+<!-- =========================================================== 4 -->
+    <section id="chromosomes">
+      <h2><span class="num">4</span>Chromosomes and the population</h2>
+      <p>The first step in any genetic algorithm is the <strong>encoding</strong>: how a solution is written as a chromosome. A <strong>chromosome</strong> is one candidate solution written as a string of values; each value is a <strong>gene</strong>, one decision variable. The length of the chromosome, its number of genes, equals the number of decision variables.</p>
+      <ul>
+        <li>The mountain: two genes, the position \(x\) and \(y\). The chromosome <code>[6.2, 4.8]</code> is the point \(x = 6.2\) km, \(y = 4.8\) km, and its fitness is the height there, \(h(6.2, 4.8) = 850\) m.</li>
+        <li>A beam design could have four genes of different types: width and depth in mm (numbers from a list of standard sizes), steel grade (S275 or S355) and stiffeners (yes or no).</li>
+        <li>A truss with 30 members whose cross-sections we choose: 30 genes.</li>
+      </ul>
+      <p>In Python, a population is conveniently a NumPy array with one chromosome per row, of shape (population size, number of genes). <strong>Random initialisation</strong> draws each gene uniformly between its lower and upper bounds, and the fitness of the whole population is one vectorised call:</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">rng = np.random.default_rng(3)
+pop_size, n_genes = 12, 2
+population = rng.uniform(0, 10, (pop_size, n_genes))   # generation 0
+
+fitness = h(population[:, 0], population[:, 1])       # height of every chromosome
+order = np.argsort(fitness)[::-1]                      # rank: best first
+print("rank   x (km)   y (km)   h (m)")
+for rank, i in enumerate(order, start=1):
+    print("%3d   %6.2f   %6.2f   %6.0f" % (rank, *population[i], fitness[i]))
+
+X, Y = np.meshgrid(np.linspace(0, 10, 200), np.linspace(0, 10, 200))
+plt.contourf(X, Y, h(X, Y), levels=16, cmap="Purples")
+plt.plot(population[:, 0], population[:, 1], "o", color="#B3261E", mec="white", ms=9)
+plt.xlabel("x (km)"); plt.ylabel("y (km)"); plt.gca().set_aspect("equal")
+plt.title("Generation 0: 12 random chromosomes")
+plt.show()</code></pre>
+</figure>
+<pre class="out">rank   x (km)   y (km)   h (m)
+  1     2.98     3.14      764
+  2     8.01     5.82      704
+  3     2.84     6.49      589
+  4     4.31     5.87      437
+  5     7.35     1.14      356
+  6     6.96     2.93      314
+  7     3.91     5.17      296
+  8     4.79     1.60      252
+  9     0.86     2.37      225
+ 10     7.38     9.56      170
+ 11     0.94     4.33      167
+ 12     0.01     9.73      151</pre>
+<figure class="plot"><img src="assets/img/w8-population-code.png" alt="Contour map of the mountain range with 12 red points scattered at random: the initial population" width="443" height="462" loading="lazy"><figcaption>Generation 0: twelve random chromosomes on the mountain map.</figcaption></figure>
+      <p>The random points are spread over the whole landscape: unlike a gradient method, the GA starts by <strong>exploring</strong> everywhere. The <strong>population size</strong> controls the balance between exploration and cost. A small population is cheap per generation but has little <strong>diversity</strong> (variety of genes) and can converge quickly onto a local peak; a large population explores better but costs more. The cost of a run is roughly</p>
+      <div class="math">$$\text{evaluations of } f \approx \text{population size} \times \text{number of generations}$$</div>
+      <p>With 50 chromosomes and 100 generations that is 5000 evaluations: nothing for a formula, but a lot if one evaluation is a one-minute simulation. Typical population sizes are 20 to 200.</p>
+    </section>
+
+<!-- =========================================================== 5 -->
+    <section id="crossover">
+      <h2><span class="num">5</span>Crossover</h2>
+      <p><strong>Crossover</strong> is the main operator of the genetic algorithm, the equivalent of mating. Two parent chromosomes are cut at a random point, between two genes, and the parts after the cut are exchanged: two parents give birth to two children. The idea is that if one parent has good values for some genes and the other parent for the rest, one of the children may inherit the good parts of both and be better than either parent; selection then keeps the good children.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def single_point_crossover(a, b, rng):
+    """Cut both parents at the same random point and swap the tails."""
+    cut = rng.integers(1, len(a))            # between gene cut and gene cut + 1
+    child1 = np.concatenate([a[:cut], b[cut:]])
+    child2 = np.concatenate([b[:cut], a[cut:]])
+    return child1, child2, cut
+
+rng = np.random.default_rng(4)
+A = np.array([2.4, 7.1, 0.8, 5.5, 3.3, 9.0])
+B = np.array([6.6, 1.9, 4.2, 8.7, 0.5, 2.8])
+c1, c2, cut = single_point_crossover(A, B, rng)
+print("cut after gene", cut)
+print("child 1:", c1)
+print("child 2:", c2)</code></pre>
+</figure>
+<pre class="out">cut after gene 4
+child 1: [2.4 7.1 0.8 5.5 0.5 2.8]
+child 2: [6.6 1.9 4.2 8.7 3.3 9. ]</pre>
+      <p>Note that crossover creates <strong>no new numbers</strong>: every gene of a child is copied from one of its parents, in the same position. This matters in section 9.</p>
+
+      <h3>5.1 Crossover operators</h3>
+      <ul>
+        <li><strong>Single-point</strong>: one random cut; the tails are exchanged (above, and in the handout).</li>
+        <li><strong>Two-point</strong>: two random cuts; the segment between them is exchanged. Genes in the middle of the chromosome mix more easily.</li>
+        <li><strong>Uniform</strong>: each gene is taken from parent A or parent B at random, like a coin toss.</li>
+      </ul>
+      <figure class="diagram">
+<svg class="dg" viewBox="0 0 1160 300" role="img" aria-label="Three crossover types for six-gene parents: single-point exchanges the tails after one cut; two-point exchanges the middle segment between two cuts; uniform chooses each gene from either parent at random.">
+    <g font-size="15" font-weight="700" class="acc"><text x="10" y="22">Single-point</text><text x="400" y="22">Two-point</text><text x="790" y="22">Uniform</text></g>
+    <g><text x="10" y="56" font-size="12" class="muted">A</text><text x="10" y="94" font-size="12" class="muted">B</text><rect x="30" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="56" y="56" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="86" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="112" y="56" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="142" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="168" y="56" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="198" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="224" y="56" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="254" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="280" y="56" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="310" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="336" y="56" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="30" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="56" y="94" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="86" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="112" y="94" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="142" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="168" y="94" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="198" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="224" y="94" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="254" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="280" y="94" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="310" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="336" y="94" font-size="14" text-anchor="middle" fill="#fff">b6</text><path d="M196 28 V 112" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="5 4"/><path class="line" d="M196 120 V 146"/><path class="fill-ink" d="M196 150 l-5 -9 h10 z"/><text x="10" y="178" font-size="12" class="muted">1</text><text x="10" y="216" font-size="12" class="muted">2</text><rect x="30" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="56" y="178" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="86" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="112" y="178" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="142" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="168" y="178" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="198" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="224" y="178" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="254" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="280" y="178" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="310" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="336" y="178" font-size="14" text-anchor="middle" fill="#fff">b6</text><rect x="30" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="56" y="216" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="86" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="112" y="216" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="142" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="168" y="216" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="198" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="224" y="216" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="254" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="280" y="216" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="310" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="336" y="216" font-size="14" text-anchor="middle" fill="#fff">a6</text><text x="400" y="56" font-size="12" class="muted">A</text><text x="400" y="94" font-size="12" class="muted">B</text><rect x="420" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="446" y="56" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="476" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="502" y="56" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="532" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="558" y="56" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="588" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="614" y="56" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="644" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="670" y="56" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="700" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="726" y="56" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="420" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="446" y="94" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="476" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="502" y="94" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="532" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="558" y="94" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="588" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="614" y="94" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="644" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="670" y="94" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="700" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="726" y="94" font-size="14" text-anchor="middle" fill="#fff">b6</text><path d="M530 28 V 112" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="5 4"/><path d="M642 28 V 112" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="5 4"/><path class="line" d="M586 120 V 146"/><path class="fill-ink" d="M586 150 l-5 -9 h10 z"/><text x="400" y="178" font-size="12" class="muted">1</text><text x="400" y="216" font-size="12" class="muted">2</text><rect x="420" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="446" y="178" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="476" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="502" y="178" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="532" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="558" y="178" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="588" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="614" y="178" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="644" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="670" y="178" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="700" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="726" y="178" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="420" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="446" y="216" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="476" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="502" y="216" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="532" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="558" y="216" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="588" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="614" y="216" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="644" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="670" y="216" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="700" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="726" y="216" font-size="14" text-anchor="middle" fill="#fff">b6</text><text x="790" y="56" font-size="12" class="muted">A</text><text x="790" y="94" font-size="12" class="muted">B</text><rect x="810" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="836" y="56" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="866" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="892" y="56" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="922" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="948" y="56" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="978" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="1004" y="56" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="1034" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="1060" y="56" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="1090" y="36" width="52" height="30" rx="4" fill="#68246D"/><text x="1116" y="56" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="810" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="836" y="94" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="866" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="892" y="94" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="922" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="948" y="94" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="978" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1004" y="94" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="1034" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1060" y="94" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="1090" y="74" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1116" y="94" font-size="14" text-anchor="middle" fill="#fff">b6</text><path class="line" d="M976 120 V 146"/><path class="fill-ink" d="M976 150 l-5 -9 h10 z"/><text x="790" y="178" font-size="12" class="muted">1</text><text x="790" y="216" font-size="12" class="muted">2</text><rect x="810" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="836" y="178" font-size="14" text-anchor="middle" fill="#fff">a1</text><rect x="866" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="892" y="178" font-size="14" text-anchor="middle" fill="#fff">b2</text><rect x="922" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="948" y="178" font-size="14" text-anchor="middle" fill="#fff">b3</text><rect x="978" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="1004" y="178" font-size="14" text-anchor="middle" fill="#fff">a4</text><rect x="1034" y="158" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1060" y="178" font-size="14" text-anchor="middle" fill="#fff">b5</text><rect x="1090" y="158" width="52" height="30" rx="4" fill="#68246D"/><text x="1116" y="178" font-size="14" text-anchor="middle" fill="#fff">a6</text><rect x="810" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="836" y="216" font-size="14" text-anchor="middle" fill="#fff">b1</text><rect x="866" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="892" y="216" font-size="14" text-anchor="middle" fill="#fff">a2</text><rect x="922" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="948" y="216" font-size="14" text-anchor="middle" fill="#fff">a3</text><rect x="978" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1004" y="216" font-size="14" text-anchor="middle" fill="#fff">b4</text><rect x="1034" y="196" width="52" height="30" rx="4" fill="#68246D"/><text x="1060" y="216" font-size="14" text-anchor="middle" fill="#fff">a5</text><rect x="1090" y="196" width="52" height="30" rx="4" fill="#1D5FA3"/><text x="1116" y="216" font-size="14" text-anchor="middle" fill="#fff">b6</text></g>
+    <g font-size="12" class="muted"><text x="10" y="290">tails after the cut are exchanged</text><text x="400" y="290">the segment between the cuts is exchanged</text><text x="790" y="290">each gene from A or B, like a coin toss</text></g>
+  </svg>
+        <figcaption>Three crossover operators on two six-gene parents A (purple) and B (blue), giving children 1 and 2. Red dashed lines are the cut points.</figcaption>
+      </figure>
+      <p>Crossover is usually applied with a <strong>crossover probability</strong> of 0.7 to 0.9; otherwise the children are copies of their parents. With only <strong>two genes</strong>, as on the mountain, there is a single possible cut, between \(x\) and \(y\): the children of parents \((x_A, y_A)\) and \((x_B, y_B)\) are always \((x_A, y_B)\) and \((x_B, y_A)\). If one parent stands due south of the summit and the other due west of it, one child lands right on the summit.</p>
+      <div class="exercise">
+        <p><span class="label">Exercise 5.1.</span> Write <code>two_point_crossover(a, b, rng)</code> and <code>uniform_crossover(a, b, rng)</code> and apply them to the parents <code>A</code> and <code>B</code> above.</p>
+<figure class="code sandbox" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+rng = np.random.default_rng(4)
+A = np.array([2.4, 7.1, 0.8, 5.5, 3.3, 9.0])
+B = np.array([6.6, 1.9, 4.2, 8.7, 0.5, 2.8])
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+def two_point_crossover(a, b, rng):
+    i, j = np.sort(rng.choice(np.arange(1, len(a)), size=2, replace=False))
+    child1, child2 = a.copy(), b.copy()
+    child1[i:j], child2[i:j] = b[i:j], a[i:j]      # swap the middle segment
+    return child1, child2
+
+def uniform_crossover(a, b, rng):
+    from_a = rng.random(len(a)) &lt; 0.5              # coin toss for every gene
+    return np.where(from_a, a, b), np.where(from_a, b, a)
+
+rng = np.random.default_rng(4)
+A = np.array([2.4, 7.1, 0.8, 5.5, 3.3, 9.0])
+B = np.array([6.6, 1.9, 4.2, 8.7, 0.5, 2.8])
+print("two-point:", *two_point_crossover(A, B, rng))
+print("uniform:  ", *uniform_crossover(A, B, rng))</code></pre>
+</figure>
+<pre class="out">two-point: [2.4 7.1 0.8 8.7 0.5 9. ] [6.6 1.9 4.2 5.5 3.3 2.8]
+uniform:   [6.6 7.1 4.2 5.5 0.5 9. ] [2.4 1.9 0.8 8.7 3.3 2.8]</pre>
+        <p>In both cases, every position of child 1 holds the gene of A or of B at that position, and child 2 holds the other one.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 6 -->
+    <section id="operators">
+      <h2><span class="num">6</span>Selection, elitism and mutation</h2>
+
+      <h3>6.1 Fitness and selection</h3>
+      <p>The <strong>fitness</strong> of a chromosome is the value of the objective function at that chromosome, the height on the mountain. The GA always <em>maximises</em> fitness; to minimise a cost \(f\), use \(-f\) as the fitness. <strong>Selection</strong> decides which chromosomes become parents. The common methods:</p>
+      <ul>
+        <li><strong>Truncation (top-ranked)</strong>: rank the population and keep the best \(N_p\) chromosomes as parents. This is the method of the handout: simple and strong.</li>
+        <li><strong>Roulette wheel (fitness-proportionate)</strong>: chromosome \(i\) is chosen with probability \(p_i = F_i / \sum_j F_j\), proportional to its fitness \(F_i\). Every chromosome has a chance; it needs positive fitness values, and one very fit chromosome can dominate the wheel.</li>
+        <li><strong>Rank</strong>: like the roulette wheel, but the probability depends on the rank, not on the fitness value. With 6 chromosomes the best gets 6/21 of the wheel and the worst 1/21, whatever the fitness values are.</li>
+        <li><strong>Tournament</strong>: pick \(k\) chromosomes at random; the fittest of them becomes a parent. Repeat for each parent. Larger \(k\) means stronger pressure.</li>
+      </ul>
+      <p><strong>Selection pressure</strong> is how strongly the best are favoured. High pressure (truncation, large tournaments) converges quickly but loses diversity; low pressure (roulette wheel, rank) keeps weaker chromosomes in the game and explores more.</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">rng = np.random.default_rng(3)
+population = rng.uniform(0, 10, (12, 2))
+fitness = h(population[:, 0], population[:, 1])
+
+def tournament(population, fitness, n_parents, k, rng):
+    """Pick k chromosomes at random, keep the fittest; repeat n_parents times."""
+    parents = []
+    for _ in range(n_parents):
+        entrants = rng.choice(len(population), size=k, replace=False)
+        winner = entrants[np.argmax(fitness[entrants])]
+        parents.append(population[winner])
+    return np.array(parents)
+
+def roulette(population, fitness, n_parents, rng):
+    """Choose parents with probability proportional to their fitness."""
+    p = fitness / fitness.sum()
+    return population[rng.choice(len(population), size=n_parents, p=p)]
+
+print("population mean height: %.0f m" % fitness.mean())
+for name, parents in [("tournament k=3", tournament(population, fitness, 6, 3, rng)),
+                      ("roulette wheel", roulette(population, fitness, 6, rng))]:
+    print("%-15s parents' mean height: %.0f m" % (name, h(parents[:, 0], parents[:, 1]).mean()))</code></pre>
+</figure>
+<pre class="out">population mean height: 369 m
+tournament k=3  parents' mean height: 408 m
+roulette wheel  parents' mean height: 426 m</pre>
+      <p>Both methods choose parents that are, on average, higher than the population, without simply discarding the rest.</p>
+
+      <h3>6.2 Elitism</h3>
+      <p>Crossover and mutation are random: the children of the best chromosome may all be worse than it, and without protection the best solution found so far can be lost. <strong>Elitism</strong> copies the best one or few chromosomes, the <strong>elite</strong>, unchanged into the next generation (the handout: “the best chromosome from every generation will be passed directly to the next generation”). With elitism the best fitness can never decrease from one generation to the next.</p>
+      <figure class="pic">
+        <img src="assets/img/w8-elitism.png" alt="Best height per generation, averaged over 100 runs: with elitism it rises to about 1215 m; without elitism it levels off around 1145 m." width="704" height="396" loading="lazy">
+        <figcaption>The GA of section 8 on the mountain, 100 runs with and without two elites. Without elitism, good chromosomes are lost and the best height stalls lower.</figcaption>
+      </figure>
+      <p>One or two elites are usually enough; too many copies of the same few chromosomes reduce diversity.</p>
+
+      <h3>6.3 Mutation</h3>
+      <p>Crossover only reshuffles genes that already exist in the population: if no chromosome has a good value of \(y\), crossover can never create one. <strong>Mutation</strong> changes a few genes of the children at random, bringing new values into the population and maintaining <strong>diversity</strong>. For real-valued genes:</p>
+      <ul>
+        <li><strong>random reset</strong>: replace the gene by a new random value in its range (a big jump, exploration);</li>
+        <li><strong>random perturbation</strong>: add a small random number, for example from \(N(0, \sigma^2)\) (a small step, exploitation). PyGAD’s default random mutation adds a number between −1 and 1.</li>
+      </ul>
+      <p>Yes/no genes are flipped; genes chosen from a list take another item. The <strong>mutation rate</strong> is small, typically 1 to 10 % of the genes. Too high, and children no longer resemble their parents: the GA becomes a random search. Too low, and the population collapses onto copies of one chromosome.</p>
+<figure class="code" data-runnable>
+<pre><code class="language-python">import numpy as np
+
+rng = np.random.default_rng(0)
+children = np.array([[6.3, 5.1], [2.4, 7.1], [8.0, 6.0], [6.4, 2.6]])
+
+p_mutation, step = 0.3, 1.0
+mutate = rng.random(children.shape) &lt; p_mutation        # which genes mutate
+noise = rng.normal(0, step, children.shape)            # random perturbation
+mutated = np.clip(children + mutate * noise, 0, 10)    # stay inside the map
+print(mutate)
+print(np.round(mutated, 2))</code></pre>
+</figure>
+<pre class="out">[[False  True]
+ [ True  True]
+ [False False]
+ [False False]]
+[[6.3  3.83]
+ [1.78 7.14]
+ [8.   6.  ]
+ [6.4  2.6 ]]</pre>
+    </section>
+
+<!-- =========================================================== 7 -->
+    <section id="convergence">
+      <h2><span class="num">7</span>Convergence and stopping</h2>
+      <p>Over the generations the population <strong>converges</strong>: the chromosomes gather around the best region and the best fitness levels off. The figure follows one run of the GA of section 8 (20 chromosomes) on the mountain: the best chromosome climbs from about 800 m to the highest peak within five generations; the population mean stays below it, because mutation keeps creating some poorer chromosomes, which is the price of continued exploration.</p>
+      <figure class="pic">
+        <img src="assets/img/w8-convergence.png" alt="Best height and population mean against generation. The best rises from 800 m to 1250 m within 5 generations and stays flat; the mean rises and fluctuates below it; the shaded range of the population narrows." width="704" height="418" loading="lazy">
+        <figcaption>Convergence of a genetic algorithm: the best chromosome (with elitism, it never decreases), the population mean and the range of the population.</figcaption>
+      </figure>
+      <p>Common <strong>stopping criteria</strong>:</p>
+      <ul>
+        <li>a maximum number of generations;</li>
+        <li>no improvement of the best fitness for a set number of generations (<strong>stagnation</strong>);</li>
+        <li>a target fitness is reached, when a good value is known.</li>
+      </ul>
+      <p>Convergence does not prove that the global optimum has been found: the population may have converged onto a local peak (<strong>premature convergence</strong>). Running the GA several times, with different random seeds, is the simplest check.</p>
+    </section>
+
+<!-- =========================================================== 8 -->
+    <section id="ga-numpy">
+      <h2><span class="num">8</span>A complete genetic algorithm in NumPy</h2>
+      <p>All the building blocks fit in one function of about twenty lines. The chromosomes are points \((x, y)\) on the mountain and the fitness is the height. Selection is truncation (the top half of the population become parents), crossover swaps the \(y\) genes of two random parents, each gene mutates with probability 0.3 by a normal random step of 1 km, and the two best chromosomes are kept unchanged.</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">def genetic_algorithm(pop_size=20, n_parents=10, n_elite=2, generations=40,
+                      p_mutation=0.3, step=1.0, seed=None, verbose=False):
+    rng = np.random.default_rng(seed)
+    pop = rng.uniform(0, 10, (pop_size, 2))                 # 1. random population
+    for gen in range(generations):
+        fit = h(pop[:, 0], pop[:, 1])                       # 2. fitness
+        order = np.argsort(fit)[::-1]
+        pop, fit = pop[order], fit[order]                   #    rank, best first
+        if verbose and gen % 5 == 0:
+            print("generation %2d: best (%.3f, %.3f), h = %6.1f m, mean %6.1f m"
+                  % (gen, pop[0, 0], pop[0, 1], fit[0], fit.mean()))
+        parents = pop[:n_parents]                           # 4. selection: top-ranked
+        children = []
+        while len(children) &lt; pop_size - n_elite:
+            i, j = rng.choice(n_parents, size=2, replace=False)
+            a, b = parents[i], parents[j]
+            children += [[a[0], b[1]], [b[0], a[1]]]        # 5. crossover: swap y
+        children = np.array(children[:pop_size - n_elite])
+        mutate = rng.random(children.shape) &lt; p_mutation    # 6. mutation
+        children = np.clip(children + mutate * rng.normal(0, step, children.shape), 0, 10)
+        pop = np.vstack([pop[:n_elite], children])          # 7. elitism + children
+    fit = h(pop[:, 0], pop[:, 1])
+    best = np.argmax(fit)
+    return pop[best], fit[best]
+
+x_best, h_best = genetic_algorithm(seed=4, verbose=True)
+print("best chromosome:", np.round(x_best, 3), "height %.1f m" % h_best)
+print("evaluations of h:", 20 * 41)</code></pre>
+</figure>
+<pre class="out">generation  0: best (5.221, 6.412), h =  799.0 m, mean  366.0 m
+generation  5: best (6.453, 6.010), h = 1249.3 m, mean 1023.9 m
+generation 10: best (6.453, 6.010), h = 1249.3 m, mean 1177.2 m
+generation 15: best (6.453, 6.010), h = 1249.3 m, mean 1101.3 m
+generation 20: best (6.482, 6.010), h = 1249.9 m, mean 1153.8 m
+generation 25: best (6.498, 6.010), h = 1250.0 m, mean 1111.0 m
+generation 30: best (6.498, 6.010), h = 1250.0 m, mean 1162.3 m
+generation 35: best (6.498, 6.010), h = 1250.0 m, mean 1144.4 m
+best chromosome: [6.498 6.01 ] height 1250.0 m
+evaluations of h: 820</pre>
+      <figure class="pic">
+        <img src="assets/img/w8-ga-3d.png" alt="3-D sketch of the mountain range with chromosomes as points on the surface: purple parents, orange children joined to their parents by dashed lines, and green mutated children; a flag marks the best point so far." width="1424" height="922" loading="lazy">
+        <figcaption>One generation on the 3-D mountain (interactive on the lecture slides): the purple parents produce orange children at the crossing points of their coordinates, \((x_A, y_B)\) and \((x_B, y_A)\); green points are children after mutation.</figcaption>
+      </figure>
+      <p>The numbers in the comments are the steps of the algorithm in section 3 (step 3, the stopping criterion, is simply the fixed number of generations). The figure shows a population of 12 at four moments of a run: random at generation 0, then gathering around the highest peak.</p>
+      <figure class="pic">
+        <img src="assets/img/w8-generations.png" alt="Four contour maps of the mountain at generations 0, 1, 3 and 10 of a genetic algorithm with 12 chromosomes. At generation 0 the points are scattered; by generation 10 they are clustered on the highest peak; the best is shown in gold." width="1300" height="360" loading="lazy">
+        <figcaption>A population of 12 chromosomes at generations 0, 1, 3 and 10. The gold point is the best chromosome of the generation.</figcaption>
+      </figure>
+      <div class="exercise">
+        <p><span class="label">Exercise 8.1.</span> Run <code>genetic_algorithm</code> 100 times (seeds 0 to 99) for population sizes 10, 20 and 40 (with <code>n_parents</code> half the population), and count how often the best height exceeds 1245 m. How does the success rate compare with the third of gradient ascent runs that reached the top in section 1? What does a larger population cost?</p>
+<figure class="code sandbox" data-runnable data-setup="mountain">
+<pre><code class="language-python"># h(x, y) is ready to use; paste genetic_algorithm here first
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">def genetic_algorithm(pop_size=20, n_parents=10, n_elite=2, generations=40,
+                      p_mutation=0.3, step=1.0, seed=None):
+    rng = np.random.default_rng(seed)
+    pop = rng.uniform(0, 10, (pop_size, 2))
+    for gen in range(generations):
+        fit = h(pop[:, 0], pop[:, 1])
+        order = np.argsort(fit)[::-1]
+        pop = pop[order]
+        parents = pop[:n_parents]
+        children = []
+        while len(children) &lt; pop_size - n_elite:
+            i, j = rng.choice(n_parents, size=2, replace=False)
+            a, b = parents[i], parents[j]
+            children += [[a[0], b[1]], [b[0], a[1]]]
+        children = np.array(children[:pop_size - n_elite])
+        mutate = rng.random(children.shape) &lt; p_mutation
+        children = np.clip(children + mutate * rng.normal(0, step, children.shape), 0, 10)
+        pop = np.vstack([pop[:n_elite], children])
+    fit = h(pop[:, 0], pop[:, 1])
+    return pop[np.argmax(fit)], fit.max()
+
+for size in [10, 20, 40]:
+    hits = sum(genetic_algorithm(pop_size=size, n_parents=size // 2, seed=s)[1] &gt; 1245
+               for s in range(100))
+    print("population %2d: %3d of 100 runs reach the highest peak, %4d evaluations per run"
+          % (size, hits, size * 41))</code></pre>
+</figure>
+<pre class="out">population 10:  67 of 100 runs reach the highest peak,  410 evaluations per run
+population 20:  85 of 100 runs reach the highest peak,  820 evaluations per run
+population 40:  94 of 100 runs reach the highest peak, 1640 evaluations per run</pre>
+        <p>Larger populations find the highest peak much more often than single gradient ascent runs, but each run costs proportionally more evaluations of the objective: exploration costs computing time.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 9 -->
+    <section id="discrete">
+      <h2><span class="num">9</span>The genetic algorithm is a discrete search</h2>
+      <p>Gradient methods move a single point in small, continuous steps, guided by the slope, until the slope is zero: they converge to the exact optimum, to many decimal places. The genetic algorithm works differently. Crossover does not change numbers, it <strong>exchanges</strong> them: every gene of a child is copied from a parent. New values only appear through mutation, which makes random jumps. The GA <strong>samples</strong> the landscape in discrete jumps rather than sliding continuously.</p>
+      <p>The consequence on a continuous problem: run the GA ten times and you get ten different answers, close to each other but not the same.</p>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">def genetic_algorithm(pop_size=20, n_parents=10, n_elite=2, generations=40,
+                      p_mutation=0.3, step=1.0, seed=None):
+    rng = np.random.default_rng(seed)
+    pop = rng.uniform(0, 10, (pop_size, 2))
+    for gen in range(generations):
+        fit = h(pop[:, 0], pop[:, 1])
+        pop = pop[np.argsort(fit)[::-1]]
+        parents = pop[:n_parents]
+        children = []
+        while len(children) &lt; pop_size - n_elite:
+            i, j = rng.choice(n_parents, size=2, replace=False)
+            a, b = parents[i], parents[j]
+            children += [[a[0], b[1]], [b[0], a[1]]]
+        children = np.array(children[:pop_size - n_elite])
+        mutate = rng.random(children.shape) &lt; p_mutation
+        children = np.clip(children + mutate * rng.normal(0, step, children.shape), 0, 10)
+        pop = np.vstack([pop[:n_elite], children])
+    fit = h(pop[:, 0], pop[:, 1])
+    return pop[np.argmax(fit)], fit.max()
+
+print("run     x (km)    y (km)    h (m)")
+for run in range(10):
+    best, height = genetic_algorithm(seed=run)
+    print("%3d   %7.3f   %7.3f   %7.1f" % (run + 1, best[0], best[1], height))</code></pre>
+</figure>
+<pre class="out">run     x (km)    y (km)    h (m)
+  1     6.477     6.013    1249.8
+  2     6.518     6.001    1249.9
+  3     6.501     6.055    1249.0
+  4     6.534     5.993    1249.6
+  5     6.498     6.010    1250.0
+  6     6.485     6.006    1249.9
+  7     6.496     5.994    1250.0
+  8     6.292     5.141    1023.2
+  9     6.495     5.998    1250.0
+ 10     6.480     5.995    1249.9</pre>
+      <figure class="pic">
+        <img src="assets/img/w8-ten-runs.png" alt="Left: the best answers of the 10 runs on the mountain map; nine are on the highest peak, one on its shoulder. Right: zoom on the summit; the nine answers are scattered within about 0.05 km of the peak at (6.5, 6.0)." width="1056" height="484" loading="lazy">
+        <figcaption>The best answers of the ten runs. Nine lie within about 0.05 km of the summit, each at a different point and none exactly on it; run 8 stalled on the shoulder of the mountain at 1023 m, because its population lost diversity before reaching the top.</figcaption>
+      </figure>
+      <p>So on continuous problems the GA gives a good approximate answer, not an exact one, and repeated runs differ. Three practical consequences:</p>
+      <ul>
+        <li>Fix the random seed (<code>seed</code> here, <code>random_seed</code> in PyGAD) when a run must be repeatable.</li>
+        <li>Run the GA several times and compare the answers: if they disagree strongly, the population or the number of generations is too small.</li>
+        <li>For an exact answer, <strong>polish</strong> the GA’s best chromosome with a gradient method (a <strong>hybrid</strong>): the GA finds the right peak, the gradient method climbs to its exact top.</li>
+      </ul>
+<figure class="code" data-runnable data-setup="mountain">
+<pre><code class="language-python">from scipy.optimize import minimize
+
+ga_best = np.array([6.477, 6.013])                 # the answer of run 1 above
+res = minimize(lambda p: -h(p[0], p[1]), ga_best)  # maximise h = minimise -h
+print("GA answer:       (%.3f, %.3f), h = %.2f m" % (*ga_best, h(*ga_best)))
+print("after polishing: (%.4f, %.4f), h = %.2f m" % (*res.x, -res.fun))</code></pre>
+</figure>
+<pre class="out">GA answer:       (6.477, 6.013), h = 1249.79 m
+after polishing: (6.4999, 6.0000), h = 1250.01 m</pre>
+      <p>On truly discrete problems (catalogue sizes, integers, yes/no choices) this property is not a weakness: it is exactly what we need, as section 11 shows.</p>
+    </section>
+
+<!-- =========================================================== Part B -->
+    <section id="part-b" class="part-head">
+      <p class="tag">PART B</p>
+      <h2>Genetic algorithms in practice</h2>
+      <p>The PyGAD library, applied first to the handout’s test function and then to an engineering design with standard sizes.</p>
+    </section>
+
+<!-- =========================================================== 10 -->
+    <section id="pygad">
+      <h2><span class="num">10</span>The PyGAD library</h2>
+      <p><strong>PyGAD</strong> is an open-source Python library for genetic algorithms. Install it once with <code>pip install pygad</code> (or <code>%pip install pygad</code> in a Jupyter notebook; the live windows on this page install it automatically). The whole algorithm is one object, configured with keyword arguments that map directly onto the building blocks of Part A:</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Argument of <code>pygad.GA(…)</code></th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>fitness_func</code></td><td>a function <code>f(ga_instance, solution, solution_idx)</code> that returns the fitness of <code>solution</code> (a NumPy array of genes)</td></tr>
+          <tr><td><code>num_genes</code></td><td>number of genes per chromosome = number of decision variables</td></tr>
+          <tr><td><code>sol_per_pop</code></td><td>population size</td></tr>
+          <tr><td><code>num_generations</code></td><td>maximum number of generations</td></tr>
+          <tr><td><code>num_parents_mating</code></td><td>number of parents selected in each generation</td></tr>
+          <tr><td><code>init_range_low</code>, <code>init_range_high</code></td><td>range of the random genes of the initial population</td></tr>
+          <tr><td><code>gene_space</code></td><td>allowed values of each gene: a list of values, or a range <code>{"low": …, "high": …}</code></td></tr>
+          <tr><td><code>gene_type</code></td><td><code>float</code>, <code>int</code>, or one type per gene</td></tr>
+          <tr><td><code>parent_selection_type</code></td><td><code>"sss"</code> (steady-state, the default), <code>"rws"</code> (roulette wheel), <code>"sus"</code>, <code>"rank"</code>, <code>"random"</code>, <code>"tournament"</code></td></tr>
+          <tr><td><code>keep_elitism</code></td><td>number of elite chromosomes copied unchanged</td></tr>
+          <tr><td><code>crossover_type</code></td><td><code>"single_point"</code>, <code>"two_points"</code>, <code>"uniform"</code>, <code>"scattered"</code></td></tr>
+          <tr><td><code>mutation_type</code>, <code>mutation_percent_genes</code></td><td><code>"random"</code>, <code>"swap"</code>, …; percentage of the genes that mutate</td></tr>
+          <tr><td><code>stop_criteria</code></td><td>for example <code>"saturate_20"</code>: stop after 20 generations without improvement</td></tr>
+          <tr><td><code>random_seed</code></td><td>makes a run repeatable</td></tr>
+        </tbody>
+      </table></div>
+      <p>Then call <code>.run()</code> and read <code>.best_solution()</code>, which returns the best chromosome, its fitness and its index in the population; <code>.best_solution_generation</code> is the generation in which it was found.</p>
+      <div class="note">
+        <p><span class="label">PyGAD maximises.</span> Unlike <code>scipy.optimize</code>, which minimises, PyGAD <strong>maximises</strong> the fitness. To minimise a function \(f\), return \(-f\) from the fitness function, and change the sign back when reporting the result.</p>
+      </div>
+
+      <h3>10.1 Minimising a bumpy function</h3>
+      <p>The handout’s example: find the minimum of</p>
+      <div class="math">$$f(x, y) = (x - \pi)^2 + \left(y - \tfrac{\pi}{2}\right)^2 + \sin\!\left(3x + \tfrac{\pi}{3}\right) + \sin\!\left(4y - \tfrac{\pi}{4}\right) \exp\!\big(-((x - 3)^2 + (y - 3)^2)\big)$$</div>
+      <p>It is a bowl centred at \((\pi, \pi/2)\), with sine ripples and a bump near \((3, 3)\). It has several local minima, at about \((1.69, 1.56)\) with \(f = 1.93\) and \((3.25, 2.79)\) with \(f = -0.21\), and the global minimum at \((3.2799, 1.5500)\) with \(f = -1.06076\). A gradient method started near \((2, 2)\) or \((3, 3)\) ends in a local minimum.</p>
+      <figure class="pic">
+        <img src="assets/img/w8-test-function.png" alt="3-D surface of the test function over 0 to 5 in x and y: a bowl rising to over 20 at the corners, with ripples, and a red dot at the global minimum near (3.28, 1.55)." width="682" height="506" loading="lazy">
+        <figcaption>The test function of the handout; the red dot is the global minimum.</figcaption>
+      </figure>
+<figure class="code" data-runnable data-setup="pygad">
+<pre><code class="language-python">import numpy as np
+import pygad
+
+def fitness(ga_instance, solution, solution_idx):
+    x, y = solution
+    f = ((x - np.pi)**2 + (y - np.pi/2)**2 + np.sin(3*x + np.pi/3)
+         + np.sin(4*y - np.pi/4) * np.exp(-((x - 3)**2 + (y - 3)**2)))
+    return -f                       # PyGAD maximises: maximise -f to minimise f
+
+ga_instance = pygad.GA(num_generations=200, num_parents_mating=10,
+                       sol_per_pop=12, num_genes=2, fitness_func=fitness,
+                       init_range_low=-10, init_range_high=10,
+                       parent_selection_type="rank", keep_elitism=1,
+                       crossover_type="single_point", mutation_type="random",
+                       mutation_percent_genes=50, random_seed=1,
+                       suppress_warnings=True)
+ga_instance.run()
+solution, solution_fitness, solution_idx = ga_instance.best_solution()
+print("best (x, y) =", np.round(solution, 4))
+print("minimum f   =", round(-solution_fitness, 4))
+print("found in generation", ga_instance.best_solution_generation)
+ga_instance.plot_fitness(title="Best fitness (= -f) per generation")</code></pre>
+</figure>
+<pre class="out">best (x, y) = [3.2826 1.5561]
+minimum f   = -1.0606
+found in generation 64</pre>
+<figure class="plot"><img src="assets/img/w8-pygad-fitness.png" alt="Staircase plot of the best fitness per generation: it rises in steps during the first generations and then stays flat just above -1.07" width="580" height="472" loading="lazy"><figcaption>The best fitness (minus f) of each generation, from plot_fitness().</figcaption></figure>
+      <p>The GA was not fooled by the local minima: its answer is within about 0.006 of the global minimum in each coordinate. <code>plot_fitness()</code> plots the best fitness of each generation; with elitism it is a staircase that never goes down.</p>
+      <div class="note">
+        <p><span class="label">Differs from the handout.</span> The handout’s PyGAD code needs a few corrections. It uses <code>np</code> without <code>import numpy as np</code>. It defines <code>sol_per_pop = 8</code>, <code>num_genes</code>, <code>lb</code> and <code>ub</code> but then passes <code>sol_per_pop=12</code> and the numbers directly. With two genes, <code>mutation_percent_genes=10</code> selects less than one gene, so PyGAD warns and mutates one gene anyway; 50 % says the same thing without a warning. <code>init_range_low</code> and <code>init_range_high</code> only set the range of the <em>initial</em> population: mutation can later move genes outside \([-10, 10]\); to enforce bounds, use <code>gene_space=[{"low": -10, "high": 10}] * 2</code>. Finally, 1000 generations are many more than needed: the best solution stops improving after about 100.</p>
+      </div>
+
+      <h3>10.2 Ten runs, ten answers</h3>
+      <p>The discreteness of section 9 with PyGAD: the same GA ten times, without a random seed.</p>
+<figure class="code" data-runnable data-setup="pygad">
+<pre><code class="language-python">import numpy as np
+import pygad
+
+def fitness(ga_instance, solution, solution_idx):
+    x, y = solution
+    f = ((x - np.pi)**2 + (y - np.pi/2)**2 + np.sin(3*x + np.pi/3)
+         + np.sin(4*y - np.pi/4) * np.exp(-((x - 3)**2 + (y - 3)**2)))
+    return -f
+
+print("run       x        y        f(x, y)")
+for run in range(1, 11):
+    ga_instance = pygad.GA(num_generations=100, num_parents_mating=10,
+                           sol_per_pop=12, num_genes=2, fitness_func=fitness,
+                           init_range_low=-10, init_range_high=10,
+                           parent_selection_type="rank", keep_elitism=1,
+                           mutation_percent_genes=50, suppress_warnings=True)
+    ga_instance.run()
+    s, fit, _ = ga_instance.best_solution()
+    print("%3d  %8.4f %8.4f %10.5f" % (run, s[0], s[1], -fit))</code></pre>
+</figure>
+<pre class="out">run       x        y        f(x, y)
+  1    3.2710   1.5552   -1.06026
+  2    3.2794   1.5369   -1.06038
+  3    3.2798   1.5505   -1.06076
+  4    3.2845   1.5488   -1.06065
+  5    3.2660   1.5474   -1.05967
+  6    3.2749   1.5495   -1.06062
+  7    3.2665   1.5501   -1.05977
+  8    3.2782   1.5531   -1.06072
+  9    3.3006   1.5594   -1.05821
+ 10    3.2771   1.5531   -1.06070</pre>
+      <p>Every run lands near the global minimum \((3.2799, 1.5500)\), never exactly on it and never twice at the same point; run the window again for ten new answers. The handout’s conclusion: the GA makes discrete jumps within the decision space, and might not be ideal for problems with a continuous decision space, unless its answer is polished with a gradient method.</p>
+      <div class="exercise">
+        <p><span class="label">Exercise 10.1.</span> Repeat the ten runs with <code>parent_selection_type="tournament"</code>, then with <code>"rws"</code>, then with <code>keep_elitism=0</code>. For each setting, compute the mean and the worst \(f\) of the ten runs. Which setting is the most reliable?</p>
+<figure class="code sandbox" data-runnable data-setup="pygad">
+<pre><code class="language-python">import numpy as np
+import pygad
+
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable data-setup="pygad">
+<pre><code class="language-python">import numpy as np
+import pygad
+
+def fitness(ga_instance, solution, solution_idx):
+    x, y = solution
+    f = ((x - np.pi)**2 + (y - np.pi/2)**2 + np.sin(3*x + np.pi/3)
+         + np.sin(4*y - np.pi/4) * np.exp(-((x - 3)**2 + (y - 3)**2)))
+    return -f
+
+settings = {"rank, 1 elite":       dict(parent_selection_type="rank", keep_elitism=1),
+            "tournament, 1 elite": dict(parent_selection_type="tournament", keep_elitism=1),
+            "roulette, 1 elite":   dict(parent_selection_type="rws", keep_elitism=1),
+            "rank, no elitism":    dict(parent_selection_type="rank", keep_elitism=0)}
+for name, options in settings.items():
+    results = []
+    for run in range(10):
+        ga_instance = pygad.GA(num_generations=100, num_parents_mating=10,
+                               sol_per_pop=12, num_genes=2, fitness_func=fitness,
+                               init_range_low=-10, init_range_high=10,
+                               mutation_percent_genes=50, random_seed=run,
+                               suppress_warnings=True, **options)
+        ga_instance.run()
+        results.append(-ga_instance.best_solution()[1])
+    print("%-20s mean f = %8.5f, worst f = %8.5f" % (name, np.mean(results), np.max(results)))</code></pre>
+</figure>
+<pre class="out">rank, 1 elite        mean f = -1.06039, worst f = -1.05989
+tournament, 1 elite  mean f = -1.06043, worst f = -1.05947
+roulette, 1 elite    mean f = -1.05970, worst f = -1.05494
+rank, no elitism     mean f = -1.04671, worst f = -0.99445</pre>
+        <p>The differences between the selection methods are small on this problem; removing elitism makes the result clearly worse and less reliable, because the best solution found can be lost in a later generation. The roulette wheel (<code>"rws"</code>) needs positive fitness values to work as intended; with negative fitness values such as \(-f\), rank selection is the safer choice.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 11 -->
+    <section id="beam">
+      <h2><span class="num">11</span>Engineering example: a beam from a catalogue</h2>
+      <p>Week 7’s lightest beam (span 6 m, uniform load 20 kN/m, steel, allowable bending stress 165 MPa, deflection limit \(L/360\), stability limit \(d \le 6b\)) had a continuous optimum of 49 × 292 mm. A real beam is cut from standard sizes: here the width \(b\) comes in steps of 5 mm from 40 to 200 mm, and the depth \(d\) in steps of 10 mm from 100 to 600 mm. The variables are now <strong>discrete</strong>: there is no gradient, but for a genetic algorithm a list of allowed values is just a <code>gene_space</code>.</p>
+      <p>The constraints are handled with a <strong>penalty</strong>: a design that violates a constraint gets a large extra cost, proportional to the violation, so the GA learns to avoid it. With the bending moment \(M = wL^2/8\), the stress \(\sigma = 6M/(bd^2)\), the deflection \(\delta = 5wL^4/(384EI)\) with \(I = bd^3/12\), and the mass per metre \(m = 7850\,bd\) (kg/m, with \(b\), \(d\) in m):</p>
+      <div class="math">$$\text{fitness} = -\Big(m + 1000\big[\max(0, \tfrac{\sigma}{165} - 1) + \max(0, \tfrac{\delta}{L/360} - 1) + \max(0, \tfrac{d}{6b} - 1)\big]\Big)$$</div>
+<figure class="code" data-runnable data-setup="pygad">
+<pre><code class="language-python">import numpy as np
+import pygad
+
+L, w, E, sigma_allow = 6000.0, 20.0, 200000.0, 165.0   # mm, N/mm (= kN/m), MPa, MPa
+widths = list(range(40, 205, 5))                       # mm, standard sizes
+depths = list(range(100, 610, 10))                     # mm
+
+def beam(b, d):
+    """Mass (kg/m), bending stress (MPa) and mid-span deflection (mm)."""
+    M = w * L**2 / 8
+    sigma = 6 * M / (b * d**2)
+    delta = 5 * w * L**4 / (384 * E * b * d**3 / 12)
+    return 7850 * b * d * 1e-6, sigma, delta
+
+def fitness(ga_instance, solution, solution_idx):
+    b, d = solution
+    mass, sigma, delta = beam(b, d)
+    penalty = (max(0, sigma / sigma_allow - 1) + max(0, delta / (L / 360) - 1)
+               + max(0, d / (6 * b) - 1)) * 1000
+    return -(mass + penalty)                           # minimise the mass
+
+for run in range(5):
+    ga_instance = pygad.GA(num_generations=100, num_parents_mating=10,
+                           sol_per_pop=30, num_genes=2, fitness_func=fitness,
+                           gene_space=[widths, depths], gene_type=int,
+                           parent_selection_type="tournament", keep_elitism=2,
+                           mutation_percent_genes=50, random_seed=run,
+                           suppress_warnings=True)
+    ga_instance.run()
+    (b, d), fit, _ = ga_instance.best_solution()
+    mass, sigma, delta = beam(b, d)
+    print("run %d: b = %3d mm, d = %3d mm, mass %.1f kg/m, stress %.0f MPa, deflection %.1f mm"
+          % (run + 1, b, d, mass, sigma, delta))</code></pre>
+</figure>
+<pre class="out">run 1: b =  50 mm, d = 290 mm, mass 113.8 kg/m, stress 128 MPa, deflection 16.6 mm
+run 2: b =  50 mm, d = 290 mm, mass 113.8 kg/m, stress 128 MPa, deflection 16.6 mm
+run 3: b =  50 mm, d = 290 mm, mass 113.8 kg/m, stress 128 MPa, deflection 16.6 mm
+run 4: b =  50 mm, d = 290 mm, mass 113.8 kg/m, stress 128 MPa, deflection 16.6 mm
+run 5: b =  50 mm, d = 290 mm, mass 113.8 kg/m, stress 128 MPa, deflection 16.6 mm</pre>
+      <p>Every run finds the same design, 50 × 290 mm at 113.8 kg/m, about 2 % heavier than the continuous optimum of week 7 (111.7 kg/m), which cannot be bought. On a discrete problem the answers of repeated runs agree: the discreteness of the GA is now an advantage. The deflection, 16.6 mm against a limit of 16.7 mm, is the active constraint.</p>
+      <p>With two variables we could simply try all \(33 \times 51 = 1683\) combinations. With ten members, each with 33 possible widths and 51 depths, there would be \(1683^{10} \approx 10^{32}\) combinations: no computer can try them all, while a GA with a few thousand evaluations still finds very good designs.</p>
+      <div class="exercise">
+        <p><span class="label">Exercise 11.1.</span> Add a third gene, the steel grade: 0 for S275 (allowable stress 165 MPa, cost factor 1.0) and 1 for S355 (allowable stress 213 MPa, cost factor 1.1). Minimise the cost, the mass times the cost factor. Does the higher grade pay off?</p>
+<figure class="code sandbox" data-runnable data-setup="pygad">
+<pre><code class="language-python">import numpy as np
+import pygad
+
+# Write your code here</code></pre>
+</figure>
+        <details class="solution"><summary>Show a solution</summary><div class="inner">
+<figure class="code" data-runnable data-setup="pygad">
+<pre><code class="language-python">import numpy as np
+import pygad
+
+L, w, E = 6000.0, 20.0, 200000.0
+widths, depths = list(range(40, 205, 5)), list(range(100, 610, 10))
+grades = {0: ("S275", 165.0, 1.0), 1: ("S355", 213.0, 1.1)}
+
+def fitness(ga_instance, solution, solution_idx):
+    b, d, g = solution
+    name, sigma_allow, factor = grades[int(g)]
+    sigma = 6 * (w * L**2 / 8) / (b * d**2)
+    delta = 5 * w * L**4 / (384 * E * b * d**3 / 12)
+    cost = 7850 * b * d * 1e-6 * factor
+    penalty = (max(0, sigma / sigma_allow - 1) + max(0, delta / (L / 360) - 1)
+               + max(0, d / (6 * b) - 1)) * 1000
+    return -(cost + penalty)
+
+ga_instance = pygad.GA(num_generations=150, num_parents_mating=10, sol_per_pop=40,
+                       num_genes=3, fitness_func=fitness,
+                       gene_space=[widths, depths, [0, 1]], gene_type=int,
+                       parent_selection_type="tournament", keep_elitism=2,
+                       mutation_percent_genes=34, random_seed=1, suppress_warnings=True)
+ga_instance.run()
+(b, d, g), fit, _ = ga_instance.best_solution()
+print("best: b = %d mm, d = %d mm, grade %s, cost %.1f (kg/m of S275 equivalent)"
+      % (b, d, grades[g][0], -fit))</code></pre>
+</figure>
+<pre class="out">best: b = 50 mm, d = 290 mm, grade S275, cost 113.8 (kg/m of S275 equivalent)</pre>
+        <p>The design is governed by the deflection limit, which depends on the stiffness \(E\), the same for both grades, and not on the strength. The stronger, more expensive steel buys nothing: the GA keeps S275. If the stress limit governed, for example with a shallower section required for headroom, the answer could change.</p>
+        </div></details>
+      </div>
+    </section>
+
+<!-- =========================================================== 12 -->
+    <section id="further-reading">
+      <h2><span class="num">12</span>Further reading</h2>
+      <ul>
+        <li>Holland, J. H. (1992). <em>Adaptation in Natural and Artificial Systems</em>. MIT Press (first edition 1975).</li>
+        <li>Goldberg, D. E. (1989). <em>Genetic Algorithms in Search, Optimization and Machine Learning</em>. Addison-Wesley.</li>
+        <li>Simon, D. (2013). <em>Evolutionary Optimization Algorithms</em>. Wiley.</li>
+        <li>Gad, A. F. (2023). PyGAD: an intuitive genetic algorithm Python library. <em>Multimedia Tools and Applications</em>, 83, 58029–58042.</li>
+        <li>PyGAD documentation: <a href="https://pygad.readthedocs.io/">pygad.readthedocs.io</a>.</li>
+      </ul>
+      <p>Things to explore: optimise a complex engineering problem with the GA and compare its performance with gradient descent; next week, compare both with particle swarm optimisation.</p>
+    </section>
+
+    <section id="notebook" class="wide">
+      <h2>Practice notebook</h2>
+      <p style="max-width:var(--measure)">All of this week’s code in one Jupyter notebook, with exercises at the end. Cells share variables, so run them from top to bottom with <kbd style="font-family:var(--mono);font-size:.85em">Shift + Enter</kbd>. Your edits are kept in this browser only; use <em>File → Download</em> to save a copy.</p>
+      <div class="notebook-shell">
+        <div class="notebook-bar">
+          <span>week8_genetic_algorithm.ipynb</span>
+          <span class="links" id="notebook-links"></span>
+        </div>
+        <div id="notebook-slot"></div>
+      </div>
+    </section>
+    <nav class="pager" id="pager" aria-label="Other weeks"></nav>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">ENGI 1151 Computational Tools for Engineers and Scientists, Durham University. Python runs in your browser through <a href="https://jupyterlite.readthedocs.io/">JupyterLite</a> and Pyodide; nothing is sent to a server.</div>
+</footer>
+
+<!-- Setup code prepended to runnable blocks so each live window works on its own -->
+<script type="text/plain" id="setup-mountain" data-hint="The live window already has the mountain range: h(x, y), grad_h(x, y), PEAKS, NumPy and Matplotlib.">import numpy as np
+import matplotlib.pyplot as plt
+
+# the mountain range: four peaks (cx, cy, height above base a, width w), in km and m
+PEAKS = [(6.5, 6.0, 1100, 1.3), (2.5, 7.5, 850, 0.9), (3.0, 2.5, 750, 1.0), (8.2, 2.0, 650, 0.8)]
+
+def h(x, y):
+    """Height of the mountain range (m) at x, y (km); works with arrays."""
+    z = 150 + 0 * x
+    for cx, cy, a, w in PEAKS:
+        z = z + a * np.exp(-((x - cx)**2 + (y - cy)**2) / (2 * w**2))
+    return z
+
+def grad_h(x, y):
+    """Gradient of h: (dh/dx, dh/dy)."""
+    gx, gy = 0 * x, 0 * y
+    for cx, cy, a, w in PEAKS:
+        e = a * np.exp(-((x - cx)**2 + (y - cy)**2) / (2 * w**2)) / w**2
+        gx, gy = gx - e * (x - cx), gy - e * (y - cy)
+    return gx, gy
+</script>
+<script type="text/plain" id="setup-pygad" data-hint="The live window installs PyGAD first; this takes a few seconds.">%pip install -q pygad
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<script src="assets/site.js"></script>
+<script>
+/* ============ Hero: a genetic algorithm on the mountain range ============ */
+(() => {
+  const canvas = document.getElementById('hero-sim');
+  const ctx = canvas.getContext('2d');
+  const nOut = document.getElementById('sim-n'), fOut = document.getElementById('sim-fit');
+  const replay = document.getElementById('sim-replay');
+  const reduce = reduceMotion;
+  const PEAKS = [[6.5, 6.0, 1100, 1.3], [2.5, 7.5, 850, 0.9], [3.0, 2.5, 750, 1.0], [8.2, 2.0, 650, 0.8]];
+  const H = (x, y) => PEAKS.reduce((s, [cx, cy, a, w]) => s + a * Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (2 * w * w)), 150);
+  const N = 16, P = 8, E = 2, PM = 0.3, STEP = 1.0, GENS = 25;
+  const randn = () => { let u = 0, v = 0; while (u === 0) u = Math.random(); v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  let pop, gen, best, timer, map = null, mapKey = '';
+  function colours() { const cs = getComputedStyle(document.documentElement);
+    return { ink: cs.getPropertyValue('--ink').trim(), accent: cs.getPropertyValue('--accent').trim(), bad: cs.getPropertyValue('--bad').trim() || '#B3261E', paper: cs.getPropertyValue('--paper').trim() }; }
+  function size() { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect();
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return r; }
+  let box = size();
+  const side = () => Math.min(box.width, box.height) - 8;
+  const ox = () => (box.width - side()) / 2, oy = () => (box.height - side()) / 2;
+  const px = x => ox() + x / 10 * side(), py = y => oy() + (1 - y / 10) * side();
+  function hexToRgb(h) { const m = h.replace('#', ''); const n = parseInt(m.length === 3 ? m.split('').map(c => c + c).join('') : m, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function buildMap() {                                 // contour-banded height map, drawn once per size/theme
+    const c = colours(), s = Math.round(side()), dark = darkQuery.matches;
+    const key = s + c.accent + dark; if (key === mapKey) return; mapKey = key;
+    const off = document.createElement('canvas'); off.width = s; off.height = s;
+    const g = off.getContext('2d'), img = g.createImageData(s, s);
+    const lo = dark ? [30, 26, 36] : [247, 243, 248], hi = hexToRgb(c.accent.startsWith('#') ? c.accent : '#68246D');
+    for (let j = 0; j < s; j++) for (let i = 0; i < s; i++) {
+      const z = H(10 * i / s, 10 * (1 - j / s)), t = Math.floor((z - 150) / 1100 * 12) / 12;
+      const k = 4 * (j * s + i);
+      for (let q = 0; q < 3; q++) img.data[k + q] = Math.round(lo[q] + (hi[q] - lo[q]) * Math.min(1, t * 0.95));
+      img.data[k + 3] = 255;
+    }
+    g.putImageData(img, 0, 0); map = off;
+  }
+  function draw() {
+    const c = colours();
+    ctx.clearRect(0, 0, box.width, box.height);
+    buildMap(); ctx.drawImage(map, ox(), oy(), side(), side());
+    for (const p of pop) { ctx.fillStyle = c.bad; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(px(p[0]), py(p[1]), 5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
+    ctx.fillStyle = '#F2B705'; ctx.strokeStyle = c.ink; ctx.beginPath(); ctx.arc(px(best[0]), py(best[1]), 7, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+    nOut.textContent = gen; fOut.textContent = Math.round(H(best[0], best[1])) + ' m';
+  }
+  const fit = p => H(p[0], p[1]);
+  function generation() {
+    pop.sort((a, b) => fit(b) - fit(a));
+    const parents = pop.slice(0, P), kids = [];
+    while (kids.length < N - E) {
+      let i = Math.floor(Math.random() * P), j = Math.floor(Math.random() * (P - 1)); if (j >= i) j++;
+      const a = parents[i], b = parents[j];
+      kids.push([a[0], b[1]], [b[0], a[1]]);
+    }
+    for (const k of kids) for (let g = 0; g < 2; g++) if (Math.random() < PM) k[g] = Math.min(10, Math.max(0, k[g] + STEP * randn()));
+    pop = pop.slice(0, E).concat(kids.slice(0, N - E));
+    pop.sort((a, b) => fit(b) - fit(a));
+    if (fit(pop[0]) > fit(best)) best = pop[0].slice();
+    gen++;
+  }
+  function start() {
+    clearTimeout(timer);
+    pop = Array.from({ length: N }, () => [10 * Math.random(), 10 * Math.random()]);
+    pop.sort((a, b) => fit(b) - fit(a)); best = pop[0].slice(); gen = 0;
+    if (reduce) { while (gen < GENS) generation(); draw(); return; }
+    draw();
+    const tick = () => { generation(); draw(); if (gen < GENS) timer = setTimeout(tick, 450); };
+    timer = setTimeout(tick, 700);
+  }
+  replay.addEventListener('click', start);
+  window.addEventListener('resize', () => { box = size(); mapKey = ''; draw(); });
+  darkQuery.addEventListener('change', () => { mapKey = ''; draw(); });
+  start();
+})();
+</script>
+</body>
+</html>
