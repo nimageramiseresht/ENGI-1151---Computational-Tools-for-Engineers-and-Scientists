@@ -125,7 +125,8 @@ onmessage = e => { const m = e.data; chain = chain.then(() => handle(m)).catch((
 async function handle(m) {
   if (m.t === 'preload') {
     const errors = [];
-    try { await pyodide.loadPackage(m.pkgs, QUIET(errors)); } catch (x) { errors.push(String(x)); }
+    try { await pyodide.loadPackage(m.pkgs.filter(p => !PIP[p]), QUIET(errors)); } catch (x) { errors.push(String(x)); }
+    await pipInstall(m.pkgs.filter(p => PIP[p]), errors);
     // on failure the code boxes simply try again when they need the package
     postMessage(errors.length ? { t: 'loaded', err: errors.join(' ') } : { t: 'loaded' });
     return;
@@ -133,6 +134,8 @@ async function handle(m) {
   const { id, code, setup, inputs } = m;
   try {
     try { await pyodide.loadPackagesFromImports((setup || '') + '\n' + code, QUIET([])); } catch (x) { /* Python reports a missing module below */ }
+    const wanted = Object.keys(PIP).filter(n => new RegExp('^\\s*(import|from)\\s+' + n + '\\b', 'm').test((setup || '') + '\n' + code));
+    await pipInstall(wanted, []);
     const run = pyodide.globals.get('_run');
     const err = run(code, setup || '', pyodide.toPy(inputs || []));
     run.destroy();
