@@ -31,6 +31,10 @@ const WEEKS = [
   { n: 7, part: 'optimisation', file: 'week7.html', title: 'Introduction to optimisation',
     blurb: 'Find the best design: closed-form optima with derivatives and gradients, gradient descent and Newton’s method by hand, and scipy.optimize.',
     topics: 'f′(x) = 0 · gradient · Newton · scipy.optimize' },
+  { n: 8, part: 'optimisation', file: 'week8.html', title: 'Advanced optimisation: the genetic algorithm',
+    blurb: 'When gradients get trapped on local peaks: metaheuristics, and a population of solutions that evolves by selection, crossover and mutation. In Python with PyGAD.',
+    topics: 'metaheuristics · GA · crossover · mutation · PyGAD' },
+  { n: 9, part: 'optimisation', soon: true },
 ];
 
 /* ============ Live Python configuration ============ */
